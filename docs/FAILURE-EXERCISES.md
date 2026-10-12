@@ -12,7 +12,7 @@ Use one exercise live to demonstrate the gate. The others cover additional failu
 
 ## Exercise 1: deterministic tool-budget failure (recommended live)
 
-**Break:** In `lambda/app/assistant.py`, change `MAX_TOOL_ROUNDS = 5` to `MAX_TOOL_ROUNDS = 1`. Commit, push, inspect branch checks, open the PR, then have the instructor merge it for the candidate run.
+**Break:** In `lambda/app/assistant.py`, change `MAX_TOOL_ROUNDS = 5` to `MAX_TOOL_ROUNDS = 1`. Commit, push, inspect branch checks, open the PR, then have an authorized reviewer approve and merge it for the candidate run.
 
 **Inspect:** Ask a policy question, for example "How many PTO days do employees receive each year?" In Langfuse, select its session and trace. Follow the generation and authorized policy tool. The single round is consumed fetching evidence, leaving no next model round to answer. Expect the safe incomplete-answer message. In Actions, find failed reference assertions and the failed release gate; confirm promotion and production demonstration are skipped.
 
@@ -44,7 +44,7 @@ Use one exercise live to demonstrate the gate. The others cover additional failu
 
 ## Salary-band example without another live code edit
 
-Show the retained earlier failed run and corrected baseline: the failed answer inferred a range from individual salaries; the fixed implementation routes explicit salary-band questions to policy search first. Compare the salary-band policy source and expected figures with the answer. Do not fabricate an observation or label an injected fixture as a real app trace.
+Inspect the implementation that routes explicit salary-band questions to policy search first. Compare the salary-band policy source and expected figures with the answer; individual employee salaries do not establish an approved salary band. Do not fabricate an observation or label an injected fixture as a real app trace.
 
 ## Finish each exercise
 

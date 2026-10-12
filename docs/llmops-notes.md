@@ -270,7 +270,7 @@ Three things follow from that:
 1. **Input tokens dominate.** 144,232 in against 7,593 out. RAG stuffs retrieved
    text into every prompt, so the corpus you send is the bill. Sending 8 chunks
    instead of 4 doubles your cost and often does not improve the answer.
-2. **The model is not what costs money here.** Earlier Classic OpenSearch figures are not the current NextGen lab estimate. See [LAB-COSTS.md](LAB-COSTS.md) for active compute, storage and fixed endpoint charges.
+2. **Infrastructure and model usage both incur charges.** This deployment uses NextGen OpenSearch with scale-to-zero settings. See [LAB-COSTS.md](LAB-COSTS.md) for active compute, storage and fixed endpoint charges.
 3. **Nova Pro is 13x the price of Nova Lite.** That is the real fallback
    tradeoff. Check whether the cheap model handles your questions rather than
    assuming it cannot.

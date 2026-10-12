@@ -4,10 +4,10 @@ This lab uses Langfuse Cloud. The Kubernetes lab demonstrates Docker Compose sel
 
 1. Open [Langfuse Cloud](https://cloud.langfuse.com). Choose GitHub or Google sign-in where offered. Complete account verification if requested.
 2. Create or join the organization for your lab work. Create a separate HR lab project so its data and keys are distinct from other projects.
-3. Confirm the selected cloud region and the exact API base URL shown for that project. Keep evaluation data within the environment approved for the lab. Do not guess the endpoint from another student's account.
+3. Confirm the selected cloud region and the exact API base URL shown for that project. Keep evaluation data within the environment approved for the lab. Do not guess the endpoint from another project.
 4. Open the project's settings and API key section. Generate the public and secret keys for the lab. The secret key is sensitive even though the public key is not.
 5. Configure LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY as GitHub Actions environment secrets in hr-staging. Configure LANGFUSE_BASE_URL as an environment variable using the project endpoint. Restrict deployments and secret access to reviewed branches.
-6. For instructor rehearsal, load the keys through a local ignored environment file or a secret manager. Never commit them, place them in the React build, display them on the projector, or paste them into a PR report.
+6. For local testing, load the keys through a local ignored environment file or a secret manager. Never commit them, place them in the React build, display them in shared screenshots, or paste them into a PR report.
 7. Run the connection check from the pipeline environment. Verify a candidate prompt version and a synthetic dataset experiment appear in the correct project.
 8. Verify trace export separately. The HR Lambdas are in private subnets without internet egress in the original architecture. They require an approved export path to reach Langfuse Cloud; account setup alone does not establish that path.
 

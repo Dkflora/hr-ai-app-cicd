@@ -4,9 +4,9 @@ Use this only if you do not already have a role for your own repository. Local A
 
 ## 1. Get your repository's exact subject prefix
 
-Open your own repository's Settings and its Actions OIDC subject configuration. Copy the displayed subject prefix, including immutable owner/repository IDs if present. It must identify your own repository, not the instructor source. New repositories use a format such as `repo:USERNAME@OWNER-ID/hr-rag-lab@REPO-ID`.
+Open your own repository's Settings and its Actions OIDC subject configuration. Copy the displayed subject prefix, including immutable owner/repository IDs if present. It must identify your own repository, not the source repository. New repositories use a format such as `repo:USERNAME@OWNER-ID/hr-rag-lab@REPO-ID`.
 
-If you cannot find that setting, the instructor can inspect the repository's OIDC configuration. Do not guess IDs or use wildcard repository trust. Custom OIDC subject templates need instructor review.
+If you cannot find that setting, a repository administrator can inspect the repository's OIDC configuration. Do not guess IDs or use wildcard repository trust. Custom OIDC subject templates need repository administrator review.
 
 ## 2. Generate the two policy files
 
@@ -33,7 +33,7 @@ In AWS console → IAM → Identity providers, find `token.actions.githubusercon
 5. Paste `build/github-oidc-permissions.json`, review its scoped resources, and save it as `HRLabOnly`.
 6. Copy the role ARN from the role summary.
 
-If you lack permission to create IAM providers/roles/policies, the instructor or AWS account administrator performs these steps. If a role already exists, inspect it rather than overwriting unrelated trust or permissions.
+If you lack permission to create IAM providers/roles/policies, the AWS account administrator performs these steps. If a role already exists, inspect it rather than overwriting unrelated trust or permissions.
 
 ## 5. Configure GitHub in the browser
 

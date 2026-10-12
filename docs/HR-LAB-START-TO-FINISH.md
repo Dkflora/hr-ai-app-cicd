@@ -23,15 +23,15 @@ Use each PR to describe the change, validation and release impact. Retain the fa
 
 ## 1. Import, clone and orient
 
-Use Linux or WSL2 Bash for these commands, not PowerShell or Git Bash. Setup activates a Linux virtual environment. The workstation needs Git, Python 3.12, Node.js 22/npm, Terraform 1.15.9, and AWS CLI. An instructor-hosted Linux workstation is another option. Missing tools use instructor setup support rather than consuming the evaluation segment.
+Use Linux or WSL2 Bash for these commands, not PowerShell or Git Bash. Setup activates a Linux virtual environment. The workstation needs Git, Python 3.12, Node.js 22/npm, Terraform 1.15.9, and AWS CLI. A managed Linux workstation is another option. Install the required tools before running setup.
 
-The source repository is public. **Import it into your own GitHub account first**, then clone your imported repository. Cloning the instructor source alone does not give you ownership of its Actions settings or deployment environments.
+The source repository is public. **Import it into your own GitHub account first**, then clone your imported repository. Cloning the source repository alone does not give you ownership of its Actions settings or deployment environments.
 
 1. Open [GitHub Import](https://github.com/new/import).
 2. Enter `https://github.com/kserge2001/hr-rag-cicd-student-starter.git` as the source URL.
 3. Choose **your own account** as owner and `hr-rag-lab` as the new repository name.
-4. Choose **Public** for this synthetic classroom repository, then click **Begin import**. Private repositories require a GitHub plan that supports environment secrets; deployment-reviewer features also vary by plan. Wait for completion.
-5. Open your new repository and confirm its address begins with your username. If GitHub Importer refuses a GitHub-hosted source, use the command-line import below; both create an independent student-owned repository.
+4. Choose **Public** for this synthetic-data repository, then click **Begin import**. Private repositories require a GitHub plan that supports environment secrets; deployment-reviewer features also vary by plan. Wait for completion.
+5. Open your new repository and confirm its address begins with your username. If GitHub Importer refuses a GitHub-hosted source, use the template option below; both create a repository owned by your account.
 6. Clone **your own repository** and create the feature branch:
 
 ```bash
@@ -41,7 +41,7 @@ git remote -v
 git switch -c feature/ci-quality-gate
 ```
 
-Replace `YOUR-USERNAME` with your account name. The origin must point to your imported repository, not the instructor source. Configure pull requests, Actions, secrets and environments in the GitHub website. No GitHub CLI installation or commands are used in this lab.
+Replace `YOUR-USERNAME` with your account name. The origin must point to your imported repository, not the source repository. Configure pull requests, Actions, secrets and environments in the GitHub website. No GitHub CLI installation or commands are used in this lab.
 
 If the browser importer refuses this source, use **Use this template → Create a new repository** on the source page, select your own account, and name it `hr-rag-lab`. Then use the same `git clone` command above.
 
@@ -60,7 +60,7 @@ cp infra/terraform/terraform.tfvars.example infra/terraform/terraform.tfvars
 cp .env.langfuse.example .env.langfuse
 ```
 
-Use a text editor to set these values in the ignored `terraform.tfvars`. Choose unique names; the placeholder below must be replaced by the student's own identifier.
+Use a text editor to set these values in the ignored `terraform.tfvars`. Choose unique names; the placeholder below must be replaced by your own identifier.
 
 ```hcl
 aws_region = "us-east-1"
@@ -76,7 +76,7 @@ The inline judge is already included and always runs in this prepared applicatio
 
 `langfuse_base_url` is the Langfuse Cloud endpoint for your project's region, not the HR app URL or the model endpoint. For a US Langfuse project, use `https://us.cloud.langfuse.com`.
 
-`trace_synthetic_content = true` includes approved synthetic question/answer content in traces so students can inspect it.
+`trace_synthetic_content = true` includes approved synthetic question/answer content in traces so we can inspect it.
 
 Follow [LANGFUSE-CLOUD-SETUP.md](LANGFUSE-CLOUD-SETUP.md): sign up with GitHub or Google, create a project, select its region and create a key pair. Enter the keys into `.env.langfuse`; the public key starts `pk-lf-` and the secret starts `sk-lf-`. Use the project's matching endpoint. Quotes are optional. Save the file; do not paste secrets into chat, commits or React.
 
@@ -86,9 +86,9 @@ source .venv/bin/activate
 terraform -chdir=infra/terraform output -raw app_url
 ```
 
-Bootstrap builds the Lambda layer, provisions infrastructure, initializes synthetic employees, uploads/ingests policies, deploys React, creates test sign-ins, stores Langfuse keys in Secrets Manager and verifies ingestion plus an authenticated API call. Do not redo the earlier manual chunking lesson. Terraform apply still requires plan review and confirmation.
+Bootstrap builds the Lambda layer, provisions infrastructure, initializes synthetic employees, uploads/ingests policies, deploys React, creates test sign-ins, stores Langfuse keys in Secrets Manager and verifies ingestion plus an authenticated API call. Ingestion is automated; no manual chunking steps are required. Terraform apply still requires plan review and confirmation.
 
-Checkpoint: readiness succeeds, a real answer is returned, and model/tool observations reach Langfuse. A smoke trace alone is insufficient. Students using the prepared checkpoint must receive its local configuration/state through the instructor-approved arrangement; never run a new Terraform apply against someone else's stack accidentally.
+Checkpoint: readiness succeeds, a real answer is returned, and model/tool observations reach Langfuse. A smoke trace alone is insufficient. Use only configuration and Terraform state for your own deployment; do not apply changes to someone else's stack.
 
 ## 3. Cognito and a real trace
 
@@ -128,14 +128,14 @@ Open `hr-staging`. Under **Environment variables**, click **Add environment vari
 terraform -chdir=infra/terraform output
 ```
 
-For one exact value, use `terraform -chdir=infra/terraform output -raw OUTPUT_NAME`, replacing `OUTPUT_NAME` with the table's output name. Get the AWS role ARN from the instructor or the OIDC console walkthrough. Use `us-east-1` for this class.
+For one exact value, use `terraform -chdir=infra/terraform output -raw OUTPUT_NAME`, replacing `OUTPUT_NAME` with the table's output name. Get the AWS role ARN from the OIDC console walkthrough or your AWS account administrator. Use `us-east-1` for this deployment.
 
 Under **Environment secrets**, click **Add environment secret** for `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`, using your saved local key pair. Keys remain outside source code and React. 
 
 | Variable | Source |
 |---|---|
 | AWS_REGION | us-east-1 |
-| AWS_STAGING_ROLE_ARN | Instructor-issued role for this repository |
+| AWS_STAGING_ROLE_ARN | Repository-scoped role created through the OIDC walkthrough |
 | HR_STAGING_FUNCTION | candidate_function Terraform output |
 | HR_STAGING_ORIGIN | app_url output |
 | HR_TEST_USERS_SECRET_ARN | evaluation_users_secret_arn output |
@@ -147,7 +147,7 @@ Under **Environment secrets**, click **Add environment secret** for `LANGFUSE_PU
 
 Secrets: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY, read from the ignored local file. No long-lived AWS keys enter GitHub.
 
-In Settings → Environments, restrict staging to main and configure a designated reviewer where available. Configure the production-approval reviewer too. A sole owner cannot approve their own protected deployment; arrange another reviewer or explicitly identify the classroom approval limitation.
+In Settings → Environments, restrict staging to main and configure a designated reviewer where available. Configure the production-approval reviewer too. If self-review prevention is enabled, the person initiating a deployment cannot approve it; assign another reviewer. Document any approval features unavailable on your GitHub plan.
 
 ```bash
 git add .github/workflows/hr-quality.yml
@@ -212,7 +212,7 @@ In GitHub, open a PR from `fix/restore-tool-budget` into `main`, inspect checks 
 
 The final job verifies the exact merged commit and passing report, then demonstrates a production handoff. It does not deploy a second stack or move production traffic. React, prompt and backend come from the same reviewed commit; initial Terraform changes require a separate reviewed apply.
 
-Review the prepared `ci/rollback_lab.py` and prior approved-version evidence. Rehearse rollback only when the instructor confirms the previous version exists; do not roll back or destroy shared infrastructure automatically.
+Review the prepared `ci/rollback_lab.py` and prior approved-version evidence. Run rollback only after confirming the previous approved version exists; do not roll back or destroy shared infrastructure automatically.
 
 Submit branch/PR and bad/fixed run links, corresponding trace links, the passing report, tool-result explanations and release/recovery reasoning. Review [OWASP-EVIDENCE.md](OWASP-EVIDENCE.md); this lab does not certify complete security.
 
@@ -453,7 +453,7 @@ jobs:
               raise SystemExit('A passing evaluation report is required')
           print('DEMONSTRATION ONLY: production would receive the tested backend artifact and exact prompt version.')
           print('React would be built from this same commit with production configuration.')
-          print('No production resources or traffic are changed by this classroom job.')
+          print('No production resources or traffic are changed by this dry-run job.')
           PY
 ```
 
