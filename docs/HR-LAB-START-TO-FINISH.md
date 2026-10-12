@@ -29,7 +29,7 @@ The source repository is public. **Import it into your own GitHub account first*
 1. Open [GitHub Import](https://github.com/new/import).
 2. Enter `https://github.com/kserge2001/hr-rag-cicd-student-starter.git` as the source URL.
 3. Choose **your own account** as owner and `hr-rag-lab` as the new repository name.
-4. Choose visibility according to your account/class policy, then click **Begin import**. Wait for completion.
+4. Choose **Public** for this synthetic classroom repository, then click **Begin import**. Private repositories require a GitHub plan that supports environment secrets; deployment-reviewer features also vary by plan. Wait for completion.
 5. Open your new repository and confirm its address begins with your username. If GitHub Importer refuses a GitHub-hosted source, use the command-line import below; both create an independent student-owned repository.
 6. Clone **your own repository** and create the classroom branch:
 
@@ -54,7 +54,7 @@ Use this only if you have not already created `hr-rag-lab`. Do not initialize th
 gh auth login
 export GH_OWNER="$(gh api user --jq .login)"
 export GH_REPO="$GH_OWNER/hr-rag-lab"
-gh repo create "$GH_REPO" --private
+gh repo create "$GH_REPO" --public
 git clone https://github.com/kserge2001/hr-rag-cicd-student-starter.git hr-rag-lab
 cd hr-rag-lab
 git remote rename origin source
@@ -495,3 +495,5 @@ jobs:
 ## Command references
 
 The GitHub CLI commands follow its official documentation: [GitHub Importer](https://docs.github.com/en/migrations/importing-source-code/using-github-importer/importing-a-repository-with-github-importer) and [create an empty destination repository](https://cli.github.com/manual/gh_repo_create), [set environment variables](https://cli.github.com/manual/gh_variable_set), and [set encrypted environment secrets](https://cli.github.com/manual/gh_secret_set). The prepared helper passes values through standard input.
+
+GitHub documents these plan requirements in [Deployments and environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
