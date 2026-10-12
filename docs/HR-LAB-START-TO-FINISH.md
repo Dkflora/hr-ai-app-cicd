@@ -1,8 +1,25 @@
-# HR RAG lab: from your repository to a passing pipeline
+# HR policy assistant: controlled delivery and evaluation
 
 This lab inherits the AWS application and Python helpers. Students configure the lab, assemble three prepared workflow blocks, interpret evaluation results, deliberately break one setting, then fix and rerun. No application or evaluation script is written from scratch.
 
 The application and evaluation helpers are supplied. Setup automatically checks the application; students then assemble and run their own pipeline.
+
+## Delivery model
+
+This project follows a reviewed change → staging candidate → evaluation gate → release approval pattern. Branch names describe the change, rather than the training session:
+
+| Branch | Purpose |
+|---|---|
+| `feature/ci-quality-gate` | Add the delivery pipeline |
+| `test/tool-budget-regression` | Reproduce a controlled failure in synthetic staging |
+| `fix/restore-tool-budget` | Restore the tested behavior |
+| `main` | Reviewed integration branch; deploys the staging candidate |
+
+Branch and PR checks run without deployment credentials. After review, main deploys a candidate to staging and evaluates the real authenticated API. Required checks block promotion when behavior is wrong or evidence is incomplete. The approved alias is a release pointer within this same staging stack; it does not isolate production traffic. The final production-handoff job is explicitly a dry run.
+
+For a real production service, deploy the tested artifact and exact prompt version through a separately authorized production job, with production configuration, smoke checks, monitoring and rollback. This repository does not provision that production environment. A deliberately broken change is permitted here only as an authorized fault simulation in synthetic staging; do not treat it as normal practice for a live production branch.
+
+Use each PR to describe the change, validation and release impact. Retain the failing and passing runs, traces and exact release versions as engineering evidence. Explain remaining limitations instead of equating a green workflow with guaranteed correctness or security.
 
 ## 1. Import, clone and orient
 
@@ -15,13 +32,13 @@ The source repository is public. **Import it into your own GitHub account first*
 3. Choose **your own account** as owner and `hr-rag-lab` as the new repository name.
 4. Choose **Public** for this synthetic classroom repository, then click **Begin import**. Private repositories require a GitHub plan that supports environment secrets; deployment-reviewer features also vary by plan. Wait for completion.
 5. Open your new repository and confirm its address begins with your username. If GitHub Importer refuses a GitHub-hosted source, use the command-line import below; both create an independent student-owned repository.
-6. Clone **your own repository** and create the classroom branch:
+6. Clone **your own repository** and create the feature branch:
 
 ```bash
 git clone https://github.com/YOUR-USERNAME/hr-rag-lab.git
 cd hr-rag-lab
 git remote -v
-git switch -c lab/classroom
+git switch -c feature/ci-quality-gate
 ```
 
 Replace `YOUR-USERNAME` with your account name. The origin must point to your imported repository, not the instructor source. Configure pull requests, Actions, secrets and environments in the GitHub website. No GitHub CLI installation or commands are used in this lab.
@@ -75,7 +92,7 @@ Checkpoint: readiness succeeds, a real answer is returned, and model/tool observ
 
 ## 3. Cognito and a real trace
 
-1. Inspect the existing Cognito pool, synthetic users and app client. The instructor supplies synthetic classroom sign-in credentials through an approved channel.
+1. Inspect the existing Cognito pool, synthetic users and app client. The project owner supplies synthetic test-account credentials through an approved channel.
 2. Sign into the chatbot. Explain the browser token → API Gateway → trusted claims → employee permissions flow. Do not display bearer tokens or passwords.
 3. Ask "How many PTO days do employees receive each year?" and a follow-up. Find the session and opaque user identifier in Langfuse, then policy tool, model and inline judge spans. Inspect the numbered prompt version.
 4. Explain `ci/auth.py` by its input and result: pipeline AWS permission allows admin authentication of synthetic users, credentials come from the lab secret, and fresh tokens remain in memory. It does not bypass API or data permissions.
@@ -90,22 +107,22 @@ mkdir -p .github/workflows
 python -m unittest discover -s ci/tests -v
 git add .github/workflows/hr-quality.yml
 git commit -m "Add HR branch and pull-request checks"
-git push -u origin lab/classroom
+git push -u origin feature/ci-quality-gate
 ```
 
-In GitHub, click **Compare & pull request**, choose `main` as base and your classroom branch as compare, then create the PR. Open its **Checks** tab and inspect Actions. Explain one actual test. Branch/PR code receives no AWS or Langfuse credentials. In repository Settings, configure main protection and required `checks` plus reviewer policy where available. The instructor reviews the PR. GitHub plan/organization features can restrict private-repository protections; state any unavailable control explicitly rather than claiming it exists.
+In GitHub, click **Compare & pull request**, choose `main` as base and your feature branch as compare, then create the PR. Open its **Checks** tab and inspect Actions. Explain one actual test. Branch/PR code receives no AWS or Langfuse credentials. In repository Settings, configure main protection and required `checks` plus reviewer policy where available. A designated reviewer reviews the PR. GitHub plan/organization features can restrict private-repository protections; state any unavailable control explicitly rather than claiming it exists.
 
 ## Break
 
 ## 5. Wire protected staging
 
-If no role exists, follow [GITHUB-AWS-OIDC-SETUP.md](GITHUB-AWS-OIDC-SETUP.md) to generate reviewed policies and create a scoped role. Otherwise, the instructor supplies an AWS role ARN whose OIDC trust allows **this exact student repository** and `hr-lab-staging`, with audience `sts.amazonaws.com`. New repositories can use immutable owner/repository IDs in their OIDC subject; the instructor must inspect that configuration. Do not reuse the instructor rehearsal role or broaden trust to all repositories. Its scoped permissions cover only the student's lab Lambda/aliases, test-user secret, Cognito pool, frontend bucket/distribution and required model invocation. `lambda:GetFunction` is required by the update waiter.
+If no role exists, follow [GITHUB-AWS-OIDC-SETUP.md](GITHUB-AWS-OIDC-SETUP.md) to generate reviewed policies and create a scoped role. Otherwise, the instructor supplies an AWS role ARN whose OIDC trust allows **this exact student repository** and `hr-staging`, with audience `sts.amazonaws.com`. New repositories can use immutable owner/repository IDs in their OIDC subject; the instructor must inspect that configuration. Do not reuse the instructor rehearsal role or broaden trust to all repositories. Its scoped permissions cover only the student's lab Lambda/aliases, test-user secret, Cognito pool, frontend bucket/distribution and required model invocation. `lambda:GetFunction` is required by the update waiter.
 
 Append **Block B** and **Block C** below to the same workflow file, keeping `candidate` and `production-demonstration` beneath `jobs`. Students do not write the Python helpers.
 
-In the GitHub website, open **your repository → Settings → Environments → New environment**. Create `hr-lab-staging` and `hr-production-demo`.
+In the GitHub website, open **your repository → Settings → Environments → New environment**. Create `hr-staging` and `hr-production-approval`.
 
-Open `hr-lab-staging`. Under **Environment variables**, click **Add environment variable** for each name in the table below. Read the values from Terraform outputs and the generated frontend file:
+Open `hr-staging`. Under **Environment variables**, click **Add environment variable** for each name in the table below. Read the values from Terraform outputs and the generated frontend file:
 
 ```bash
 terraform -chdir=infra/terraform output
@@ -149,9 +166,9 @@ Inspect exact prompt publication, candidate deployment, 43 cases × two API requ
 - Promptfoo: deterministic required/prohibited facts and source assertions over captured real API answers.
 - Langfuse: dataset experiment outputs and scores by numbered prompt/code release. The experiment replays captured outputs; it does not independently regenerate another sample.
 - DeepEval: prepared reference-aware model grader. Examine one reason; a model grade can be wrong. The optional demonstration runs only when enabled and prior steps succeed.
-- Evidently: numeric answer-length/latency comparison with a captured failing classroom reference. A distribution shift requests investigation, not automatic rejection of answer quality. Report generation must succeed when enabled.
+- Evidently: numeric answer-length/latency comparison with a captured failing nonproduction reference. A distribution shift requests investigation, not automatic rejection of answer quality. Report generation must succeed when enabled.
 
-Inspect results in Actions, Langfuse and the downloaded Evidently artifact. Compare cases and repeat counts before interpreting scores. Human agreement requires independent labels from a domain expert; classroom simulated labels are not real user-outcome validation. The illustrative uncertainty report does not establish a production mistake percentage.
+Inspect results in Actions, Langfuse and the downloaded Evidently artifact. Compare cases and repeat counts before interpreting scores. Human agreement requires independent labels from a domain expert; simulated labels are not real user-outcome validation. The illustrative uncertainty report does not establish a production mistake percentage.
 
 ## 7. Break, inspect, fix and rerun
 
@@ -160,7 +177,7 @@ Use [FAILURE-EXERCISES.md](FAILURE-EXERCISES.md), Exercise 1. Start from the now
 ```bash
 git switch main
 git pull --ff-only
-git switch -c lab/tool-budget
+git switch -c test/tool-budget-regression
 ```
 
 In the editor, change only `MAX_TOOL_ROUNDS = 5` to `MAX_TOOL_ROUNDS = 1` in `lambda/app/assistant.py`.
@@ -168,17 +185,17 @@ In the editor, change only `MAX_TOOL_ROUNDS = 5` to `MAX_TOOL_ROUNDS = 1` in `la
 ```bash
 git add lambda/app/assistant.py
 git commit -m "Exercise: limit the agent to one tool round"
-git push -u origin lab/tool-budget
+git push -u origin test/tool-budget-regression
 ```
 
-In the GitHub website, open a PR from `lab/tool-budget` into `main` and inspect its Checks tab. Static checks can pass despite this behavior regression. After instructor review and merge, inspect the **new main run**, its failed live assertions and Langfuse trace. The tool lookup consumes the only round; the next answer-generation turn cannot occur. Confirm promotion/demo are skipped and approved remains the baseline. The classroom UI still uses candidate, so it can show the deliberately broken answer while release is blocked.
+In the GitHub website, open a PR from `test/tool-budget-regression` into `main` and inspect its Checks tab. Static checks can pass despite this behavior regression. After reviewer approval and merge, inspect the **new main run**, its failed live assertions and Langfuse trace. The tool lookup consumes the only round; the next answer-generation turn cannot occur. Confirm promotion/demo are skipped and approved remains the baseline. The staging UI still uses candidate, so it can show the deliberately broken answer while release is blocked.
 
 Fix with another short branch/PR:
 
 ```bash
 git switch main
 git pull --ff-only
-git switch -c lab/restore-tool-budget
+git switch -c fix/restore-tool-budget
 ```
 
 Restore `MAX_TOOL_ROUNDS = 5` in the editor.
@@ -186,12 +203,12 @@ Restore `MAX_TOOL_ROUNDS = 5` in the editor.
 ```bash
 git add lambda/app/assistant.py
 git commit -m "Restore the working tool budget"
-git push -u origin lab/restore-tool-budget
+git push -u origin fix/restore-tool-budget
 ```
 
-In GitHub, open a PR from `lab/restore-tool-budget` into `main`, inspect checks and obtain review. After merge, select the newest main run in the Actions tab. Keep the question/reference unchanged; compare failed/fixed traces, case results and exact release identity. All required evaluations must pass before promotion. If model variation causes an unrelated failure, investigate it.
+In GitHub, open a PR from `fix/restore-tool-budget` into `main`, inspect checks and obtain review. After merge, select the newest main run in the Actions tab. Keep the question/reference unchanged; compare failed/fixed traces, case results and exact release identity. All required evaluations must pass before promotion. If model variation causes an unrelated failure, investigate it.
 
-## 8. Production demonstration, recovery and evidence
+## 8. Production handoff, recovery and evidence
 
 The final job verifies the exact merged commit and passing report, then demonstrates a production handoff. It does not deploy a second stack or move production traffic. React, prompt and backend come from the same reviewed commit; initial Terraform changes require a separate reviewed apply.
 
@@ -201,7 +218,7 @@ Submit branch/PR and bad/fixed run links, corresponding trace links, the passing
 
 ## Exact workflow blocks
 
-Paste A first. Append B and C later in the same file. These blocks are the verified instructor workflow divided by job; no Python source needs copying. The starter deliberately has **no active workflow** until students assemble it.
+Paste A first. Append B and C later in the same file. These blocks define the delivery workflow by job; no Python source needs copying. The starter deliberately has **no active workflow** until students assemble it.
 
 ### Block A — branch/PR checks
 
@@ -211,7 +228,7 @@ name: HR application candidate and evaluation gate
 on:
   pull_request:
   push:
-    branches: [main, 'lab/**']
+    branches: [main, 'feature/**', 'fix/**', 'test/**']
   workflow_dispatch:
 permissions:
   contents: read
@@ -264,7 +281,7 @@ jobs:
       needs.checks.result == 'success'
     needs: checks
     runs-on: ubuntu-latest
-    environment: hr-lab-staging
+    environment: hr-staging
     timeout-minutes: 120
     permissions:
       contents: read
@@ -405,15 +422,15 @@ jobs:
           retention-days: 3
 ```
 
-### Block C — production handoff demonstration
+### Block C — production handoff (dry run)
 
 ```yaml
-  production-demonstration:
-    name: Demonstrate production release after merge
+  production-handoff-dry-run:
+    name: Production handoff (dry run)
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: candidate
     runs-on: ubuntu-latest
-    environment: hr-production-demo
+    environment: hr-production-approval
     permissions:
       contents: read
     steps:

@@ -6,8 +6,8 @@ Use one exercise live to demonstrate the gate. The others are available for inst
 
 1. Start from your own student repository's main branch after its first passing pipeline. The instructor's `af0fa05` commit is reference evidence in a separate repository, not a commit to check out in this fresh starter. Record the full commit, prompt version and approved Lambda alias before any exercise.
 2. Save the passing Actions run and Langfuse experiment link. The baseline has 43 cases, two repetitions per case. Do not edit the approved reference answers.
-3. Create a feature branch. Branch and PR checks are static and have no deployment secrets. After review, the instructor merges the exercise into main to deploy it to the **synthetic classroom candidate** and run live evaluations. This intentionally failing change is never a real production release.
-4. The `approved` alias is the classroom release pointer; the UI/API evaluates the candidate. A failed candidate can be visible in the classroom UI even though promotion is blocked. Do not describe approved as a separate production stack.
+3. Create a feature branch. Branch and PR checks are static and have no deployment secrets. After review, the designated reviewer merges the controlled test into main to deploy it to the **synthetic staging candidate** and run live evaluations. This intentionally failing change is never a real production release.
+4. The `approved` alias is the approved release pointer within staging; the UI/API evaluates the candidate. A failed candidate can be visible in the staging UI even though promotion is blocked. Do not describe approved as a separate production stack.
 5. If a new unexplained baseline failure appears, diagnose it before starting an exercise. A previous passing run is evidence for that run, not a guarantee of all future model outputs.
 
 ## Exercise 1: deterministic tool-budget failure (recommended live)

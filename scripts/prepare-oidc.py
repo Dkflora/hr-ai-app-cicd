@@ -32,7 +32,7 @@ def main():
     partition = secret.split(':')[1]
     function = f"arn:{partition}:lambda:{args.region}:{account}:function:{value('candidate_function')}"
     provider = f"arn:{partition}:iam::{account}:oidc-provider/token.actions.githubusercontent.com"
-    trust = {'Version':'2012-10-17','Statement':[{'Effect':'Allow','Principal':{'Federated':provider},'Action':'sts:AssumeRoleWithWebIdentity','Condition':{'StringEquals':{'token.actions.githubusercontent.com:aud':'sts.amazonaws.com','token.actions.githubusercontent.com:sub':args.subject_prefix+':environment:hr-lab-staging'}}}]}
+    trust = {'Version':'2012-10-17','Statement':[{'Effect':'Allow','Principal':{'Federated':provider},'Action':'sts:AssumeRoleWithWebIdentity','Condition':{'StringEquals':{'token.actions.githubusercontent.com:aud':'sts.amazonaws.com','token.actions.githubusercontent.com:sub':args.subject_prefix+':environment:hr-staging'}}}]}
     def allow(actions, resources):
         return {'Effect':'Allow','Action':actions,'Resource':resources}
     policy = {'Version':'2012-10-17','Statement':[

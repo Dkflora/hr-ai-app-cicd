@@ -1,4 +1,4 @@
-# HR RAG: evaluation and CI/CD lab
+# HR policy assistant: evaluation and delivery pipeline
 
 This is a prepared application for the HR Week Six lab. Students already built the RAG workflow; this lab automates that setup and focuses on controlled changes, evaluations, release evidence, and recovery.
 
@@ -10,7 +10,7 @@ Use Python 3.12, Node.js 22, Terraform, AWS CLI, and a Bash environment. Authent
 
 Run `bash scripts/setup-lab.sh`. It creates a local Python environment, builds packages, runs Terraform, initializes the synthetic employee database, uploads policies, deploys React, initializes synthetic sign-in accounts, stores Langfuse keys securely, and checks ingestion plus an authenticated API request. Initial infrastructure creation can take several minutes. A failed readiness check is not a completed setup.
 
-The API serves a `candidate` Lambda alias. The pipeline deploys a published numeric version and verifies release identity before grading answers. The separate `approved` alias is a classroom release pointer; this repository does not silently promote changes into an existing production application.
+The API serves a `candidate` Lambda alias. The pipeline deploys a published numeric version and verifies release identity before grading answers. The separate `approved` alias is a approved release pointer within staging; this repository does not silently promote changes into an existing production application.
 
 ## Materials
 

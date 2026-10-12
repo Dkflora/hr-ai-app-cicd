@@ -18,7 +18,7 @@ python scripts/prepare-oidc.py
 
 It asks for your repository name (`username/hr-rag-lab`) and the exact subject prefix you copied. Region defaults to `us-east-1`. It reads local Terraform outputs and AWS account identity, then writes `build/github-oidc-trust.json` and `build/github-oidc-permissions.json`. It does not create AWS resources or require students to write Python.
 
-Open both generated files in an editor. Trust is limited to your exact repository, `hr-lab-staging` environment and `sts.amazonaws.com` audience. Permissions target only your lab's Lambda/aliases, synthetic-user secret, Cognito pool, frontend bucket/distribution and Nova models.
+Open both generated files in an editor. Trust is limited to your exact repository, `hr-staging` environment and `sts.amazonaws.com` audience. Permissions target only your lab's Lambda/aliases, synthetic-user secret, Cognito pool, frontend bucket/distribution and Nova models.
 
 ## 3. Register the provider once per AWS account
 
@@ -37,7 +37,7 @@ If you lack permission to create IAM providers/roles/policies, the instructor or
 
 ## 5. Configure GitHub in the browser
 
-Return to Section 5 of [the main lab guide](HR-LAB-START-TO-FINISH.md). Create `hr-lab-staging` and `hr-production-demo` in Settings → Environments. Add `AWS_STAGING_ROLE_ARN` as an environment variable using the copied role ARN, plus the other values listed in the guide. Add your Langfuse keys as environment secrets.
+Return to Section 5 of [the main lab guide](HR-LAB-START-TO-FINISH.md). Create `hr-staging` and `hr-production-approval` in Settings → Environments. Add `AWS_STAGING_ROLE_ARN` as an environment variable using the copied role ARN, plus the other values listed in the guide. Add your Langfuse keys as environment secrets.
 
 Restrict staging deployment to main and configure reviewer policy where available. Environment-scoped trust alone does not enforce a branch restriction; GitHub environment settings do. Use a public synthetic lab repository for GitHub Free environment support.
 

@@ -21,7 +21,7 @@ Students do not need to write every helper from scratch. The repository provides
 
 `deploy_frontend.py` uploads the React files already produced by npm run build to S3, then refreshes CloudFront. It is a deployment helper, not an AI evaluation.
 
-`auth.py` gets fresh test-user tokens without printing passwords. `rollback_lab.py` restores a previous classroom release pointer. `tests/` checks the prompt, release packaging, judge behavior and tracing.
+`auth.py` gets fresh test-user tokens without printing passwords. `rollback_lab.py` restores a previous approved release pointer within staging. `tests/` checks the prompt, release packaging, judge behavior and tracing.
 
 ## Explain the grader itself
 
