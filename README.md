@@ -34,3 +34,5 @@ GitHub Actions uses protected staging and AWS OIDC. Unreviewed PR code receives 
 Use the guide to configure your own AWS deployment and GitHub pipeline. The setup script performs the application checks automatically. All evaluation helpers are supplied; we focus on the workflow, evidence and controlled changes.
 
 Follow the teardown instructions to remove your AWS deployment when finished.
+
+See [the change, test and evidence map](docs/CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
