@@ -81,3 +81,17 @@ We do not recreate those tools in Python. The adapters translate our captured AP
 Helpers create the ignored `build/` directory when needed. Packaging writes `function.zip` and `release.json`; live evaluation writes `evaluation.json`; reporting writes report files. Local runs create these on the workstation. Actions runs create them in that job's runner workspace.
 
 Jobs do not automatically share their filesystem. Only explicitly uploaded/downloaded artifacts transfer between jobs or remain available after the runner is removed. The workflow retains selected release/report artifacts and excludes raw evaluation answers from the uploaded artifact bundle.
+
+## Data and tests folders
+
+`data/` contains inputs, not another evaluation engine:
+
+- `drift-reference.csv`: captured numeric answer-length and latency measurements that the Evidently Action compares with the current run.
+- `drift-reference.json`: provenance and the case-definition hash used by `prepare_drift.py` to reject an incompatible comparison. The supplied reference is a synthetic failing run for demonstrating change detection, not an approved production-quality baseline.
+
+`tests/` contains local implementation checks run by the branch/PR job:
+
+- `test_release.py`: prompt validation, release packaging and inline-judge behavior.
+- `test_telemetry.py`: trace context, user/session handling and sensitive-data protection.
+
+These unit tests check the helpers and application plumbing. The live API evaluation checks deployed behavior. Tool Actions add their configured views of the captured answers. Those stages have different inputs and purposes; running them is not running the same implementation twice.
