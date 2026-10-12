@@ -7,7 +7,7 @@
 - Prompt version 8; candidate Lambda version 11. Exact artifact, dataset and prompt digests are retained in the run's release manifest.
 - Static/build checks, API evaluation, official Langfuse and Promptfoo Actions, prepared DeepEval grading, Evidently report, exact-version classroom promotion and production demonstration succeeded.
 - Earlier failing run: https://github.com/kserge2001/hr-rag-evaluation-instructor/actions/runs/38119603482. It shows the gate blocking promotion before the retrieval fixes.
-- Eighteen local CI tests pass. CloudFront routing update deployed. AWS resources remain running.
+- Eighteen local CI tests pass. CloudFront routing update deployed. The instructor authorized AWS teardown on October 12, 2026; the rehearsal deployment is retired. Build your own stack from the student repository. Historical passing-run evidence remains available.
 
 ## Boundaries
 
