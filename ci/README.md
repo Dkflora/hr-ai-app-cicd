@@ -31,6 +31,22 @@ The prepared adapters connect these tools to the same captured API results. We c
 
 Alternative local drift reporting, version comparisons and human-versus-model agreement are kept in [examples/evaluation](../examples/evaluation/README.md). They are not extra required pipeline stages.
 
+## Does the workflow need these files?
+
+**Yes, the workflow calls most of these helpers directly or through an Action.** They are inputs and application-specific operations, not second implementations of the tools.
+
+| File we see | Its job | What the Action does instead |
+|---|---|---|
+| `evaluate_api.py` | Signs in test identities, calls our authenticated HR API, checks expected facts and records answers | No supplied tool Action performs this complete HR-specific API and authorization test |
+| `prepare_promptfoo.py` | Converts approved cases into Promptfoo configuration | Promptfoo Action executes that configuration |
+| `promptfoo-provider.cjs` | Reads the captured API answers for the configured cases | Promptfoo Action uses that provider to run assertions |
+| `prepare_drift.py` | Checks dataset compatibility and writes numeric measurements to CSV | Evidently Action compares the CSV with the reference and generates the report |
+| `evidently_config.py` | Declares the report metrics; it does not run the report | Evidently Action loads this configuration and runs it |
+| `langfuse_experiment.py` | Defines the dataset experiment using our captured answers and reference checks | Langfuse Action executes that experiment and publishes its results |
+| `promote_lab.py` | Checks release identity and passing evidence before updating the approved staging alias | Evaluation Actions do not decide or perform our AWS release operation |
+
+The workflow uses `auth.py` through `evaluate_api.py`; configuration files and providers can be required even without a separate `run: python` step. `rollback_lab.py` is recovery support, not a normal pipeline step. `check_promptfoo.py` is currently **not called** by the supplied workflow; the Promptfoo Action enforces its own configured failure threshold. Do not add another step for it unless a separate completeness check is required.
+
 ## Why Actions still call helpers
 
 GitHub Actions supplies the runner and connects the stages. The prepared workflow uses the official Promptfoo, Langfuse experiment and Evidently report Actions. DeepEval runs through a prepared Python command. These integrations run the tools, but still need application-specific inputs: how to authenticate, which API to call, which answers to check and which AWS version to release.
@@ -49,7 +65,7 @@ We do not recreate those tools in Python. The adapters translate our captured AP
 | `report.py` | Checks result completeness and writes a report without raw employee answers | Make release evidence safe to retain and inspect |
 | `prepare_promptfoo.py` | Generates Promptfoo inputs and assertions from captured results and reference cases | Adapt our data to the official Promptfoo Action |
 | `promptfoo-provider.cjs` | Supplies the captured answer to Promptfoo | Check an existing API answer without paying to generate it again |
-| `check_promptfoo.py` | Requires complete case coverage and no failures/errors | Do not accept a partial or failing tool report |
+| `check_promptfoo.py` | Checks complete case coverage and no failures/errors | Not called by the supplied workflow; retained as a separate diagnostic check |
 | `langfuse_experiment.py` | Publishes dataset items and records captured answers and scores as an experiment | Give the official Langfuse Action our application-specific experiment |
 | `deepeval_check.py` | Uses a Bedrock-backed DeepEval grader against reference outcomes | Demonstrate an independent model-based grading pattern |
 | `prepare_drift.py` | Converts baseline/current results into numeric proxy measurements | Feed the Evidently Action without exporting answer text in its input |
