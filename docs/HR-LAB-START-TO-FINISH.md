@@ -13,9 +13,22 @@ This project follows a reviewed change → staging candidate → evaluation gate
 | `feature/ci-quality-gate` | Add the delivery pipeline |
 | `test/tool-budget-regression` | Reproduce a controlled failure in synthetic staging |
 | `fix/restore-tool-budget` | Restore the tested behavior |
-| `main` | Reviewed integration branch; deploys the staging candidate |
+| `main` | Deploy the reviewed version to staging and run release checks |
 
 Branch and PR checks run without deployment credentials. After review, main deploys a candidate to staging and evaluates the real authenticated API. Required checks block promotion when behavior is wrong or evidence is incomplete. The approved alias is a release pointer within this same staging stack; it does not isolate production traffic. The final production-handoff job is explicitly a dry run.
+
+### From staging to production
+
+The release path is: **merge to main → deploy to staging → pass evaluations → release approval → production deployment → smoke checks and monitoring**. A separate production branch is not required.
+
+| Step | What this repository does | What a production service requires |
+|---|---|---|
+| Validate release | Deploy and evaluate the candidate in staging | The same checks against the intended release |
+| Approve | Use the protected production-approval environment | An authorized release reviewer where required |
+| Deploy production | Run a handoff demonstration without changing resources or traffic | Deploy the tested backend package and React build, with the exact prompt version, using a separately scoped production role and production configuration |
+| Verify and recover | Retain staging results and the approved staging pointer | Check the authenticated production API and frontend, monitor errors and quality, and restore the last approved release if needed |
+
+The production job supplied here stops at the handoff demonstration. To make it a real deployment, replace its dry-run step with production deployment and verification steps. Passing staging checks alone does not move production traffic, and the staging alias is not a production environment.
 
 For a real production service, deploy the tested artifact and exact prompt version through a separately authorized production job, with production configuration, smoke checks, monitoring and rollback. This repository does not provision that production environment. A deliberately broken change is permitted here only as an authorized fault simulation in synthetic staging; do not treat it as normal practice for a live production branch.
 
