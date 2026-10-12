@@ -113,7 +113,7 @@ Inspect Actions and explain one actual test. Branch/PR code receives no AWS or L
 
 ## 5. Wire protected staging (115–155)
 
-The instructor supplies an AWS role ARN whose OIDC trust allows **this exact student repository** and `hr-lab-staging`, with audience `sts.amazonaws.com`. New repositories can use immutable owner/repository IDs in their OIDC subject; the instructor must inspect that configuration. Do not reuse the instructor rehearsal role or broaden trust to all repositories. Its scoped permissions cover only the student's lab Lambda/aliases, test-user secret, Cognito pool, frontend bucket/distribution and required model invocation. `lambda:GetFunction` is required by the update waiter.
+If no role exists, follow [GITHUB-AWS-OIDC-SETUP.md](GITHUB-AWS-OIDC-SETUP.md) to generate reviewed policies and create a scoped role. Otherwise, the instructor supplies an AWS role ARN whose OIDC trust allows **this exact student repository** and `hr-lab-staging`, with audience `sts.amazonaws.com`. New repositories can use immutable owner/repository IDs in their OIDC subject; the instructor must inspect that configuration. Do not reuse the instructor rehearsal role or broaden trust to all repositories. Its scoped permissions cover only the student's lab Lambda/aliases, test-user secret, Cognito pool, frontend bucket/distribution and required model invocation. `lambda:GetFunction` is required by the update waiter.
 
 Append **Block B** and **Block C** below to the same workflow file, keeping `candidate` and `production-demonstration` beneath `jobs`. Students do not write the Python helpers.
 
