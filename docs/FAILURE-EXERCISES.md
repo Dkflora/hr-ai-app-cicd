@@ -1,6 +1,6 @@
 # HR lab: break, inspect, fix and rerun
 
-Use one exercise live during the 35-minute gate segment. The others are available for instructor-selected practice. Students change one number or a short text/block; all evaluation scripts are inherited.
+Use one exercise live to demonstrate the gate. The others are available for instructor-selected practice. Students change one number or a short text/block; all evaluation scripts are inherited.
 
 ## Starting checkpoint
 

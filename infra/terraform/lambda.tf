@@ -19,7 +19,6 @@ locals {
 
   # Settings every function gets
   common_env = {
-    INLINE_JUDGE_ENABLED       = tostring(var.inline_judge_enabled)
     INLINE_JUDGE_MODEL         = var.fallback_chat_model_id != "" ? var.fallback_chat_model_id : var.chat_model_id
     LAB_ENVIRONMENT            = var.lab_environment
     HR_TRACING_ENABLED         = "true"

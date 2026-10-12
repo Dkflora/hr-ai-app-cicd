@@ -40,9 +40,7 @@ def assess(client, model, question, draft, evidence):
     return value
 
 def validate_answer(question, draft, messages, employee, client, remaining_seconds=26):
-    # Enable only after the selected Bedrock model and end-to-end latency are rehearsed.
-    if os.getenv('INLINE_JUDGE_ENABLED', 'false').lower() != 'true':
-        return draft
+    # Every draft follows the prepared judge/revision/fallback path.
     deadline = time.monotonic() + max(0, remaining_seconds)
     evidence = tool_evidence(messages)
     try:

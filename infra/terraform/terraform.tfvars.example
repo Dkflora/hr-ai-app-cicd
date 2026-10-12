@@ -26,4 +26,3 @@ aurora_instance_count = 1
 # Langfuse project endpoint; keys are configured separately outside Terraform state.
 langfuse_base_url = "https://us.cloud.langfuse.com"
 trace_synthetic_content = false
-inline_judge_enabled = false

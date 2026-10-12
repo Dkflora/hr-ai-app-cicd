@@ -62,8 +62,3 @@ variable "trace_synthetic_content" {
   description = "Explicit approval to export question/answer content from synthetic staging data only"
 }
 
-variable "inline_judge_enabled" {
-  type        = bool
-  default     = false
-  description = "Enable only after latency and bounded fallback paths are rehearsed"
-}

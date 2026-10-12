@@ -1,6 +1,6 @@
 # HR RAG: evaluation and CI/CD lab
 
-This is a prepared application for the second four-hour Week Six lab. Students already built the RAG workflow; this lab automates that setup and focuses on controlled changes, evaluations, release evidence, and recovery.
+This is a prepared application for the HR Week Six lab. Students already built the RAG workflow; this lab automates that setup and focuses on controlled changes, evaluations, release evidence, and recovery.
 
 ## Start the lab
 
@@ -15,7 +15,6 @@ The API serves a `candidate` Lambda alias. The pipeline deploys a published nume
 ## Materials
 
 - [Start-to-finish student guide](docs/HR-LAB-START-TO-FINISH.md)
-- [Four-hour classroom plan](docs/HR-LAB-CLASSROOM-PLAN.md)
 - [Langfuse Cloud setup](docs/LANGFUSE-CLOUD-SETUP.md)
 - [OWASP evidence review](docs/OWASP-EVIDENCE.md)
 - [Original RAG implementation guide](docs/ORIGINAL-APPLICATION-GUIDE.md)
@@ -32,6 +31,6 @@ GitHub Actions uses protected staging and AWS OIDC. Unreviewed PR code receives 
 
 ## Rehearsal status
 
-The instructor baseline passed a full hosted workflow: 43/43 cases twice, 86 authenticated API requests, Promptfoo/Langfuse/DeepEval/Evidently, classroom promotion and production demonstration. See [baseline evidence](docs/BASELINE-VERIFICATION.md). A student clone needs its own AWS/GitHub configuration and readiness check. Browser sign-in and a four-hour multi-student rehearsal are separate checks; do not infer those from an API test.
+The instructor baseline passed a full hosted workflow: 43/43 cases twice, 86 authenticated API requests, Promptfoo/Langfuse/DeepEval/Evidently, classroom promotion and production demonstration. See [baseline evidence](docs/BASELINE-VERIFICATION.md). A student clone needs its own AWS/GitHub configuration and readiness check. Browser sign-in and a multi-student rehearsal are separate checks; do not infer those from an API test.
 
 The deployed rehearsal infrastructure must remain intact until the instructor explicitly requests destruction.

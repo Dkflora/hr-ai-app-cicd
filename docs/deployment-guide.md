@@ -11,7 +11,7 @@ Every command below was run end to end before this guide was written, and the
 outputs quoted are the real ones. Where a timing is given, it was measured.
 
 A full deploy takes about **30 minutes** of hands-on time, most of it waiting on
-Terraform. Running the stack costs roughly **$2 to $5** a day, so the teardown
+Terraform. Costs depend on active usage and provisioned endpoints; see [current lab costs](LAB-COSTS.md). The teardown
 step at the end is not optional if this is a temporary environment.
 
 ---
@@ -910,25 +910,7 @@ Rebuild the **layer** only when `lambda/requirements.txt` changes.
 
 ## 13. Costs
 
-Measured on this project, and the reason the teardown step matters.
-
-| Service | What you pay for | If left running a month |
-|---|---|---|
-| OpenSearch Serverless | The collection existing, whether or not anyone asks | roughly $175 |
-| AWS WAF | $5 per web ACL plus $1 per rule, plus requests | about $8 |
-| Aurora Serverless v2 | Storage while paused, about $0.12 per ACU-hour active | $1 to $20 |
-| Secrets Manager | $0.40 per secret | about $1 |
-| Bedrock | Nova Pro, Titan embeddings, guardrail checks | $1 to $5 |
-| Lambda, API Gateway, CloudFront, S3, Cognito | Mostly within free tiers at this traffic | $1 to $5 |
-
-The model is not the bill at this size. **The whole lab's model usage cost about
-$0.14**, which is $0.0009 per Bedrock call. What costs money is the
-infrastructure that exists whether or not anyone asks a question, and OpenSearch
-Serverless is most of it at roughly $7 a day.
-
-There is no NAT gateway in this build, which would have been another $32 a month
-plus data. Bedrock, Secrets Manager and OpenSearch are reached over interface
-endpoints, and S3 over a gateway endpoint.
+See [LAB-COSTS.md](LAB-COSTS.md) for the current scale-to-zero configuration and component breakdown. The old fixed daily estimate and Classic OpenSearch monthly amounts do not apply to this version. No measured total cost is claimed.
 
 ---
 
@@ -948,8 +930,7 @@ they are attached to cannot be deleted, and the subnets behind it wait on that.
 The security group alone took 10 minutes 40 seconds. Nothing is stuck. Leave it
 running.
 
-Do this. OpenSearch Serverless bills for as long as the collection exists,
-whether or not anyone is asking questions. Left running it is roughly $7 a day.
+Destroy the lab when finished. NextGen OpenSearch can scale compute to zero, but storage and provisioned private endpoints can still cost money. See [LAB-COSTS.md](LAB-COSTS.md).
 
 Check it is gone, per service:
 

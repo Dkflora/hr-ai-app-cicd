@@ -233,7 +233,4 @@ for search, not for billing.
 
 ## Cost
 
-Roughly $2 to $5 a day for an environment in light use. OpenSearch Serverless bills for as
-long as the collection exists, whether or not anyone is asking questions, which dominates the
-bill for an idle environment. There is no NAT gateway: Bedrock, Secrets Manager and OpenSearch
-are reached over interface endpoints and S3 over a gateway endpoint.
+The older daily estimate is superseded by [LAB-COSTS.md](LAB-COSTS.md). This version uses NextGen OpenSearch scale-to-zero and Aurora auto-pause; private endpoints still have hourly charges.

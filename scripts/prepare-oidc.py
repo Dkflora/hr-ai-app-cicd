@@ -11,12 +11,17 @@ def read_json(arguments):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--repo', required=True)
+    parser.add_argument('--repo')
     parser.add_argument('--region', default='us-east-1')
+    parser.add_argument('--subject-prefix', help='Exact repository subject prefix copied from GitHub settings')
     args = parser.parse_args()
-    oidc = read_json(['gh', 'api', f'repos/{args.repo}/actions/oidc/customization/sub'])
-    if not oidc.get('use_default', False) or not oidc.get('sub_claim_prefix'):
-        raise SystemExit('Custom or unavailable OIDC subject: ask the instructor to inspect it; no policy generated')
+    args.repo = args.repo or input('Your GitHub repository (username/hr-rag-lab): ').strip()
+    args.subject_prefix = args.subject_prefix or input('Exact OIDC subject prefix from GitHub settings: ').strip()
+    owner, repo = args.repo.split('/')
+    import re
+    pattern = rf"repo:{re.escape(owner)}(?:@[0-9]+)?/{re.escape(repo)}(?:@[0-9]+)?"
+    if not re.fullmatch(pattern, args.subject_prefix):
+        raise SystemExit('Subject prefix must identify exactly this repository, with no wildcards or custom claims')
     outputs = read_json(['terraform', '-chdir=infra/terraform', 'output', '-json'])
     account = read_json(['aws', 'sts', 'get-caller-identity'])['Account']
     def value(name):
@@ -27,7 +32,7 @@ def main():
     partition = secret.split(':')[1]
     function = f"arn:{partition}:lambda:{args.region}:{account}:function:{value('candidate_function')}"
     provider = f"arn:{partition}:iam::{account}:oidc-provider/token.actions.githubusercontent.com"
-    trust = {'Version':'2012-10-17','Statement':[{'Effect':'Allow','Principal':{'Federated':provider},'Action':'sts:AssumeRoleWithWebIdentity','Condition':{'StringEquals':{'token.actions.githubusercontent.com:aud':'sts.amazonaws.com','token.actions.githubusercontent.com:sub':oidc['sub_claim_prefix']+':environment:hr-lab-staging'}}}]}
+    trust = {'Version':'2012-10-17','Statement':[{'Effect':'Allow','Principal':{'Federated':provider},'Action':'sts:AssumeRoleWithWebIdentity','Condition':{'StringEquals':{'token.actions.githubusercontent.com:aud':'sts.amazonaws.com','token.actions.githubusercontent.com:sub':args.subject_prefix+':environment:hr-lab-staging'}}}]}
     def allow(actions, resources):
         return {'Effect':'Allow','Action':actions,'Resource':resources}
     policy = {'Version':'2012-10-17','Statement':[
