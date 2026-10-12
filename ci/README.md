@@ -1,30 +1,34 @@
-# What these Python files do
+# How the pipeline helpers fit together
 
-Students do not need to write every helper from scratch. The repository provides application setup and deployment helpers. In class, we connect them through GitHub Actions and explain their inputs, results and release decisions.
+The helpers are provided. We connect them through GitHub Actions, configure the test cases and release rules, and interpret the results. We do not need to write every helper from scratch.
 
-## Read the pipeline in this order
+## Main delivery path
 
-1. `release.py`: check the prompt format, publish its numbered Langfuse version, and package Python with that exact prompt.
-2. `deploy_candidate.py`: put that package into the staging Lambda version.
-3. `evaluate_api.py`: sign in as synthetic employees, ask the real application the test questions, and check its answers.
-4. `report.py`: explain what passed and what failed. Failed or missing required results block release.
-5. `promote_lab.py`: move the classroom approved pointer only when the tested release passes.
+| Stage | Prepared helper | What we verify |
+|---|---|---|
+| Package | `release.py` | Prompt format, numbered Langfuse version and exact release identity |
+| Deploy candidate | `deploy_candidate.py` | The intended package reaches the staging Lambda version |
+| Evaluate API | `evaluate_api.py` | Authenticated test users receive correct, authorized answers |
+| Report | `report.py` | All required cases completed and the results are recorded |
+| Approve release | `promote_lab.py` | Only the exact passing release moves the approved staging pointer |
 
-## Four views of application quality
+## Four views of answer quality
 
-- `prepare_promptfoo.py` and `check_promptfoo.py`: check required facts, forbidden facts and sources in the captured answers.
-- `langfuse_experiment.py`: put those questions, captured answers and scores into a Langfuse experiment for comparison.
-- `deepeval_check.py`: have another model judge approved reference outcomes, including correct access refusals. It can disagree with other checks and needs review.
-- `evidently_drift.py`: compare answer length and latency between two runs. A change is a reason to investigate, not proof of a bad answer.
+- Promptfoo checks required facts, prohibited facts and sources in the captured API answers.
+- Langfuse records the dataset experiment and scores by release so we can compare results.
+- DeepEval grades the answer against approved reference outcomes; disagreements need review.
+- Evidently compares numeric answer-length and latency patterns. A shift prompts investigation, not an automatic verdict that an answer is wrong.
 
-## Prepared automation
+The prepared adapters connect these tools to the same captured API results. We configure their workflow blocks rather than rewrite the adapters.
 
-`deploy_frontend.py` uploads the React files already produced by npm run build to S3, then refreshes CloudFront. It is a deployment helper, not an AI evaluation.
+## Supporting automation
 
-`auth.py` gets fresh test-user tokens without printing passwords. `rollback_lab.py` restores a previous approved release pointer within staging. `tests/` checks the prompt, release packaging, judge behavior and tracing.
+`auth.py` is used internally by the API evaluator. It reads dedicated test credentials from Secrets Manager, signs in through Cognito and obtains fresh tokens. This runs on each evaluation; creating the users during setup does not supply permanent tokens.
 
-## Explain the grader itself
+`deploy_frontend.py` uploads the built React files to S3 and refreshes CloudFront. `rollback_lab.py` restores a previous approved pointer within staging. `tests/` verifies prompt structure, release packaging, judge behavior and trace handling.
 
-`judge_agreement.py` compares human and model grades on the same cases. `compare_versions.py` compares baseline and candidate cases with repeated runs and an illustrative uncertainty calculation. We explain the results; students do not need to derive the statistical formulas or rewrite the provider adapter during this four-hour lab.
+## Compare releases and review the grader
 
-A file is not proof that an integration passed. Refer to the instructor rehearsal status for what has actually run.
+`compare_versions.py` compares the same cases across baseline and candidate runs, including repeated generations and an illustrative uncertainty calculation. `judge_agreement.py` compares independent human grades with model grades. We interpret these reports and explain disagreements; their statistical and provider implementations are already supplied.
+
+A script existing in the repository does not prove a successful run. Use our own workflow results, traces and release records as evidence.

@@ -1,6 +1,6 @@
 # GitHub-to-AWS OIDC setup in the browser
 
-Use this only if you do not already have a role for your own repository. Local AWS credentials are already configured. Students use the GitHub website and AWS console; no GitHub CLI is required.
+Use this only if you do not already have a role for your own repository. Local AWS credentials are already configured. We use the GitHub website and AWS console; no GitHub CLI is required.
 
 ## 1. Get your repository's exact subject prefix
 
@@ -16,7 +16,7 @@ After Terraform/app setup, run the inherited helper:
 python scripts/prepare-oidc.py
 ```
 
-It asks for your repository name (`username/hr-rag-lab`) and the exact subject prefix you copied. Region defaults to `us-east-1`. It reads local Terraform outputs and AWS account identity, then writes `build/github-oidc-trust.json` and `build/github-oidc-permissions.json`. It does not create AWS resources or require students to write Python.
+It asks for your repository name (`username/hr-rag-lab`) and the exact subject prefix you copied. Region defaults to `us-east-1`. It reads local Terraform outputs and AWS account identity, then writes `build/github-oidc-trust.json` and `build/github-oidc-permissions.json`. It does not create AWS resources or require us to write Python.
 
 Open both generated files in an editor. Trust is limited to your exact repository, `hr-staging` environment and `sts.amazonaws.com` audience. Permissions target only your lab's Lambda/aliases, synthetic-user secret, Cognito pool, frontend bucket/distribution and Nova models.
 

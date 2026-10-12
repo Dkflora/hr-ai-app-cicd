@@ -1,10 +1,10 @@
 # HR lab: break, inspect, fix and rerun
 
-Use one exercise live to demonstrate the gate. The others are available for instructor-selected practice. Students change one number or a short text/block; all evaluation scripts are inherited.
+Use one exercise live to demonstrate the gate. The others cover additional failure modes. We change one number or a short text/block; all evaluation scripts are inherited.
 
 ## Starting checkpoint
 
-1. Start from your own student repository's main branch after its first passing pipeline. The instructor's `af0fa05` commit is reference evidence in a separate repository, not a commit to check out in this fresh starter. Record the full commit, prompt version and approved Lambda alias before any exercise.
+1. Start from our repository's main branch after its first passing pipeline. Record the full commit, prompt version and approved Lambda alias before any exercise.
 2. Save the passing Actions run and Langfuse experiment link. The baseline has 43 cases, two repetitions per case. Do not edit the approved reference answers.
 3. Create a feature branch. Branch and PR checks are static and have no deployment secrets. After review, the designated reviewer merges the controlled test into main to deploy it to the **synthetic staging candidate** and run live evaluations. This intentionally failing change is never a real production release.
 4. The `approved` alias is the approved release pointer within staging; the UI/API evaluates the candidate. A failed candidate can be visible in the staging UI even though promotion is blocked. Do not describe approved as a separate production stack.

@@ -1,10 +1,10 @@
 # HR policy assistant: evaluation and delivery pipeline
 
-This is a prepared application for the HR Week Six lab. Students already built the RAG workflow; this lab automates that setup and focuses on controlled changes, evaluations, release evidence, and recovery.
+This is a prepared application for the HR Week Six lab. We already built the RAG workflow; this lab automates that setup and focuses on controlled changes, evaluations, release evidence, and recovery.
 
 ## Start the lab
 
-First import this public repository into **your own GitHub account**. Use [GitHub Import](https://github.com/new/import), source `https://github.com/kserge2001/hr-rag-cicd-student-starter.git`, and choose yourself as the destination owner. Then clone your imported repository. The full guide includes a command-line import alternative. Cloning this source without creating your own repository is insufficient for configuring your pipeline.
+First import this public repository into **your own GitHub account**. Use [GitHub Import](https://github.com/new/import), source `https://github.com/kserge2001/hr-rag-cicd-student-starter.git`, and choose yourself as the destination owner. Then clone your imported repository. The guide explains browser import or copying the template into your own account. Cloning this source without creating your own repository is insufficient for configuring your pipeline.
 
 Use Python 3.12, Node.js 22, Terraform, AWS CLI, and a Bash environment. Authenticate to your isolated AWS lab account. Copy `infra/terraform/terraform.tfvars.example` to `terraform.tfvars` in the same directory and choose unique lab names. Use one Aurora instance for the classroom rehearsal if appropriate. Store your Langfuse project keys in the ignored `.env.langfuse`, using `.env.langfuse.example` as the template. Confirm the project region endpoint.
 
@@ -14,12 +14,12 @@ The API serves a `candidate` Lambda alias. The pipeline deploys a published nume
 
 ## Materials
 
-- [Start-to-finish student guide](docs/HR-LAB-START-TO-FINISH.md)
+- [Start-to-finish guide](docs/HR-LAB-START-TO-FINISH.md)
 - [Langfuse Cloud setup](docs/LANGFUSE-CLOUD-SETUP.md)
 - [OWASP evidence review](docs/OWASP-EVIDENCE.md)
 - [Original RAG implementation guide](docs/ORIGINAL-APPLICATION-GUIDE.md)
 
-Students assemble the workflow from the blocks in the student guide. No active workflow is installed in the starter.
+We assemble the workflow from the blocks in the guide. No active workflow is installed in the starter.
 
 ## What is automated and what is demonstrated
 
@@ -31,6 +31,6 @@ GitHub Actions uses protected staging and AWS OIDC. Unreviewed PR code receives 
 
 ## Working with the prepared application
 
-Use the student guide to configure your own AWS deployment and GitHub pipeline. The setup script performs the application checks automatically. All evaluation helpers are supplied; students focus on the workflow, evidence and controlled changes.
+Use the guide to configure your own AWS deployment and GitHub pipeline. The setup script performs the application checks automatically. All evaluation helpers are supplied; we focus on the workflow, evidence and controlled changes.
 
 Follow the class instructions for cleaning up your own AWS deployment when finished.

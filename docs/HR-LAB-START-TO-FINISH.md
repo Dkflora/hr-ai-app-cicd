@@ -1,8 +1,8 @@
 # HR policy assistant: controlled delivery and evaluation
 
-This lab inherits the AWS application and Python helpers. Students configure the lab, assemble three prepared workflow blocks, interpret evaluation results, deliberately break one setting, then fix and rerun. No application or evaluation script is written from scratch.
+This lab inherits the AWS application and Python helpers. We configure the deployment, assemble the workflow blocks, interpret evaluation results, reproduce a controlled failure, then fix and rerun. No application or evaluation script is written from scratch.
 
-The application and evaluation helpers are supplied. Setup automatically checks the application; students then assemble and run their own pipeline.
+The application and evaluation helpers are supplied. Setup automatically checks the application; we then assemble and run our pipeline.
 
 ## Delivery model
 
@@ -72,7 +72,7 @@ langfuse_base_url = "https://us.cloud.langfuse.com"
 trace_synthetic_content = true
 ```
 
-The inline judge is already included and always runs in this prepared application. It checks the draft before display, allows one revision, and uses a safe fallback if validation still fails. Students do not choose whether to enable it. Langfuse post-run scoring is a separate evaluation pattern.
+The inline judge is already included and always runs in this prepared application. It checks the draft before display, allows one revision, and uses a safe fallback if validation still fails. It is part of the prepared application; no enable/disable choice is required. Langfuse post-run scoring is a separate evaluation pattern.
 
 `langfuse_base_url` is the Langfuse Cloud endpoint for your project's region, not the HR app URL or the model endpoint. For a US Langfuse project, use `https://us.cloud.langfuse.com`.
 
@@ -116,9 +116,9 @@ In GitHub, click **Compare & pull request**, choose `main` as base and your feat
 
 ## 5. Wire protected staging
 
-If no role exists, follow [GITHUB-AWS-OIDC-SETUP.md](GITHUB-AWS-OIDC-SETUP.md) to generate reviewed policies and create a scoped role. Otherwise, the instructor supplies an AWS role ARN whose OIDC trust allows **this exact student repository** and `hr-staging`, with audience `sts.amazonaws.com`. New repositories can use immutable owner/repository IDs in their OIDC subject; the instructor must inspect that configuration. Do not reuse the instructor rehearsal role or broaden trust to all repositories. Its scoped permissions cover only the student's lab Lambda/aliases, test-user secret, Cognito pool, frontend bucket/distribution and required model invocation. `lambda:GetFunction` is required by the update waiter.
+If no role exists, follow [GITHUB-AWS-OIDC-SETUP.md](GITHUB-AWS-OIDC-SETUP.md) to generate reviewed policies and create a scoped role. Otherwise, the project owner supplies an AWS role ARN whose OIDC trust allows **our exact repository** and `hr-staging`, with audience `sts.amazonaws.com`. New repositories can use immutable owner/repository IDs in their OIDC subject; the project owner must inspect that configuration. Do not reuse the another repository's role or broaden trust to all repositories. Its scoped permissions cover only our staging Lambda/aliases, test-user secret, Cognito pool, frontend bucket/distribution and required model invocation. `lambda:GetFunction` is required by the update waiter.
 
-Append **Block B** and **Block C** below to the same workflow file, keeping `candidate` and `production-demonstration` beneath `jobs`. Students do not write the Python helpers.
+Append **Block B** and **Block C** below to the same workflow file, keeping `candidate` and `production-handoff-dry-run` beneath `jobs`. The Python helpers are supplied; we configure the workflow blocks.
 
 In the GitHub website, open **your repository → Settings → Environments → New environment**. Create `hr-staging` and `hr-production-approval`.
 
@@ -147,7 +147,7 @@ Under **Environment secrets**, click **Add environment secret** for `LANGFUSE_PU
 
 Secrets: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY, read from the ignored local file. No long-lived AWS keys enter GitHub.
 
-In Settings → Environments, restrict staging to main and configure a designated reviewer where available. Configure the production-demo reviewer too. A sole owner cannot approve their own protected deployment; arrange another reviewer or explicitly identify the classroom approval limitation.
+In Settings → Environments, restrict staging to main and configure a designated reviewer where available. Configure the production-approval reviewer too. A sole owner cannot approve their own protected deployment; arrange another reviewer or explicitly identify the classroom approval limitation.
 
 ```bash
 git add .github/workflows/hr-quality.yml
@@ -155,7 +155,7 @@ git commit -m "Connect candidate deployment and AI evaluation gate"
 git push
 ```
 
-Open the existing PR in GitHub, confirm its Checks tab passes, and obtain instructor review. Then merge the PR in the browser. Merge to main triggers the protected deployment. Approve the environment when required, then:
+Open the existing PR in GitHub, confirm its Checks tab passes, and obtain reviewer approval. Then merge the PR in the browser. Merge to main triggers the protected deployment. Approve the environment when required, then:
 
 Open your repository's **Actions** tab, select the newest main-branch run for this merge, and follow the jobs. Approve the staging deployment when required. Read the job summary and logs in the browser; do not select an older passing run.
 
@@ -218,12 +218,12 @@ Submit branch/PR and bad/fixed run links, corresponding trace links, the passing
 
 ## Exact workflow blocks
 
-Paste A first. Append B and C later in the same file. These blocks define the delivery workflow by job; no Python source needs copying. The starter deliberately has **no active workflow** until students assemble it.
+Paste A first. Append B and C later in the same file. These blocks define the delivery workflow by job; no Python source needs copying. The starter deliberately has **no active workflow** until we assemble it.
 
 ### Block A — branch/PR checks
 
 ```yaml
-# Students build this workflow using the completed version as a checkpoint.
+# Reviewed changes, staging evaluation and release approval.
 name: HR application candidate and evaluation gate
 on:
   pull_request:
