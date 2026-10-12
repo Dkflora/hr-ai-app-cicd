@@ -6,7 +6,7 @@ The application and evaluation helpers are supplied. Setup automatically checks 
 
 ## Delivery model
 
-This project follows a reviewed change → staging candidate → evaluation gate → release approval pattern. Branch names describe the change, rather than the training session:
+This project follows this process: review the change → deploy the new version to staging → run evaluations → approve the release. Branch names describe the change, rather than the training session:
 
 | Branch | Purpose |
 |---|---|
@@ -240,6 +240,10 @@ The final job verifies the exact merged commit and passing report, then demonstr
 Review the prepared `ci/rollback_lab.py` and prior approved-version evidence. Run rollback only after confirming the previous approved version exists; do not roll back or destroy shared infrastructure automatically.
 
 Retain branch/PR and failing/fixed run links, corresponding trace links, the passing report, tool-result explanations and release/recovery reasoning. Review [OWASP-EVIDENCE.md](OWASP-EVIDENCE.md); this lab does not certify complete security.
+
+## Understand the supplied automation
+
+Read [the CI helper map](../ci/README.md) for every script, its purpose, and why it is needed. It distinguishes official tool Actions, application-specific adapters, deployment helpers and additional analysis. The helpers are supplied; configure and connect their workflow steps rather than copy Python source.
 
 ## Exact workflow blocks
 

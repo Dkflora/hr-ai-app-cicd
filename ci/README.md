@@ -32,3 +32,41 @@ The prepared adapters connect these tools to the same captured API results. We c
 `compare_versions.py` compares the same cases across baseline and candidate runs, including repeated generations and an illustrative uncertainty calculation. `judge_agreement.py` compares independent human grades with model grades. We interpret these reports and explain disagreements; their statistical and provider implementations are already supplied.
 
 A script existing in the repository does not prove a successful run. Use our own workflow results, traces and release records as evidence.
+
+## Why Actions still call helpers
+
+GitHub Actions supplies the runner and connects the stages. The prepared workflow uses the official Promptfoo, Langfuse experiment and Evidently report Actions. DeepEval runs through a prepared Python command. These integrations run the tools, but still need application-specific inputs: how to authenticate, which API to call, which answers to check and which AWS version to release.
+
+We do not recreate those tools in Python. The adapters translate our captured API answers and approved references into each tool's format. Deployment helpers implement this application's release rules. We configure the workflow and test cases; the supplied helpers execute those rules.
+
+## Every file and why it exists
+
+| File | What it does | Why it exists / when it runs |
+|---|---|---|
+| `release.py` | Checks the prompt, publishes its numbered Langfuse version when requested, and packages Python with a release manifest | Bind prompt and code to an identifiable release before deployment |
+| `deploy_candidate.py` | Uploads the backend package, publishes an immutable Lambda version and moves the candidate alias | Deploy the exact proposed staging release |
+| `deploy_frontend.py` | Uploads the built React site and invalidates CloudFront | Release frontend changes alongside the backend |
+| `auth.py` | Gets fresh Cognito tokens for dedicated synthetic identities | An authenticated API test needs a current token, not just an account created during setup |
+| `evaluate_api.py` | Calls the real API for every case and repetition, checks authorization, reference facts and release identity | Produce the application's live test evidence |
+| `report.py` | Checks result completeness and writes a report without raw employee answers | Make release evidence safe to retain and inspect |
+| `prepare_promptfoo.py` | Generates Promptfoo inputs and assertions from captured results and reference cases | Adapt our data to the official Promptfoo Action |
+| `promptfoo-provider.cjs` | Supplies the captured answer to Promptfoo | Check an existing API answer without paying to generate it again |
+| `check_promptfoo.py` | Requires complete case coverage and no failures/errors | Do not accept a partial or failing tool report |
+| `langfuse_experiment.py` | Publishes dataset items and records captured answers and scores as an experiment | Give the official Langfuse Action our application-specific experiment |
+| `deepeval_check.py` | Uses a Bedrock-backed DeepEval grader against reference outcomes | Demonstrate an independent model-based grading pattern |
+| `prepare_drift.py` | Converts baseline/current results into numeric proxy measurements | Feed the Evidently Action without exporting answer text in its input |
+| `evidently_config.py` | Defines the Evidently report metrics | Configure what the official report Action measures |
+| `evidently_drift.py` | Generates an Evidently report directly through Python | Alternative local execution path; not an additional required Action stage |
+| `promote_lab.py` | Checks passing evidence before moving the approved staging alias | Prevent approval of an untested or mismatched version; does not deploy production |
+| `rollback_lab.py` | Restores the recorded previous approved staging version | Demonstrate recovery without deleting infrastructure |
+| `compare_versions.py` | Compares baseline/candidate cases with repeated runs grouped by case | Additional release-comparison analysis, separate from the main deployment path |
+| `judge_agreement.py` | Compares independent human labels with model grades | Check the grader's reliability; it requires actual independently supplied labels |
+| `requirements.txt` | Lists core helper dependencies | Install the delivery/evaluation runtime |
+| `requirements-demo.txt` | Lists dependencies for the additional evaluation tools | Install the enabled tool demonstrations |
+| `tests/` | Checks packaging, prompt structure, judge behavior and telemetry handling | Catch implementation regressions before cloud deployment |
+
+## Where the outputs go
+
+Helpers create the ignored `build/` directory when needed. Packaging writes `function.zip` and `release.json`; live evaluation writes `evaluation.json`; reporting writes report files. Local runs create these on the workstation. Actions runs create them in that job's runner workspace.
+
+Jobs do not automatically share their filesystem. Only explicitly uploaded/downloaded artifacts transfer between jobs or remain available after the runner is removed. The workflow retains selected release/report artifacts and excludes raw evaluation answers from the uploaded artifact bundle.
