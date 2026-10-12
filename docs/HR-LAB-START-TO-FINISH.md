@@ -34,6 +34,18 @@ For a real production service, deploy the tested artifact and exact prompt versi
 
 Use each PR to describe the change, validation and release impact. Retain the failing and passing runs, traces and exact release versions as engineering evidence. Explain remaining limitations instead of equating a green workflow with guaranteed correctness or security.
 
+## Engineering responsibilities and release rules
+
+- The domain owner approves HR reference answers and escalation rules. Implementation changes must preserve authorization and approved policy evidence.
+- The repository owner configures protected branches, deployment environments and repository-scoped AWS access. Require PR review and branch checks before merging where the GitHub plan supports them.
+- The pipeline records the commit, prompt version, deployed Lambda version and evaluation results. A missing result or required failed check blocks release approval; changing expected answers to hide a regression is not a repair.
+- The release owner reviews the passing evidence and authorizes the production handoff. Production deployment must use the tested artifact with production configuration, rather than rebuilding an untracked version.
+- After a release, monitor application errors, latency, cost and answer quality. Assign an owner to investigate alerts and decide whether to roll back; a model score alone does not diagnose the incident.
+
+**Environment boundary:** this repository implements one synthetic staging stack. Its UI follows the candidate alias, so a failing candidate can be visible there while the approved pointer stays unchanged. A production service must route users to its approved release and isolate candidate testing. The production-handoff job here is a dry run, not a production deployment.
+
+Infrastructure changes require a reviewed Terraform plan and apply. The application pipeline does not automatically apply arbitrary infrastructure changes. The controlled failure exercises operate only in synthetic staging and must finish with restored behavior and a passing run.
+
 ## 1. Import, clone and orient
 
 Use Linux or WSL2 Bash for these commands, not PowerShell or Git Bash. Setup activates a Linux virtual environment. The workstation needs Git, Python 3.12, Node.js 22/npm, Terraform 1.15.9, and AWS CLI. A managed Linux workstation is another option. Install the required tools before running setup.
@@ -227,7 +239,7 @@ The final job verifies the exact merged commit and passing report, then demonstr
 
 Review the prepared `ci/rollback_lab.py` and prior approved-version evidence. Run rollback only after confirming the previous approved version exists; do not roll back or destroy shared infrastructure automatically.
 
-Submit branch/PR and bad/fixed run links, corresponding trace links, the passing report, tool-result explanations and release/recovery reasoning. Review [OWASP-EVIDENCE.md](OWASP-EVIDENCE.md); this lab does not certify complete security.
+Retain branch/PR and failing/fixed run links, corresponding trace links, the passing report, tool-result explanations and release/recovery reasoning. Review [OWASP-EVIDENCE.md](OWASP-EVIDENCE.md); this lab does not certify complete security.
 
 ## Exact workflow blocks
 
