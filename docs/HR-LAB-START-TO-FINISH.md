@@ -2,7 +2,7 @@
 
 This lab inherits the AWS application and Python helpers. Students configure the lab, assemble three prepared workflow blocks, interpret evaluation results, deliberately break one setting, then fix and rerun. No application or evaluation script is written from scratch.
 
-The instructor implementation passed 43/43 cases twice (86 authenticated API requests), with Promptfoo, Langfuse, DeepEval, Evidently and classroom promotion successful. [Baseline evidence](BASELINE-VERIFICATION.md) records the tested commit and run. Setup automatically checks the application; students then run their own pipeline.
+The application and evaluation helpers are supplied. Setup automatically checks the application; students then assemble and run their own pipeline.
 
 ## 1. Import, clone and orient
 

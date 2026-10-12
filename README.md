@@ -19,7 +19,7 @@ The API serves a `candidate` Lambda alias. The pipeline deploys a published nume
 - [OWASP evidence review](docs/OWASP-EVIDENCE.md)
 - [Original RAG implementation guide](docs/ORIGINAL-APPLICATION-GUIDE.md)
 
-The instructor copy contains `instructor/workflows/hr-quality.yml` and evaluation extensions. Those solutions are deliberately excluded from `build/hr-student-starter.zip`, generated with `python scripts/export-student.py`. Students build the workflow in `.github/workflows` during class.
+Students assemble the workflow from the blocks in the student guide. No active workflow is installed in the starter.
 
 ## What is automated and what is demonstrated
 
@@ -29,8 +29,8 @@ Application spans go to CloudWatch and an outside-VPC exporter sends OTLP to Lan
 
 GitHub Actions uses protected staging and AWS OIDC. Unreviewed PR code receives no cloud or model secrets. The instructor pipeline includes reference assertions, Promptfoo, Langfuse dataset experiments, optional DeepEval, reports, and a lab promotion pointer. Evidently needs its documented baseline. Tool installation alone does not establish security or answer quality.
 
-## Rehearsal status
+## Working with the prepared application
 
-The instructor baseline passed a full hosted workflow: 43/43 cases twice, 86 authenticated API requests, Promptfoo/Langfuse/DeepEval/Evidently, classroom promotion and production demonstration. See [baseline evidence](docs/BASELINE-VERIFICATION.md). A student clone needs its own AWS/GitHub configuration and readiness check. Browser sign-in and a multi-student rehearsal are separate checks; do not infer those from an API test.
+Use the student guide to configure your own AWS deployment and GitHub pipeline. The setup script performs the application checks automatically. All evaluation helpers are supplied; students focus on the workflow, evidence and controlled changes.
 
-The deployed rehearsal infrastructure must remain intact until the instructor explicitly requests destruction.
+Follow the class instructions for cleaning up your own AWS deployment when finished.

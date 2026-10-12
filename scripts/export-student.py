@@ -7,7 +7,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SKIP = {'instructor', '.git', '.terraform', '__pycache__', '.pytest_cache',
         'node_modules', 'build', 'dist', '.venv', 'venv'}
 def allowed(path):
-    if path.relative_to(ROOT).as_posix().startswith('.github/workflows/'):
+    student_path = path.relative_to(ROOT).as_posix()
+    if 'instructor' in student_path.lower() or path.name in {'BASELINE-VERIFICATION.md', 'HR-LAB-CLASSROOM-PLAN.md', 'CLASS-TIMING.md', 'CLASSROOM-PLAN.md'}:
+        return False
+    if student_path.startswith('.github/workflows/'):
         return False
     if any(part in SKIP for part in path.relative_to(ROOT).parts):
         return False
