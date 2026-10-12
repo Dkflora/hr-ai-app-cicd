@@ -17,7 +17,7 @@ The API serves a `candidate` Lambda alias. The pipeline deploys a published nume
 - [Start-to-finish guide](docs/HR-LAB-START-TO-FINISH.md)
 - [Langfuse Cloud setup](docs/LANGFUSE-CLOUD-SETUP.md)
 - [OWASP evidence review](docs/OWASP-EVIDENCE.md)
-- [Application implementation guide](docs/ORIGINAL-APPLICATION-GUIDE.md)
+- [Supplementary application design references](reference/application/README.md)
 
 We assemble the workflow from the blocks in the guide. No active workflow is installed in the starter.
 

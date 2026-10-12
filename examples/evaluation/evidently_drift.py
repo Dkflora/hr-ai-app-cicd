@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 from evidently import Dataset,DataDefinition,Report
 from evidently.presets import DataDriftPreset
-root=Path(__file__).resolve().parents[1]
+root=Path(__file__).resolve().parents[2]
 def dataset(path):
     records=json.loads(Path(path).read_text())['records']
     data=[{'answer_length':len(r['answer']),'latency_seconds':r['latency_seconds']} for r in records if r.get('answer') and not r.get('error')]

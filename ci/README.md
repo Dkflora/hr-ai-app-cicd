@@ -27,11 +27,9 @@ The prepared adapters connect these tools to the same captured API results. We c
 
 `deploy_frontend.py` uploads the built React files to S3 and refreshes CloudFront. `rollback_lab.py` restores a previous approved pointer within staging. `tests/` verifies prompt structure, release packaging, judge behavior and trace handling.
 
-## Compare releases and review the grader
+## Additional analysis
 
-`compare_versions.py` compares the same cases across baseline and candidate runs, including repeated generations and an illustrative uncertainty calculation. `judge_agreement.py` compares independent human grades with model grades. We interpret these reports and explain disagreements; their statistical and provider implementations are already supplied.
-
-A script existing in the repository does not prove a successful run. Use our own workflow results, traces and release records as evidence.
+Alternative local drift reporting, version comparisons and human-versus-model agreement are kept in [examples/evaluation](../examples/evaluation/README.md). They are not extra required pipeline stages.
 
 ## Why Actions still call helpers
 
@@ -56,11 +54,8 @@ We do not recreate those tools in Python. The adapters translate our captured AP
 | `deepeval_check.py` | Uses a Bedrock-backed DeepEval grader against reference outcomes | Demonstrate an independent model-based grading pattern |
 | `prepare_drift.py` | Converts baseline/current results into numeric proxy measurements | Feed the Evidently Action without exporting answer text in its input |
 | `evidently_config.py` | Defines the Evidently report metrics | Configure what the official report Action measures |
-| `evidently_drift.py` | Generates an Evidently report directly through Python | Alternative local execution path; not an additional required Action stage |
 | `promote_lab.py` | Checks passing evidence before moving the approved staging alias | Prevent approval of an untested or mismatched version; does not deploy production |
 | `rollback_lab.py` | Restores the recorded previous approved staging version | Demonstrate recovery without deleting infrastructure |
-| `compare_versions.py` | Compares baseline/candidate cases with repeated runs grouped by case | Additional release-comparison analysis, separate from the main deployment path |
-| `judge_agreement.py` | Compares independent human labels with model grades | Check the grader's reliability; it requires actual independently supplied labels |
 | `requirements.txt` | Lists core helper dependencies | Install the delivery/evaluation runtime |
 | `requirements-demo.txt` | Lists dependencies for the additional evaluation tools | Install the enabled tool demonstrations |
 | `tests/` | Checks packaging, prompt structure, judge behavior and telemetry handling | Catch implementation regressions before cloud deployment |
