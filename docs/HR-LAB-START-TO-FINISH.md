@@ -1,4 +1,4 @@
-# HR RAG lab: four hours from clone to a passing pipeline
+# HR RAG lab: four hours from import to a passing pipeline
 
 This lab inherits the AWS application and Python helpers. Students configure the lab, assemble three prepared workflow blocks, interpret evaluation results, deliberately break one setting, then fix and rerun. No application or evaluation script is written from scratch.
 
@@ -8,7 +8,7 @@ The instructor implementation passed 43/43 cases twice (86 authenticated API req
 
 | Minutes | Activity | Student work |
 |---|---|---|
-| 0–15 | Clone and orient | Create own repository, clone, create branch |
+| 0–15 | Import, clone and orient | Create own repository, clone, create branch |
 | 15–45 | Bootstrap | Local AWS/Langfuse configuration; one setup command |
 | 45–65 | Inspect a request | Cognito login, user/session, tools, judge, prompt version |
 | 65–105 | Build CI | Paste Block A; branch and PR checks |
@@ -20,23 +20,51 @@ The instructor implementation passed 43/43 cases twice (86 authenticated API req
 
 The instructor chooses one live failure exercise. Other exercises are available in [FAILURE-EXERCISES.md](FAILURE-EXERCISES.md). Pipeline execution overlaps discussion. Initial AWS provisioning can exceed its slot; use the prepared deployment checkpoint if needed. Keep all infrastructure running.
 
-## 1. Clone and orient (0–15)
+## 1. Import, clone and orient (0–15)
 
 Use Linux or WSL2 Bash for these commands, not PowerShell or Git Bash. Setup activates a Linux virtual environment. The workstation needs Git, GitHub CLI (`gh`), Python 3.12, Node.js 22/npm, Terraform 1.15.9, and AWS CLI. An instructor-hosted Linux workstation is another option. Missing tools use instructor setup support rather than consuming the evaluation segment.
 
-The template is private. The instructor must grant access before students can use it. Alternatively, the instructor supplies the ZIP, which contains the same starter sources.
+The source repository is public. **Import it into your own GitHub account first**, then clone your imported repository. Cloning the instructor source alone does not give you ownership of its Actions settings or deployment environments.
+
+1. Open [GitHub Import](https://github.com/new/import).
+2. Enter `https://github.com/kserge2001/hr-rag-cicd-student-starter.git` as the source URL.
+3. Choose **your own account** as owner and `hr-rag-lab` as the new repository name.
+4. Choose visibility according to your account/class policy, then click **Begin import**. Wait for completion.
+5. Open your new repository and confirm its address begins with your username. If GitHub Importer refuses a GitHub-hosted source, use the command-line import below; both create an independent student-owned repository.
+6. Clone **your own repository** and create the classroom branch:
 
 ```bash
 gh auth login
 gh auth status
 export GH_OWNER="$(gh api user --jq .login)"
 export GH_REPO="$GH_OWNER/hr-rag-lab"
-gh repo create "$GH_REPO" --template kserge2001/hr-rag-cicd-student-starter --private --clone
+gh repo clone "$GH_REPO"
 cd hr-rag-lab
+git remote -v
 git switch -c lab/classroom
 ```
 
-Students own their repository so they can configure its Actions environment. They do not push into the instructor rehearsal repository or share its deployment role.
+The origin must point to your account, not `kserge2001`. You need repository administration access to configure Actions, secrets, environments and protections. If Actions is disabled, enable it in your repository Settings → Actions → General, using the class's policy for permitted actions.
+
+### Command-line import alternative
+
+Use this only if you have not already created `hr-rag-lab`. Do not initialize the destination with a README/license; import into an empty repository.
+
+```bash
+gh auth login
+export GH_OWNER="$(gh api user --jq .login)"
+export GH_REPO="$GH_OWNER/hr-rag-lab"
+gh repo create "$GH_REPO" --private
+git clone https://github.com/kserge2001/hr-rag-cicd-student-starter.git hr-rag-lab
+cd hr-rag-lab
+git remote rename origin source
+git remote add origin "https://github.com/$GH_REPO.git"
+git push -u origin main
+git remote -v
+git switch -c lab/classroom
+```
+
+This imports the starter's main-branch history into your own repository. No AWS roles, deployment environments, secrets or workflow runs are inherited from the source. Configure them later in this guide. The source's full workflow is in the guide as blocks; no active workflow runs just because you import.
 
 Locate `frontend/`, `lambda/app/`, `lambda/app/prompts/hr_system.txt`, `infra/terraform/` and `ci/`. Explain login → authenticated API → authorized retrieval/tools → generation → inline judge → answer, with trace export to Langfuse.
 
@@ -466,4 +494,4 @@ jobs:
 
 ## Command references
 
-The GitHub CLI commands follow its official documentation: [create a repository from a template](https://cli.github.com/manual/gh_repo_create), [set environment variables](https://cli.github.com/manual/gh_variable_set), and [set encrypted environment secrets](https://cli.github.com/manual/gh_secret_set). The prepared helper passes values through standard input.
+The GitHub CLI commands follow its official documentation: [GitHub Importer](https://docs.github.com/en/migrations/importing-source-code/using-github-importer/importing-a-repository-with-github-importer) and [create an empty destination repository](https://cli.github.com/manual/gh_repo_create), [set environment variables](https://cli.github.com/manual/gh_variable_set), and [set encrypted environment secrets](https://cli.github.com/manual/gh_secret_set). The prepared helper passes values through standard input.

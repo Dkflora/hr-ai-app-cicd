@@ -4,6 +4,8 @@ This is a prepared application for the second four-hour Week Six lab. Students a
 
 ## Start the lab
 
+First import this public repository into **your own GitHub account**. Use [GitHub Import](https://github.com/new/import), source `https://github.com/kserge2001/hr-rag-cicd-student-starter.git`, and choose yourself as the destination owner. Then clone your imported repository. The full guide includes a command-line import alternative. Cloning this source without creating your own repository is insufficient for configuring your pipeline.
+
 Use Python 3.12, Node.js 22, Terraform, AWS CLI, and a Bash environment. Authenticate to your isolated AWS lab account. Copy `infra/terraform/terraform.tfvars.example` to `terraform.tfvars` in the same directory and choose unique lab names. Use one Aurora instance for the classroom rehearsal if appropriate. Store your Langfuse project keys in the ignored `.env.langfuse`, using `.env.langfuse.example` as the template. Confirm the project region endpoint.
 
 Run `bash scripts/setup-lab.sh`. It creates a local Python environment, builds packages, runs Terraform, initializes the synthetic employee database, uploads policies, deploys React, initializes synthetic sign-in accounts, stores Langfuse keys securely, and checks ingestion plus an authenticated API request. Initial infrastructure creation can take several minutes. A failed readiness check is not a completed setup.
