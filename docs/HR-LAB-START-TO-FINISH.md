@@ -6,7 +6,7 @@ Automated setup provisions the application and checks it before we assemble and 
 
 ## How to use this guide
 
-Follow the numbered sections in order. Each section links to the configuration, implementation files or supporting explanation needed for that step.
+Follow the numbered sections in order. Required setup steps and workflow code are included here. Links to other documents provide optional implementation details and evidence; they are not additional setup procedures.
 
 ## Delivery model
 
@@ -109,7 +109,17 @@ The inline judge is already included and always runs in this prepared applicatio
 
 `trace_synthetic_content = true` includes approved synthetic question/answer content in traces so we can inspect it.
 
-Follow [LANGFUSE-CLOUD-SETUP.md](LANGFUSE-CLOUD-SETUP.md): sign up with GitHub or Google, create a project, select its region and create a key pair. Enter the keys into `.env.langfuse`; the public key starts `pk-lf-` and the secret starts `sk-lf-`. Use the project's matching endpoint. Quotes are optional. Save the file; do not paste secrets into chat, commits or React.
+### Configure Langfuse Cloud
+
+1. Open [Langfuse Cloud](https://cloud.langfuse.com), sign in with GitHub or Google where offered, and complete account verification.
+2. Create or join your organization, then create a project for the HR application.
+3. Select the cloud region and copy the exact API endpoint shown for your project. For a US project, use `https://us.cloud.langfuse.com`.
+4. Open project Settings → API keys and create a public/secret key pair.
+5. Open the ignored `.env.langfuse` file in an editor. Enter the public key after `LANGFUSE_PUBLIC_KEY=`, the secret after `LANGFUSE_SECRET_KEY=`, and the matching endpoint after `LANGFUSE_BASE_URL=`. Public keys start `pk-lf-`; secret keys start `sk-lf-`. Quotes are optional. Save the file.
+6. Set `langfuse_base_url` in Terraform to the same endpoint. Keep keys out of commits, React, shared screenshots and PR reports.
+
+The setup command below configures the trace-export path and stores the keys in Secrets Manager. Later in step 5, we copy this same key pair into GitHub environment secrets. A Langfuse-hosted judge provider connection is not required for the inline judge in this application.
+
 
 ```bash
 bash scripts/setup-lab.sh
@@ -200,7 +210,45 @@ Before continuing, confirm the pull request’s `checks` job passes. Keep this p
 
 ## 5. Wire protected staging
 
-If no role exists, follow [GITHUB-AWS-OIDC-SETUP.md](GITHUB-AWS-OIDC-SETUP.md) to generate reviewed policies and create a scoped role. Otherwise, the project owner supplies an AWS role ARN whose OIDC trust allows **our exact repository** and `hr-staging`, with audience `sts.amazonaws.com`. New repositories can use immutable owner/repository IDs in their OIDC subject; the project owner must inspect that configuration. Do not reuse another repository's role or broaden trust to all repositories. Its scoped permissions cover only our staging Lambda/aliases, test-user secret, Cognito pool, frontend bucket/distribution and invocation of the evaluation Lambda. Model calls from evaluation judges use the gateway through that Lambda. `lambda:GetFunction` is required by the update waiter.
+### Configure AWS access for this repository
+
+GitHub Actions uses OIDC to obtain temporary AWS credentials. If an administrator has already provided a role scoped to your repository and the `hr-staging` environment, inspect its trust and permissions, copy its ARN, and continue to the workflow jobs below. Otherwise, complete these steps.
+
+#### Get your repository's exact subject prefix
+
+Open your own repository's Settings and its Actions OIDC subject configuration. Copy the displayed subject prefix, including immutable owner/repository IDs if present. It must identify your own repository, not the source repository. New repositories use a format such as `repo:USERNAME@OWNER-ID/hr-rag-lab@REPO-ID`.
+
+If you cannot find that setting, a repository administrator can inspect the repository's OIDC configuration. Do not guess IDs or use wildcard repository trust. Custom OIDC subject templates need repository administrator review.
+
+#### Generate the two policy files
+
+After Terraform/app setup, run the provided helper:
+
+```bash
+python scripts/prepare-oidc.py
+```
+
+It asks for your repository name (`username/hr-rag-lab`) and the exact subject prefix you copied. Region defaults to `us-east-1`. It reads local Terraform outputs and AWS account identity, then writes `build/github-oidc-trust.json` and `build/github-oidc-permissions.json`. It does not create AWS resources or require us to write Python.
+
+Open both generated files in an editor. Trust is limited to your exact repository, `hr-staging` environment and `sts.amazonaws.com` audience. Permissions target only your deployment's Lambda/aliases, synthetic-user secret, Cognito pool, frontend bucket/distribution and the gateway-backed evaluation Lambda. The CI role does not directly invoke chat models.
+
+#### Register the provider once per AWS account
+
+In AWS console → IAM → Identity providers, find `token.actions.githubusercontent.com`. Reuse it if present and verify `sts.amazonaws.com` is an audience. If absent, choose Add provider → OpenID Connect, provider URL `https://token.actions.githubusercontent.com`, audience `sts.amazonaws.com`, and create it. Do not delete a shared provider or its other audiences.
+
+#### Create the deployment role in IAM
+
+1. Open IAM → Roles → Create role → Custom trust policy.
+2. Paste the JSON from `build/github-oidc-trust.json`.
+3. Continue without attaching administrator policies. Choose a unique lab role name, such as `hr-ci-yourname-github-ci`, and create it.
+4. Open the new role → Permissions → Add permissions → Create inline policy → JSON.
+5. Paste `build/github-oidc-permissions.json`, review its scoped resources, and save it as `HRLabOnly`.
+6. Copy the role ARN from the role summary.
+
+If you lack permission to create IAM providers/roles/policies, the AWS account administrator performs these steps. If a role already exists, inspect it rather than overwriting unrelated trust or permissions.
+
+
+### Add the deployment jobs
 
 Append the two jobs below to `.github/workflows/hr-quality.yml`, after the existing `checks` job. Keep both job names indented beneath `jobs`. Do not replace the workflow header or the checks job.
 
@@ -400,7 +448,7 @@ Open `hr-staging`. Under **Environment variables**, click **Add environment vari
 terraform -chdir=infra/terraform output
 ```
 
-For one exact value, use `terraform -chdir=infra/terraform output -raw OUTPUT_NAME`, replacing `OUTPUT_NAME` with the table's output name. Get the AWS role ARN from the OIDC console walkthrough or your AWS account administrator. Use `us-east-1` for this deployment.
+For one exact value, use `terraform -chdir=infra/terraform output -raw OUTPUT_NAME`, replacing `OUTPUT_NAME` with the table's output name. Use the role ARN copied from the IAM role summary above, or supplied by your AWS account administrator. Use `us-east-1` for this deployment.
 
 Under **Environment secrets**, click **Add environment secret** for `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`, using your saved local key pair. Keys remain outside source code and React. 
 
@@ -445,7 +493,7 @@ Inspect results in Actions, Langfuse and the downloaded Evidently artifact. Comp
 
 ## 7. Break, inspect, fix and rerun
 
-Use [FAILURE-EXERCISES.md](FAILURE-EXERCISES.md), Exercise 1. Start from the now-passing main branch:
+Start this exercise only after the baseline main-branch pipeline passes. The complete break-and-repair steps are below:
 
 ```bash
 git switch main
