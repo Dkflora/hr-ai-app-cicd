@@ -21,7 +21,6 @@ Follow the **start-to-finish guide** below from beginning to end. The other docu
 - [Start-to-finish guide](docs/HR-LAB-START-TO-FINISH.md)
 - [Langfuse Cloud setup](docs/LANGFUSE-CLOUD-SETUP.md)
 - [OWASP evidence review](docs/OWASP-EVIDENCE.md)
-- [Application design and infrastructure documents](docs/APPLICATION-DESIGN.md)
 
 We assemble the workflow from the blocks in the guide. No active workflow is installed in the starter.
 
@@ -40,3 +39,4 @@ Use the guide to configure your own AWS deployment and GitHub pipeline. The setu
 Follow the teardown instructions to remove your AWS deployment when finished.
 
 See [the change, test and evidence map](docs/CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
+
