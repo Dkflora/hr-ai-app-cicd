@@ -1,8 +1,8 @@
 # HR policy assistant: controlled delivery and evaluation
 
-This lab inherits the AWS application and Python helpers. We configure the deployment, assemble the workflow blocks, interpret evaluation results, reproduce a controlled failure, then fix and rerun. No application or evaluation script is written from scratch.
+The repository provides the AWS application and Python helpers. We configure the deployment, assemble the workflow, interpret evaluation results, reproduce a controlled failure, then repair it and rerun the checks.
 
-The application and evaluation helpers are supplied. Setup automatically checks the application; we then assemble and run our pipeline.
+Automated setup provisions the application and checks it before we assemble and run the delivery pipeline.
 
 ## How to use this guide
 
@@ -10,7 +10,7 @@ This is the single setup and delivery walkthrough. Follow the numbered sections 
 
 ## Delivery model
 
-This project follows this process: review the change → deploy the new version to staging → run evaluations → approve the release. Branch names describe the change, rather than the training session:
+This project follows this process: review the change → deploy the new version to staging → run evaluations → approve the release. Use purpose-based branch names:
 
 | Branch | Purpose |
 |---|---|
@@ -503,6 +503,7 @@ GitHub documents these plan requirements in [Deployments and environments](https
 See [the change, test and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
 
 Read [the LLM gateway guide](LLM-GATEWAY.md) for routing, Aurora separation, configured allowances, tests and remaining production requirements. Gateway setup runs inside the provided bootstrap command.
+
 
 
 
