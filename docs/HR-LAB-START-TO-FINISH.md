@@ -6,7 +6,7 @@ The application and evaluation helpers are supplied. Setup automatically checks 
 
 ## Current review status
 
-The repository includes the LiteLLM gateway integration and is available for independent testing from main. The last full hosted evaluation passed 41 of 43 cases across two repetitions; two required cases still block release. This is a review version, not a fully verified release.
+The repository includes the LiteLLM gateway integration and is available for independent review. Follow the setup from main and record feedback for the next revision.
 
 Import this public repository into your own GitHub account, clone your own repository using the commands in section 1, and follow the numbered sections in order. Use your own resource names and repository-scoped OIDC role; do not reuse another deployment’s state or credentials.
 
@@ -62,7 +62,7 @@ Infrastructure changes require a reviewed Terraform plan and apply. The applicat
 
 Use Linux or WSL2 Bash for these commands, not PowerShell or Git Bash. Setup activates a Linux virtual environment. The workstation needs Git, Python 3.12, Node.js 22/npm, Terraform 1.15.9, and AWS CLI. A managed Linux workstation is another option. Install the required tools before running setup.
 
-The source repository is public. **Import it into your own GitHub account first**, then clone your imported repository. Cloning the source repository alone does not give you ownership of its Actions settings or deployment environments.
+The source repository is public. **Import it into your own GitHub account first**, then clone your imported repository from its default main branch. Do not select a feature branch. Cloning the source repository alone does not give you ownership of its Actions settings or deployment environments.
 
 1. Open [GitHub Import](https://github.com/new/import).
 2. Enter `https://github.com/kserge2001/hr-rag-cicd-student-starter.git` as the source URL.
@@ -511,5 +511,6 @@ GitHub documents these plan requirements in [Deployments and environments](https
 See [the change, test and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
 
 Read [the LLM gateway guide](LLM-GATEWAY.md) for routing, Aurora separation, configured allowances, tests and remaining production requirements. Gateway setup runs inside the provided bootstrap command.
+
 
 
