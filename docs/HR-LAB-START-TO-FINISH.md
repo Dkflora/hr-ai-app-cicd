@@ -479,6 +479,7 @@ Under **Environment secrets**, click **Add environment secret** for `LANGFUSE_PU
 | VITE_COGNITO_AUTHORITY / VITE_COGNITO_DOMAIN | Generated frontend/.env.production |
 | LANGFUSE_BASE_URL | Ignored .env.langfuse |
 | ENABLE_DEEPEVAL / ENABLE_EVIDENTLY | true |
+Cognito frontend settings are public configuration, not passwords. Vite compiles them into the JavaScript during the build; setting them only on the Lambda does not configure browser login. Set every VITE_COGNITO value above before the deployment job runs. The frontend build now rejects missing authority, client ID or domain values. After deployment, open the application, click Sign in, and confirm Cognito’s login form loads. Authenticated API tests alone do not verify the browser sign-in flow.
 
 Secrets: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY, read from the ignored local file. No long-lived AWS keys enter GitHub.
 
@@ -939,6 +940,7 @@ Jobs do not automatically share their filesystem. Only explicitly uploaded/downl
 These unit tests check the helpers and application plumbing. The live API evaluation checks deployed behavior. Tool Actions add their configured views of the captured answers. Those stages have different inputs and purposes; running them is not running the same implementation twice.
 
 The application gateway adapter is in `lambda/app/model_gateway.py`; its service and database setup belong to infrastructure/bootstrap, not a duplicate evaluation Action. DeepEval invokes the gateway-backed evaluation Lambda rather than calling Bedrock directly. See [gateway controls](#gateway-implementation).
+
 
 
 

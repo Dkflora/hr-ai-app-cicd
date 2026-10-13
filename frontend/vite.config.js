@@ -1,16 +1,26 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 
-// Vite runs the React app while you develop, and builds the files that go to S3.
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173,
-    // `npm run dev` still works, against the deployed API. Set API_URL to the
-    // API Gateway endpoint that Terraform prints:
-    //   API_URL=$(terraform output -raw api_endpoint) npm run dev
-    // Sign-in still goes to the real Cognito, which is why localhost:5173 is a
-    // permitted callback URL. In production CloudFront does this routing.
-    proxy: process.env.API_URL ? { "/api": process.env.API_URL } : undefined,
-  },
+export default defineConfig(({ command, mode }) => {
+  const env = loadEnv(mode, process.cwd(), "VITE_");
+  const deploymentBuild = command === "build" &&
+    (env.VITE_AUTH_MODE === "cognito" || Boolean(process.env.HR_STAGING_FRONTEND_BUCKET));
+
+  // Login settings are compiled into React. Stop a deployment build if they are absent.
+  if (deploymentBuild) {
+    const required = ["VITE_COGNITO_AUTHORITY", "VITE_COGNITO_CLIENT_ID", "VITE_COGNITO_DOMAIN"];
+    const missing = required.filter((name) => !env[name]?.trim());
+    if (missing.length) throw new Error(`Missing Cognito build settings: ${missing.join(", ")}`);
+    for (const name of ["VITE_COGNITO_AUTHORITY", "VITE_COGNITO_DOMAIN"]) {
+      if (new URL(env[name]).protocol !== "https:") throw new Error(`${name} must use HTTPS`);
+    }
+  }
+
+  return {
+    plugins: [react()],
+    server: {
+      port: 5173,
+      proxy: process.env.API_URL ? { "/api": process.env.API_URL } : undefined,
+    },
+  };
 });
