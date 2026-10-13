@@ -19,6 +19,7 @@ terraform -chdir=infra/terraform output -json > build/terraform-outputs.json
 SETUP=$(python -c "import json;print(json.load(open('build/terraform-outputs.json'))['function_names']['value']['setup-db'])")
 aws lambda invoke --function-name "$SETUP" --cli-read-timeout 300 build/setup-result.json > build/setup-meta.json
 python -c "import json; m=json.load(open('build/setup-meta.json')); r=json.load(open('build/setup-result.json')); failed='FunctionError' in m or (isinstance(r,dict) and 'errorMessage' in r); exit('Database setup failed') if failed else None"
+python scripts/initialize-gateway.py
 DOCS=$(terraform -chdir=infra/terraform output -raw documents_bucket)
 aws s3 cp lambda/data/documents/ "s3://$DOCS/" --recursive --exclude manifest.json
 aws s3 cp lambda/data/documents/manifest.json "s3://$DOCS/"

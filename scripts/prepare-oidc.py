@@ -7,6 +7,8 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 
 def read_json(arguments):
+    if arguments[0] == "aws":
+        arguments = arguments + ["--output", "json", "--no-cli-pager"]
     return json.loads(subprocess.check_output(arguments, text=True, cwd=ROOT))
 
 def main():
@@ -41,7 +43,7 @@ def main():
         allow('cognito-idp:AdminInitiateAuth',f"arn:{partition}:cognito-idp:{args.region}:{account}:userpool/{value('cognito_user_pool_id')}"),
         allow('s3:PutObject',f"arn:{partition}:s3:::{value('frontend_bucket')}/*"),
         allow('cloudfront:CreateInvalidation',f"arn:{partition}:cloudfront::{account}:distribution/{value('cloudfront_distribution_id')}"),
-        allow('bedrock:InvokeModel',[f"arn:{partition}:bedrock:{args.region}::foundation-model/amazon.nova-pro-v1:0",f"arn:{partition}:bedrock:{args.region}::foundation-model/amazon.nova-lite-v1:0"]),
+        allow('lambda:InvokeFunction',f"arn:{partition}:lambda:{args.region}:{account}:function:{value('evaluation_function')}"),
     ]}
     target = ROOT/'build'
     target.mkdir(exist_ok=True)

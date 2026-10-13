@@ -100,11 +100,9 @@ data "aws_iam_policy_document" "titan" {
 
 data "aws_iam_policy_document" "answer" {
   statement {
-    sid     = "InvokeChatModel"
-    actions = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
-    # The chat model and the fallback. A plain model id (Nova) and an inference
-    # profile id (used by Claude and others) are different ARN shapes, so both are allowed.
-    resources = local.chat_model_arns
+    sid       = "ReadGatewayApplicationKey"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [aws_secretsmanager_secret.gateway_app_key.arn]
   }
 
   statement {
@@ -176,7 +174,7 @@ data "aws_iam_policy_document" "setup_db" {
   statement {
     sid       = "ReadDatabaseSecrets"
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_secretsmanager_secret.db_app.arn, local.db_admin_secret_arn]
+    resources = [aws_secretsmanager_secret.db_app.arn, local.db_admin_secret_arn, aws_secretsmanager_secret.gateway_settings.arn]
   }
 }
 

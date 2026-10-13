@@ -6,6 +6,9 @@ Safe to run twice: every statement in db/*.sql is written to be repeatable.
 """
 
 from pathlib import Path
+import os
+import psycopg
+from psycopg import sql
 
 from app import config, database, secrets
 
@@ -29,6 +32,18 @@ def handler(event, context):
     app_password = secrets.read_secret(config.DB_APP_SECRET_ARN)["password"]
     database.set_app_user_password(app_password)
     print("set the hr_app password from Secrets Manager")
+
+    gateway = secrets.read_secret(os.environ['GATEWAY_SETTINGS_SECRET_ARN'])
+    with psycopg.connect(database.connection_url(admin=True), autocommit=True) as connection:
+        if not connection.execute("SELECT 1 FROM pg_roles WHERE rolname='llm_gateway'").fetchone():
+            connection.execute('CREATE ROLE llm_gateway LOGIN')
+        connection.execute(sql.SQL('ALTER ROLE llm_gateway WITH PASSWORD {}').format(sql.Literal(gateway['password'])))
+        connection.execute(sql.SQL('GRANT llm_gateway TO {}').format(sql.Identifier(connection.info.user)))
+        if not connection.execute("SELECT 1 FROM pg_database WHERE datname='litellm'").fetchone():
+            connection.execute('CREATE DATABASE litellm OWNER llm_gateway')
+        connection.execute(sql.SQL('REVOKE CONNECT ON DATABASE {} FROM PUBLIC').format(sql.Identifier(config.DB_NAME)))
+        connection.execute(sql.SQL('GRANT CONNECT ON DATABASE {} TO hr_app').format(sql.Identifier(config.DB_NAME)))
+    print('Initialized separate LiteLLM database and restricted database role')
 
     employees = database.run_admin_query("SELECT count(*) AS n FROM employees")[0]["n"]
     print(f"{employees} employees in the database")

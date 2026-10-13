@@ -27,6 +27,10 @@
 
 The ignored `build/` folder is generated on demand. Local commands write it on the workstation; workflow commands write it on that job’s runner. Uploaded artifacts persist only as configured. Raw `evaluation.json` answers are excluded from the workflow’s uploaded artifact bundle. Some generated tool configuration is written under `ci/`; it is not hand-authored source.
 
+## Gateway control checks
+
+Generation, model fallback, inline judging, revision and the CI judge use LiteLLM. Gateway tests cover an allowed request, exhausted budget, model restrictions, token/request limits and a tool-result round trip. The application adapter blocks policy-denied fallback and unknown models. See [gateway configuration and limits](LLM-GATEWAY.md) for its service, separate Aurora database and remaining production requirements.
+
 ## Complete application case list
 
 The source of truth is [`evaluation_questions.json`](../lambda/data/evaluation_questions.json). Each of these 43 cases runs twice, for 86 authenticated application requests. API authentication/identity checks are additional boundary checks. Required and prohibited facts are assertions, not a complete semantic correctness guarantee.

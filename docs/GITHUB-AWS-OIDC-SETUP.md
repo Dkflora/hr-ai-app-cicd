@@ -18,7 +18,7 @@ python scripts/prepare-oidc.py
 
 It asks for your repository name (`username/hr-rag-lab`) and the exact subject prefix you copied. Region defaults to `us-east-1`. It reads local Terraform outputs and AWS account identity, then writes `build/github-oidc-trust.json` and `build/github-oidc-permissions.json`. It does not create AWS resources or require us to write Python.
 
-Open both generated files in an editor. Trust is limited to your exact repository, `hr-staging` environment and `sts.amazonaws.com` audience. Permissions target only your lab's Lambda/aliases, synthetic-user secret, Cognito pool, frontend bucket/distribution and Nova models.
+Open both generated files in an editor. Trust is limited to your exact repository, `hr-staging` environment and `sts.amazonaws.com` audience. Permissions target only your lab's Lambda/aliases, synthetic-user secret, Cognito pool, frontend bucket/distribution and the gateway-backed evaluation Lambda. The CI role does not directly invoke chat models.
 
 ## 3. Register the provider once per AWS account
 
@@ -48,3 +48,18 @@ The supplied workflow already grants `id-token: write` and uses the official AWS
 After reviewing and merging the workflow PR in the GitHub website, open Actions and select the new main run. Approve staging if required, then inspect the AWS sign-in step and the remaining jobs. A sign-in failure is usually a mismatch in subject prefix, environment, audience, provider account or branch rule. Do not fix it by broadening trust.
 
 Sources: [GitHub OIDC in AWS](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws), [subject formats](https://docs.github.com/en/actions/reference/security/oidc).
+
+## Troubleshoot assume-role failures
+
+`Not authorized to perform sts:AssumeRoleWithWebIdentity` means AWS did not accept the workflow’s identity; it does not mean an HR evaluation failed.
+
+Check these exact matches:
+
+1. The workflow role ARN is the role we configured for this repository.
+2. The job has `id-token: write` permission and uses the `hr-staging` environment.
+3. The trust audience is `sts.amazonaws.com`.
+4. The subject contains our exact repository identity and ends with `:environment:hr-staging`.
+
+A name-only subject such as `repo:USERNAME/hr-rag-lab:environment:hr-staging` will not match a token using `repo:USERNAME@OWNER-ID/hr-rag-lab@REPO-ID:environment:hr-staging`. Use the actual subject format for our repository, including immutable IDs where present. Never copy another repository’s identifiers or fix this with a wildcard.
+
+After correcting the trust policy, rerun the failed job. PR deployment jobs are intentionally skipped because unreviewed PR code receives no AWS credentials. A production-handoff job is also skipped when staging fails; this is the release gate working.

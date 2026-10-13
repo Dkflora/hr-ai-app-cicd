@@ -10,9 +10,16 @@ class BedrockJudge(DeepEvalBaseLLM):
     def __init__(self):
         self.model_name=os.getenv('EVAL_JUDGE_MODEL','amazon.nova-pro-v1:0')
         super().__init__(model=self.model_name)
-    def load_model(self):return boto3.client('bedrock-runtime',region_name=os.getenv('AWS_REGION','us-east-1'),config=Config(read_timeout=30,retries={'max_attempts':0}))
+    def load_model(self):
+        return boto3.client('lambda', region_name=os.getenv('AWS_REGION','us-east-1'),
+                            config=Config(read_timeout=60,retries={'max_attempts':0}))
     def generate(self,prompt,schema=None):
-        response=self.model.converse(modelId=self.model_name,messages=[{'role':'user','content':[{'text':prompt}]}],inferenceConfig={'maxTokens':2048,'temperature':0})
+        result=self.model.invoke(FunctionName=os.environ['HR_EVALUATION_FUNCTION'],
+            Payload=json.dumps({'gateway_judge':{'model':self.model_name,
+                'messages':[{'role':'user','content':[{'text':prompt}]}]}}).encode())
+        if result.get('FunctionError'):
+            raise RuntimeError('Gateway evaluation judge failed or reached its allowance')
+        response=json.loads(result['Payload'].read())
         text=''.join(b['text'] for b in response['output']['message']['content'] if 'text' in b).strip()
         text=re.sub(r'<thinking>.*?</thinking>','',text,flags=re.DOTALL|re.IGNORECASE).strip()
         fence=re.fullmatch(r'```(?:json)?\s*(.*?)\s*```',text,flags=re.DOTALL|re.IGNORECASE)

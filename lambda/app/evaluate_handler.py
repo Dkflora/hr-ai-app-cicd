@@ -120,6 +120,13 @@ def search_probe(query, old_version=False):
 
 
 def handler(event, context):
+    if (event or {}).get('gateway_judge'):
+        # IAM-only Lambda invocation. The CI caller never receives the gateway key.
+        from app.model_gateway import GatewayClient
+        payload = event['gateway_judge']
+        return GatewayClient(timeout=30).converse(
+            modelId=payload['model'], messages=payload['messages'],
+            inferenceConfig={'maxTokens': 2048, 'temperature': 0})
     if (event or {}).get("search"):
         return search_probe(event["search"], event.get("old_version", False))
     if (event or {}).get("similarity_report"):

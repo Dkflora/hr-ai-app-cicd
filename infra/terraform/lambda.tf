@@ -19,6 +19,8 @@ locals {
 
   # Settings every function gets
   common_env = {
+    LLM_GATEWAY_URL            = "http://${aws_instance.llm_gateway.private_ip}:4000"
+    LLM_GATEWAY_KEY_SECRET_ARN = aws_secretsmanager_secret.gateway_app_key.arn
     INLINE_JUDGE_MODEL         = var.fallback_chat_model_id != "" ? var.fallback_chat_model_id : var.chat_model_id
     LAB_ENVIRONMENT            = var.lab_environment
     HR_TRACING_ENABLED         = "true"
@@ -56,10 +58,11 @@ locals {
       role    = aws_iam_role.setup_db.arn
       timeout = 120
       env = {
-        DB_HOST             = aws_rds_cluster.aurora.endpoint
-        DB_NAME             = aws_rds_cluster.aurora.database_name
-        DB_APP_SECRET_ARN   = aws_secretsmanager_secret.db_app.arn
-        DB_ADMIN_SECRET_ARN = local.db_admin_secret_arn
+        DB_HOST                     = aws_rds_cluster.aurora.endpoint
+        DB_NAME                     = aws_rds_cluster.aurora.database_name
+        DB_APP_SECRET_ARN           = aws_secretsmanager_secret.db_app.arn
+        DB_ADMIN_SECRET_ARN         = local.db_admin_secret_arn
+        GATEWAY_SETTINGS_SECRET_ARN = aws_secretsmanager_secret.gateway_settings.arn
       }
     }
     evaluate = {

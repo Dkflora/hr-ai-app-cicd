@@ -4,6 +4,10 @@ This lab inherits the AWS application and Python helpers. We configure the deplo
 
 The application and evaluation helpers are supplied. Setup automatically checks the application; we then assemble and run our pipeline.
 
+## How to use this guide
+
+This is the single setup and delivery walkthrough. Follow the numbered sections in order. Open a linked reference only for the configuration or explanation you need at that step; do not combine manual deployment instructions with automated setup.
+
 ## Delivery model
 
 This project follows this process: review the change → deploy the new version to staging → run evaluations → approve the release. Branch names describe the change, rather than the training session:
@@ -162,6 +166,7 @@ Under **Environment secrets**, click **Add environment secret** for `LANGFUSE_PU
 | AWS_REGION | us-east-1 |
 | AWS_STAGING_ROLE_ARN | Repository-scoped role created through the OIDC walkthrough |
 | HR_STAGING_FUNCTION | candidate_function Terraform output |
+| HR_EVALUATION_FUNCTION | evaluation_function Terraform output |
 | HR_STAGING_ORIGIN | app_url output |
 | HR_TEST_USERS_SECRET_ARN | evaluation_users_secret_arn output |
 | HR_COGNITO_POOL_ID / HR_COGNITO_CLIENT_ID | cognito_user_pool_id / cognito_client_id outputs |
@@ -274,6 +279,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install delivery helper dependencies
+        run: python -m pip install -r ci/requirements.txt
       - name: Prompt structure and release contract tests
         run: python -m unittest discover -s ci/tests -v
       - name: Build Lambda artifacts required by Terraform validation
@@ -319,6 +326,7 @@ jobs:
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
       HR_STAGING_FUNCTION: ${{ vars.HR_STAGING_FUNCTION }}
+      HR_EVALUATION_FUNCTION: ${{ vars.HR_EVALUATION_FUNCTION }}
       HR_STAGING_ORIGIN: ${{ vars.HR_STAGING_ORIGIN }}
       HR_TEST_USERS_SECRET_ARN: ${{ vars.HR_TEST_USERS_SECRET_ARN }}
       HR_COGNITO_POOL_ID: ${{ vars.HR_COGNITO_POOL_ID }}
@@ -493,3 +501,5 @@ See [GitHub Importer](https://docs.github.com/en/migrations/importing-source-cod
 GitHub documents these plan requirements in [Deployments and environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
 
 See [the change, test and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
+
+Read [the LLM gateway guide](LLM-GATEWAY.md) for routing, Aurora separation, configured allowances, tests and remaining production requirements. Gateway setup runs inside the provided bootstrap command.

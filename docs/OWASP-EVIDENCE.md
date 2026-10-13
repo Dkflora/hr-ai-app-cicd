@@ -11,6 +11,6 @@
 | LLM07 System prompt leakage | Prompt contains instructions rather than credentials | Attempts to extract prompt; secrets must stay in Secrets Manager, not the prompt |
 | LLM08 Vector/embedding weaknesses | Access labels enforced in retrieval; version/country filtering | Restricted-document cases, stale-version cases, ingestion/extraction fixtures |
 | LLM09 Misinformation | Source citations, reference facts, inline judge and fallback | Supported/unsupported answer tests; judge calibration against domain-reviewed labels |
-| LLM10 Unbounded consumption | Loop/token bounds, Lambda/API timeouts | Limit-hit, throttling and retry tests; per-user quotas and budget alerts need explicit review |
+| LLM10 Unbounded consumption | LiteLLM application-key budgets and RPM/TPM limits, loop/token bounds, Lambda/API timeouts | Gateway denial, throttling, retry and outage tests; embeddings/Guardrails/infrastructure need separate cost monitoring; employee-specific budgets and budget alerts remain gaps |
 
 OWASP is an industry risk reference. This table is a teaching mapping, not a security certificate. A risk is not closed merely because a tool is installed. Mark each result implemented and tested, failed, not yet tested, or not applicable with justification. Keep known gaps visible.

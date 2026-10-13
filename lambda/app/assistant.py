@@ -1,3 +1,4 @@
+from app.model_gateway import GatewayUnavailable
 """The assistant: a model plus two tools, in a loop, with guardrails on both ends.
 
     1. Guardrail checks the question         (Amazon Bedrock Guardrails)
@@ -76,25 +77,8 @@ TEMPERATURE = 0.0
 
 @cache
 def client():
-    import boto3
-    from botocore.config import Config
-
-    # max_attempts=1 means the SDK does not retry. That is deliberate.
-    #
-    # API Gateway gives up at 30 seconds and this function at 29, so the whole
-    # budget is 29 seconds including every tool call. Left on its defaults the
-    # SDK spent 15 of them retrying a model that was never going to answer, and
-    # the fallback then ran out of time. The failover IS the retry, and it has
-    # to happen while there is still budget left to answer in.
-    return boto3.client(
-        "bedrock-runtime",
-        region_name=config.AWS_REGION,
-        config=Config(
-            retries={"max_attempts": 1, "mode": "standard"},
-            connect_timeout=3,
-            read_timeout=20,
-        ),
-    )
+    from app.model_gateway import GatewayClient
+    return GatewayClient(timeout=20)
 
 
 # The tools, described so the model knows what each one does and what input it
@@ -236,7 +220,7 @@ def _call_model(model, request, usage):
     """
     try:
         return client().converse(modelId=model, **request), model
-    except (BotoCoreError, ClientError) as error:
+    except (BotoCoreError, ClientError, GatewayUnavailable) as error:
         # A model can be throttled, still warming up, withdrawn, or simply not
         # enabled in this account. None of that is the user's problem, and every
         # model here speaks the same Converse shape, so the same conversation
@@ -393,6 +377,5 @@ def log_request(employee, question, usage, started):
 
 @cache
 def judge_client():
-    import boto3
-    from botocore.config import Config
-    return boto3.client("bedrock-runtime", region_name=config.AWS_REGION, config=Config(connect_timeout=2, read_timeout=6, retries={"total_max_attempts":1}))
+    from app.model_gateway import GatewayClient
+    return GatewayClient(timeout=6)

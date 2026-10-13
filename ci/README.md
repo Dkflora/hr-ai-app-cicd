@@ -92,6 +92,9 @@ Jobs do not automatically share their filesystem. Only explicitly uploaded/downl
 `tests/` contains local implementation checks run by the branch/PR job:
 
 - `test_release.py`: prompt validation, release packaging and inline-judge behavior.
+- `test_gateway.py`: model-request translation, approved models, denied allowances, and no direct-provider escape path.
 - `test_telemetry.py`: trace context, user/session handling and sensitive-data protection.
 
 These unit tests check the helpers and application plumbing. The live API evaluation checks deployed behavior. Tool Actions add their configured views of the captured answers. Those stages have different inputs and purposes; running them is not running the same implementation twice.
+
+The application gateway adapter is in `lambda/app/model_gateway.py`; its service and database setup belong to infrastructure/bootstrap, not a duplicate evaluation Action. DeepEval invokes the gateway-backed evaluation Lambda rather than calling Bedrock directly. See [gateway controls](../docs/LLM-GATEWAY.md).
