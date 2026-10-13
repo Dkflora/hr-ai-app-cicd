@@ -19,8 +19,8 @@ Follow the **start-to-finish guide** below from beginning to end. The other docu
 ## Supporting documents
 
 - [Start-to-finish guide](docs/HR-LAB-START-TO-FINISH.md)
-- [Langfuse Cloud setup](docs/LANGFUSE-CLOUD-SETUP.md)
-- [OWASP evidence review](docs/OWASP-EVIDENCE.md)
+- [Langfuse Cloud setup](docs/HR-LAB-START-TO-FINISH.md#configure-langfuse-cloud)
+- [OWASP evidence review](docs/HR-LAB-START-TO-FINISH.md#owasp-coverage)
 
 We assemble the workflow from the blocks in the guide. No active workflow is installed in the starter.
 
@@ -28,7 +28,7 @@ We assemble the workflow from the blocks in the guide. No active workflow is ins
 
 Terraform owns infrastructure; bootstrap code handles application setup. Python, prompt, React, and infrastructure files are reviewed together, with checks for their respective behavior. Prompts are validated structurally, published with an exact Langfuse version, and packaged with Python. Semantic correctness comes from running real application cases, not merely scanning prompt text.
 
-Application spans go to CloudWatch and an outside-VPC exporter sends OTLP to Langfuse Cloud. No Langfuse credentials enter React or the private chat Lambda. Generation and judge calls route through LiteLLM using a scoped virtual key; see [gateway controls and limits](docs/LLM-GATEWAY.md). Raw question/answer export is off by default and requires an explicit synthetic-staging switch. Post-run scoring is separate from the bounded inline judge, which can revise once and return a safe fallback.
+Application spans go to CloudWatch and an outside-VPC exporter sends OTLP to Langfuse Cloud. No Langfuse credentials enter React or the private chat Lambda. Generation and judge calls route through LiteLLM using a scoped virtual key; see [gateway controls and limits](docs/HR-LAB-START-TO-FINISH.md#gateway-implementation). Raw question/answer export is off by default and requires an explicit synthetic-staging switch. Post-run scoring is separate from the bounded inline judge, which can revise once and return a safe fallback.
 
 GitHub Actions uses protected staging and AWS OIDC. Unreviewed PR code receives no cloud or model secrets. The delivery pipeline includes reference assertions, Promptfoo, Langfuse dataset experiments, optional DeepEval, reports, and an approved staging release pointer. Evidently needs its documented baseline. Tool installation alone does not establish security or answer quality.
 
@@ -38,5 +38,5 @@ Use the guide to configure your own AWS deployment and GitHub pipeline. The setu
 
 Follow the teardown instructions to remove your AWS deployment when finished.
 
-See [the change, test and evidence map](docs/CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
+See [the change, test and evidence map](docs/HR-LAB-START-TO-FINISH.md#implementation-and-test-evidence) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
 
