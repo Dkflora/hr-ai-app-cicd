@@ -6,7 +6,7 @@ Automated setup provisions the application and checks it before we assemble and 
 
 ## How to use this guide
 
-This is the single setup and delivery walkthrough. Follow the numbered sections in order. Open a linked reference only for the configuration or explanation you need at that step; do not combine manual deployment instructions with automated setup.
+Follow the numbered sections in order. Each section links to the configuration, implementation files or supporting explanation needed for that step.
 
 ## Delivery model
 
@@ -19,7 +19,7 @@ This project follows this process: review the change → deploy the new version 
 | `fix/restore-tool-budget` | Restore the tested behavior |
 | `main` | Deploy the reviewed version to staging and run release checks |
 
-Branch and PR checks run without deployment credentials. After review, main deploys a candidate to staging and evaluates the real authenticated API. Required checks block promotion when behavior is wrong or evidence is incomplete. The approved alias is a release pointer within this same staging stack; it does not isolate production traffic. The final production-handoff job is explicitly a dry run.
+Branch and pull-request checks run without deployment credentials. Merging a reviewed change to main deploys the new version to staging and tests the authenticated API. A candidate is the new version under evaluation. Required failures block approval. A passing run updates the approved staging alias, then starts the production handoff dry run.
 
 ### From staging to production
 
@@ -70,15 +70,15 @@ git remote -v
 git switch -c feature/ci-quality-gate
 ```
 
-Replace `YOUR-USERNAME` with your account name. The origin must point to your imported repository, not the source repository. Configure pull requests, Actions, secrets and environments in the GitHub website. No GitHub CLI installation or commands are used in this lab.
+Replace `YOUR-USERNAME` with your account name. The origin must point to your imported repository, not the source repository. Configure pull requests, Actions, secrets and environments in the GitHub website. Use the GitHub website for repository settings and pull requests.
 
 If the browser importer refuses this source, use **Use this template → Create a new repository** on the source page, select your own account, and name it `hr-rag-lab`. Then use the same `git clone` command above.
 
 No AWS roles, environments, secrets or workflow runs are inherited from the source. Enable Actions in your own repository's Settings if necessary.
 
-Locate `frontend/`, `lambda/app/`, `lambda/app/prompts/hr_system.txt`, `infra/terraform/` and `ci/`. Explain login → authenticated API → authorized retrieval/tools → generation → inline judge → answer, with trace export to Langfuse.
+Locate `frontend/`, `lambda/app/`, `lambda/app/prompts/hr_system.txt`, `infra/terraform/` and `ci/`. Follow the request path: login → authenticated API → authorized retrieval/tools → generation → inline judge → answer. Langfuse records the model and tool observations.
 
-Costs are explained in [LAB-COSTS.md](LAB-COSTS.md); there is no verified fixed five-dollar daily total.
+See [resource costs](LAB-COSTS.md) for infrastructure charges and usage-based costs.
 
 ## 2. Configure and bootstrap
 
@@ -117,14 +117,14 @@ terraform -chdir=infra/terraform output -raw app_url
 
 Bootstrap builds the Lambda layer, provisions infrastructure, initializes synthetic employees, uploads/ingests policies, deploys React, creates test sign-ins, stores Langfuse keys in Secrets Manager and verifies ingestion plus an authenticated API call. Ingestion is automated; no manual chunking steps are required. Terraform apply still requires plan review and confirmation.
 
-Checkpoint: readiness succeeds, a real answer is returned, and model/tool observations reach Langfuse. A smoke trace alone is insufficient. Use only configuration and Terraform state for your own deployment; do not apply changes to someone else's stack.
+Setup checks ingestion and makes an authenticated API request automatically. Confirm the returned answer and its model/tool observations in Langfuse. Use only configuration and Terraform state for your own deployment; do not apply changes to someone else's stack.
 
 ## 3. Cognito and a real trace
 
 1. Inspect the existing Cognito pool, synthetic users and app client. The project owner supplies synthetic test-account credentials through an approved channel.
-2. Sign into the chatbot. Explain the browser token → API Gateway → trusted claims → employee permissions flow. Do not display bearer tokens or passwords.
+2. Sign into the chatbot. Follow the browser token → API Gateway → trusted claims → employee permissions flow. Do not display bearer tokens or passwords.
 3. Ask "How many PTO days do employees receive each year?" and a follow-up. Find the session and opaque user identifier in Langfuse, then policy tool, model and inline judge spans. Inspect the numbered prompt version.
-4. Explain `ci/auth.py` by its input and result: pipeline AWS permission allows admin authentication of synthetic users, credentials come from the lab secret, and fresh tokens remain in memory. It does not bypass API or data permissions.
+4. Inspect [`ci/auth.py`](../ci/auth.py): pipeline AWS permission allows admin authentication of synthetic users, credentials come from the lab secret, and fresh tokens remain in memory. It does not bypass API or data permissions.
 5. Distinguish inline judging (before response, bounded revision/fallback) from Langfuse post-run scoring. Neither replaces access controls.
 
 ## 4. Build branch and PR checks
@@ -139,13 +139,11 @@ git commit -m "Add HR branch and pull-request checks"
 git push -u origin feature/ci-quality-gate
 ```
 
-In GitHub, click **Compare & pull request**, choose `main` as base and your feature branch as compare, then create the PR. Open its **Checks** tab and inspect Actions. Explain one actual test. Branch/PR code receives no AWS or Langfuse credentials. In repository Settings, configure main protection and required `checks` plus reviewer policy where available. A designated reviewer reviews the PR. GitHub plan/organization features can restrict private-repository protections; state any unavailable control explicitly rather than claiming it exists.
-
-## Break
+In GitHub, click **Compare & pull request**, choose `main` as base and your feature branch as compare, then create the PR. Open its **Checks** tab and inspect Actions. Open one test under `ci/tests/` and identify its input and expected result. Branch/PR code receives no AWS or Langfuse credentials. In repository Settings, configure main protection and required `checks` plus reviewer policy where available. A designated reviewer reviews the PR. GitHub plan/organization features can restrict private-repository protections; state any unavailable control explicitly rather than claiming it exists.
 
 ## 5. Wire protected staging
 
-If no role exists, follow [GITHUB-AWS-OIDC-SETUP.md](GITHUB-AWS-OIDC-SETUP.md) to generate reviewed policies and create a scoped role. Otherwise, the project owner supplies an AWS role ARN whose OIDC trust allows **our exact repository** and `hr-staging`, with audience `sts.amazonaws.com`. New repositories can use immutable owner/repository IDs in their OIDC subject; the project owner must inspect that configuration. Do not reuse the another repository's role or broaden trust to all repositories. Its scoped permissions cover only our staging Lambda/aliases, test-user secret, Cognito pool, frontend bucket/distribution and required model invocation. `lambda:GetFunction` is required by the update waiter.
+If no role exists, follow [GITHUB-AWS-OIDC-SETUP.md](GITHUB-AWS-OIDC-SETUP.md) to generate reviewed policies and create a scoped role. Otherwise, the project owner supplies an AWS role ARN whose OIDC trust allows **our exact repository** and `hr-staging`, with audience `sts.amazonaws.com`. New repositories can use immutable owner/repository IDs in their OIDC subject; the project owner must inspect that configuration. Do not reuse another repository's role or broaden trust to all repositories. Its scoped permissions cover only our staging Lambda/aliases, test-user secret, Cognito pool, frontend bucket/distribution and invocation of the evaluation Lambda. Model calls from evaluation judges use the gateway through that Lambda. `lambda:GetFunction` is required by the update waiter.
 
 Append **Block B** and **Block C** below to the same workflow file, keeping `candidate` and `production-handoff-dry-run` beneath `jobs`. The Python helpers are supplied; we configure the workflow blocks.
 
@@ -181,7 +179,7 @@ In Settings → Environments, restrict staging to main and configure a designate
 
 ```bash
 git add .github/workflows/hr-quality.yml
-git commit -m "Connect candidate deployment and AI evaluation gate"
+git commit -m "Connect staging deployment and AI evaluation gate"
 git push
 ```
 
@@ -189,13 +187,13 @@ Open the existing PR in GitHub, confirm its Checks tab passes, and obtain review
 
 Open your repository's **Actions** tab, select the newest main-branch run for this merge, and follow the jobs. Approve the staging deployment when required. Read the job summary and logs in the browser; do not select an older passing run.
 
-Inspect exact prompt publication, candidate deployment, 43 cases × two API requests, evaluation tools, report and approved pointer. All required results must pass. If readiness or deployment fails, inspect the actual failed step; do not skip jobs or weaken assertions.
+Follow prompt publication, staging deployment, 43 test cases run twice, evaluation tools, the report and the approved alias. See [the implementation and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for each stage's script, inputs and outputs. All required results must pass. If readiness or deployment fails, inspect the actual failed step; do not skip jobs or weaken assertions.
 
 ## 6. Interpret the four tools
 
 - Promptfoo: deterministic required/prohibited facts and source assertions over captured real API answers.
 - Langfuse: dataset experiment outputs and scores by numbered prompt/code release. The experiment replays captured outputs; it does not independently regenerate another sample.
-- DeepEval: prepared reference-aware model grader. Examine one reason; a model grade can be wrong. The optional demonstration runs only when enabled and prior steps succeed.
+- DeepEval: prepared reference-aware model grader. Examine one reason; a model grade can be wrong. This step runs when enabled and earlier required steps succeed.
 - Evidently: numeric answer-length/latency comparison with a captured failing nonproduction reference. A distribution shift requests investigation, not automatic rejection of answer quality. Report generation must succeed when enabled.
 
 Inspect results in Actions, Langfuse and the downloaded Evidently artifact. Compare cases and repeat counts before interpreting scores. Human agreement requires independent labels from a domain expert; simulated labels are not real user-outcome validation. The illustrative uncertainty report does not establish a production mistake percentage.
@@ -244,7 +242,7 @@ The final job verifies the exact merged commit and passing report, then demonstr
 
 Review the prepared `ci/rollback_lab.py` and prior approved-version evidence. Run rollback only after confirming the previous approved version exists; do not roll back or destroy shared infrastructure automatically.
 
-Retain branch/PR and failing/fixed run links, corresponding trace links, the passing report, tool-result explanations and release/recovery reasoning. Review [OWASP-EVIDENCE.md](OWASP-EVIDENCE.md); this lab does not certify complete security.
+Retain branch/PR and failing/fixed run links, corresponding trace links, the passing report, tool-result explanations and release/recovery reasoning. Review [the combined OWASP coverage map](OWASP-EVIDENCE.md) for controls, tests and remaining gaps across HR and Kubernetes.
 
 ## Understand the supplied automation
 
@@ -258,7 +256,7 @@ Paste A first. Append B and C later in the same file. These blocks define the de
 
 ```yaml
 # Reviewed changes, staging evaluation and release approval.
-name: HR application candidate and evaluation gate
+name: HR application delivery and evaluation
 on:
   pull_request:
   push:
@@ -311,6 +309,7 @@ jobs:
 
 ```yaml
   candidate:
+    name: Deploy and evaluate staging
     # Secrets and AWS access are withheld from unreviewed pull-request code.
     if: >-
       always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
@@ -358,14 +357,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Build and deploy React to isolated staging
+      - name: Build and deploy React to staging
         run: |
           npm --prefix frontend ci
           npm --prefix frontend run build
           python ci/deploy_frontend.py
       - name: Publish exact candidate prompt and package it
         run: python ci/release.py --publish
-      - name: Deploy to isolated staging and wait
+      - name: Deploy the new backend version to staging
         run: python ci/deploy_candidate.py
       - name: Test the real authenticated application
         id: live
@@ -403,7 +402,7 @@ jobs:
           no-cache: 'true'
           no-table: 'true'
           no-progress-bar: 'true' 
-      - name: Additional DeepEval judge demonstration
+      - name: Evaluate answer quality with DeepEval
         if: vars.ENABLE_DEEPEVAL == 'true'
         run: |
           python -m pip install -r ci/requirements-demo.txt
@@ -424,7 +423,7 @@ jobs:
           save_report: 'true'
           upload_artifacts: 'true'
           check-link: 'false'
-      - name: Promote the exact tested version to the lab release pointer
+      - name: Approve the exact tested staging version
         if: success()
         run: python ci/promote_lab.py
       - name: Publish public-safe report
@@ -503,8 +502,4 @@ GitHub documents these plan requirements in [Deployments and environments](https
 See [the change, test and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
 
 Read [the LLM gateway guide](LLM-GATEWAY.md) for routing, Aurora separation, configured allowances, tests and remaining production requirements. Gateway setup runs inside the provided bootstrap command.
-
-
-
-
 
