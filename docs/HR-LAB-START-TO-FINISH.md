@@ -4,14 +4,6 @@ This lab inherits the AWS application and Python helpers. We configure the deplo
 
 The application and evaluation helpers are supplied. Setup automatically checks the application; we then assemble and run our pipeline.
 
-## Current review status
-
-The repository includes the LiteLLM gateway integration and is available for independent review. Follow the setup from main and record feedback for the next revision.
-
-Import this public repository into your own GitHub account, clone your own repository using the commands in section 1, and follow the numbered sections in order. Use your own resource names and repository-scoped OIDC role; do not reuse another deployment’s state or credentials.
-
-For feedback, record the guide section, command or workflow step, expected behavior, actual behavior, and a sanitized error or trace link. Report missing instructions, broken links, failed setup, confusing configuration and evaluation failures. Never include passwords, tokens or secret keys. The source-to-test map and CI README show where each stage is implemented.
-
 ## How to use this guide
 
 This is the single setup and delivery walkthrough. Follow the numbered sections in order. Open a linked reference only for the configuration or explanation you need at that step; do not combine manual deployment instructions with automated setup.
@@ -511,6 +503,7 @@ GitHub documents these plan requirements in [Deployments and environments](https
 See [the change, test and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
 
 Read [the LLM gateway guide](LLM-GATEWAY.md) for routing, Aurora separation, configured allowances, tests and remaining production requirements. Gateway setup runs inside the provided bootstrap command.
+
 
 
 
