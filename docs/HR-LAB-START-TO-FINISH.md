@@ -155,7 +155,7 @@ After this section, the chatbot request should appear under the same user and co
 
 ## 4. Build branch and PR checks
 
-Terraform has two different roles in this project. During step 2, the setup script runs Terraform to create the AWS resources. In the workflow below, Terraform only checks the infrastructure source: `fmt -check` verifies formatting, `init -backend=false` installs providers without connecting to the deployment state backend, and `validate` checks configuration consistency. These checks catch invalid infrastructure edits before merge. They do not run `plan` or `apply`, create resources, or redeploy the database. A real infrastructure change still requires a separately reviewed plan and apply.
+The infrastructure is provisioned during setup. This workflow focuses on application code, prompt changes, deployment and AI evaluations. Infrastructure changes are handled separately.
 
 Create `.github/workflows/hr-quality.yml` and paste the complete workflow below. Keep the indentation exactly as shown. This first version runs checks without deploying to AWS.
 
@@ -187,21 +187,6 @@ jobs:
         run: python -m pip install -r ci/requirements.txt
       - name: Prompt structure and release contract tests
         run: python -m unittest discover -s ci/tests -v
-      - name: Build Lambda artifacts required by Terraform validation
-        run: |
-          python ci/release.py
-          bash scripts/build-layer.sh
-      # Install Terraform for source validation, not infrastructure deployment.
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
-          terraform_version: '1.15.9'
-      - name: Terraform formatting and static validation
-        run: |
-          # Check formatting; install providers without the state backend; validate configuration.
-          terraform -chdir=infra/terraform fmt -check
-          terraform -chdir=infra/terraform init -backend=false
-          terraform -chdir=infra/terraform validate
       - name: Build backend candidate with release identity
         run: python ci/release.py
       - uses: actions/setup-node@v4
