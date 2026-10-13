@@ -4,20 +4,13 @@ This lab inherits the AWS application and Python helpers. We configure the deplo
 
 The application and evaluation helpers are supplied. Setup automatically checks the application; we then assemble and run our pipeline.
 
-## Current review version
+## Current review status
 
-The gateway integration is being reviewed on `feature/litellm-gateway`. The last full hosted evaluation passed 41 of 43 cases across two repetitions; two required cases still block release. This is a trial version, not the verified main baseline.
+The repository includes the LiteLLM gateway integration and is available for independent testing from main. The last full hosted evaluation passed 41 of 43 cases across two repetitions; two required cases still block release. This is a review version, not a fully verified release.
 
-To test this version, import the public repository into your own GitHub account and ensure the imported repository includes `feature/litellm-gateway`. GitHub import may finish before all branches appear; confirm the branch is available before cloning. Clone your own repository and select that branch:
+Import this public repository into your own GitHub account, clone your own repository using the commands in section 1, and follow the numbered sections in order. Use your own resource names and repository-scoped OIDC role; do not reuse another deployment’s state or credentials.
 
-```bash
-git clone --branch feature/litellm-gateway https://github.com/YOUR-ACCOUNT/YOUR-REPOSITORY.git
-cd YOUR-REPOSITORY
-```
-
-Continue with the numbered setup sections below. Use your own resource names and repository-scoped OIDC role; do not reuse another deployment’s state or credentials. If your import does not contain this branch, stop and obtain the review branch before proceeding; main has the earlier baseline.
-
-For feedback, record the guide section, command or workflow step, expected behavior, actual behavior, and a sanitized error or trace link. Report missing instructions, broken links, failed setup, confusing configuration and evaluation failures. Never include passwords, tokens or secret keys. The source-to-test map and CI README below show where each stage is implemented.
+For feedback, record the guide section, command or workflow step, expected behavior, actual behavior, and a sanitized error or trace link. Report missing instructions, broken links, failed setup, confusing configuration and evaluation failures. Never include passwords, tokens or secret keys. The source-to-test map and CI README show where each stage is implemented.
 
 ## How to use this guide
 
@@ -518,4 +511,5 @@ GitHub documents these plan requirements in [Deployments and environments](https
 See [the change, test and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
 
 Read [the LLM gateway guide](LLM-GATEWAY.md) for routing, Aurora separation, configured allowances, tests and remaining production requirements. Gateway setup runs inside the provided bootstrap command.
+
 
