@@ -125,7 +125,7 @@ def _statuses(include_superseded):
     return ["current", "superseded"] if include_superseded else ["current"]
 
 
-def search(vector, access_levels, include_superseded=False, statuses=None, regions=None):
+def search(vector, access_levels, include_superseded=False, statuses=None, regions=None, filenames=None):
     """Find the closest chunks among the documents this person may read.
 
     The filter runs inside the vector search, so restricted text is never returned.
@@ -137,6 +137,8 @@ def search(vector, access_levels, include_superseded=False, statuses=None, regio
     ]
     if regions:
         filters.append({"terms": {"region": regions}})
+    if filenames is not None:
+        filters.append({"terms": {"filename": filenames}})
 
     response = client().search(
         index=config.POLICY_INDEX,

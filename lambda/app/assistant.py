@@ -1,24 +1,12 @@
-from app.model_gateway import GatewayUnavailable
-"""The assistant: a model plus two tools, in a loop, with guardrails on both ends.
+"""HR assistant with authorized tools, guardrails and bounded inline judging.
 
-    1. Guardrail checks the question         (Amazon Bedrock Guardrails)
-    2. The model reads the question and asks for tools:
-         search_hr_policies     policy text          (OpenSearch Serverless)
-         get_employee_records   employee records     (Aurora, row-level security)
-    3. Our code runs the tools and sends the results back, until the model answers
-    4. Guardrail checks the answer
-
-Everything goes through the Bedrock **Converse** API, which speaks the same shape
-to every model that supports tool use. That is deliberate: the model is a
-configuration value, not a code decision. CHAT_MODEL can point at Amazon Nova,
-Claude, Llama or Mistral and nothing in this file changes.
-
-The default is Nova, because Amazon's own models need no access request. Claude
-needs a use case form submitted once per account, which is fine when you have
-lead time and painful when you do not.
-
-The Lambda's IAM role authenticates. There is no API key anywhere in this project.
+The application uses a Converse-shaped interface. The gateway adapter translates
+model calls to LiteLLM, which routes to Bedrock and enforces key budgets and limits.
+The Lambda reads its scoped gateway key from Secrets Manager using its AWS role.
+Policy retrieval and employee-record permissions remain enforced by the backend.
 """
+
+from app.model_gateway import GatewayUnavailable
 
 import json
 import re
@@ -157,7 +145,7 @@ def run_tool(name, tool_input, employee, sources, old_version=False):
         extracts = [f"[{_label(r)}]\n{r['content']}" for r in results]
         if old_version and any(r.get("status") == "superseded" for r in results):
             extracts.insert(0, "The person is asking about an older version. Answer from "
-                               "the SUPERSEDED passages first, then give the current rule.")
+                               "the SUPERSEDED passages only. Include current rules only if the person requests a comparison.")
         return "\n\n".join(extracts) or "No matching policy text."
 
     if name != "get_employee_records":
@@ -233,7 +221,7 @@ def _call_model(model, request, usage):
         return client().converse(modelId=fallback, **request), fallback
 
 
-def _run_requested_tools(message, employee, sources, usage, old_version=False):
+def _run_requested_tools(message, employee, sources, usage, old_version=False, policy_context=None):
     """Run every tool the model asked for, and return the results to send back."""
     results = []
     for block in message.get("content", []):
@@ -242,7 +230,11 @@ def _run_requested_tools(message, employee, sources, usage, old_version=False):
 
         call = block["toolUse"]
         usage["tools_used"].append(call["name"])
-        output = run_tool(call["name"], call.get("input") or {}, employee, sources, old_version)
+        tool_input = dict(call.get("input") or {})
+        if call["name"] == "search_hr_policies" and policy_context:
+            # Keep the previous topic when the current question is a short follow-up.
+            tool_input["query"] = policy_context
+        output = run_tool(call["name"], tool_input, employee, sources, old_version)
         results.append({
             "toolResult": {
                 "toolUseId": call["toolUseId"],
@@ -250,6 +242,29 @@ def _run_requested_tools(message, employee, sources, usage, old_version=False):
             }
         })
     return results
+
+
+def policy_question_context(question, history):
+    """Resolve short follow-ups using the last user question, not invented facts."""
+    follow_up = re.search(r"\b(it|that|those|back then|what about|current policy)\b", question, re.I)
+    if not follow_up:
+        return question
+    previous = [message["content"] for message in history if message["role"] == "user"]
+    if not previous:
+        return question
+    topic_question = previous[-1]
+    # A conversation may contain several pronoun-only turns. Keep its last named HR topic.
+    topics = r"\b(pto|time off|vacation|leave|tuition|degrees?|expense|meal|allowance|benefits?|salary|pay|wellness|reimbursement)\b"
+    for previous_question in reversed(previous):
+        if re.search(topics, previous_question, re.I):
+            topic_question = previous_question
+            break
+    context = topic_question + " " + question
+    if re.search(r"\b(back then|previous|old|older)\b", question, re.I):
+        years = re.findall(r"\b20\d\d\b", " ".join(previous))
+        if years:
+            context = years[-1] + " " + context
+    return context
 
 
 @observed("HR answer", "agent")
@@ -284,6 +299,8 @@ def answer(question, history, employee):
     # "what was it back then" after "the 2024 policy" still wants the old version,
     # so the last few questions count, not only this one.
     recent_questions = [m["content"] for m in history[-6:] if m["role"] == "user"]
+    contextual_question = policy_question_context(question, history)
+    policy_context = contextual_question if contextual_question != question else None
     wants_current = bool(re.search(r'\b(current|today|now)\b', question, re.I))
     old_version = not wants_current and any(
         retrieval.asks_for_old_version(text) for text in recent_questions + [question]
@@ -303,8 +320,8 @@ def answer(question, history, employee):
             # rule of the code, not a request to the model.
             # Policy figures must come from policy documents, not inferred salaries.
             policy_question = re.search(
-                r"\b(policy|policies|carryover|carry over|salary band|pay band|entitlement)\b",
-                question, re.I,
+                r"\b(policy|policies|carryover|carry over|salary band|pay band|entitlement|tuition|degrees?|pto|time off)\b",
+                contextual_question, re.I,
             )
             if policy_question:
                 tool_config["tools"] = [TOOLS[0]]
@@ -337,7 +354,7 @@ def answer(question, history, employee):
                 text = NOT_COVERED
 
             # Hold the draft for a bounded judge/revision; no additional tool access.
-            text = validate_answer(question, text, messages, employee, judge_client(), remaining_seconds=max(0, 25-(time.time()-started)))
+            text = validate_answer(contextual_question, text, messages, employee, judge_client(), remaining_seconds=max(0, 25-(time.time()-started)))
             sources = _cited(text, sources)
 
             # 4. Guardrail on the answer
@@ -350,7 +367,7 @@ def answer(question, history, employee):
 
         # Send the model's own turn back verbatim, then the tool results.
         messages.append(message)
-        results = _run_requested_tools(message, employee, sources, usage, old_version)
+        results = _run_requested_tools(message, employee, sources, usage, old_version, policy_context)
         messages.append({"role": "user", "content": results})
 
     log_request(employee, question, usage, started)

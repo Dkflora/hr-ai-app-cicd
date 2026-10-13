@@ -500,10 +500,14 @@ Follow prompt publication, staging deployment, 43 test cases run twice, evaluati
 
 - Promptfoo: deterministic required/prohibited facts and source assertions over captured real API answers.
 - Langfuse: dataset experiment outputs and scores by numbered prompt/code release. The experiment replays captured outputs; it does not independently regenerate another sample.
-- DeepEval: prepared reference-aware model grader. Examine one reason; a model grade can be wrong. This step runs when enabled and earlier required steps succeed.
+- DeepEval: a reference-aware model grader that samples the first three distinct test cases by default. It does not semantically grade all forty-three cases. Examine one reason; a model grade can be wrong. This step runs when enabled and earlier required steps succeed.
 - Evidently: numeric answer-length/latency comparison with a captured failing nonproduction reference. A distribution shift requests investigation, not automatic rejection of answer quality. Report generation must succeed when enabled.
 
 Inspect results in Actions, Langfuse and the downloaded Evidently artifact. Compare cases and repeat counts before interpreting scores. Human agreement requires independent labels from a domain expert; simulated labels are not real user-outcome validation. The illustrative uncertainty report does not establish a production mistake percentage.
+
+### What the thresholds mean
+
+Promptfoo’s 100% threshold means every required case in this fixed regression set must pass across its recorded repetitions. It does not mean the application answers every possible question correctly. The model-based DeepEval sample uses its separately configured score threshold of 0.7; that rubric and threshold require domain review before adoption in a production quality policy. Evidently measures distribution changes, which prompt investigation rather than proving answer failure. Keep critical authorization and data-disclosure assertions mandatory; investigate a failed answer or an incorrect grader instead of lowering the bar simply to pass.
 
 ## 7. Break, inspect, fix and rerun
 
@@ -646,6 +650,8 @@ Confirm actual costs in AWS Billing/Cost Explorer once usage appears. This docum
 Sources: [AWS PrivateLink pricing](https://aws.amazon.com/privatelink/pricing/), [OpenSearch NextGen pricing](https://aws.amazon.com/opensearch-service/pricing/), [AWS WAF pricing](https://aws.amazon.com/waf/pricing/), [Aurora auto-pause](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2-auto-pause.html).
 
 ## Implementation and test evidence
+
+Short follow-ups retain the last named HR topic and requested historical year. Historical searches are limited to superseded documents in versioned policy families identified by a stable document ID in the approved manifest. Legacy duplicates without that ID are excluded from historical answers. The manifest is packaged as data/policy_manifest.json with the deployed release, so retrieval and testing use reproducible policy provenance. See lambda/app/assistant.py, lambda/app/retrieval.py, lambda/app/search_index.py and ci/release.py.
 
 ### What we configure or change
 
@@ -892,7 +898,7 @@ We do not recreate those tools in Python. The adapters translate our captured AP
 
 | File | What it does | Why it exists / when it runs |
 |---|---|---|
-| `release.py` | Checks the prompt, publishes its numbered Langfuse version when requested, and packages Python with a release manifest | Bind prompt and code to an identifiable release before deployment |
+| `release.py` | Checks the prompt, publishes its numbered Langfuse version when requested, and packages Python, the approved policy catalog and release identity | Bind prompt and code to an identifiable release before deployment |
 | `deploy_candidate.py` | Uploads the backend package, publishes an immutable Lambda version and moves the candidate alias | Deploy the exact proposed staging release |
 | `deploy_frontend.py` | Uploads the built React site and invalidates CloudFront | Release frontend changes alongside the backend |
 | `auth.py` | Gets fresh Cognito tokens for dedicated synthetic identities | An authenticated API test needs a current token, not just an account created during setup |
@@ -933,5 +939,7 @@ Jobs do not automatically share their filesystem. Only explicitly uploaded/downl
 These unit tests check the helpers and application plumbing. The live API evaluation checks deployed behavior. Tool Actions add their configured views of the captured answers. Those stages have different inputs and purposes; running them is not running the same implementation twice.
 
 The application gateway adapter is in `lambda/app/model_gateway.py`; its service and database setup belong to infrastructure/bootstrap, not a duplicate evaluation Action. DeepEval invokes the gateway-backed evaluation Lambda rather than calling Bedrock directly. See [gateway controls](#gateway-implementation).
+
+
 
 

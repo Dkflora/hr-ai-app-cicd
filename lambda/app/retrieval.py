@@ -1,6 +1,8 @@
 """Search the policies, but only the documents this person's role may read."""
 
 import re
+import json
+from functools import cache
 
 from app import config, database, embeddings, search_index
 
@@ -8,7 +10,7 @@ from app import config, database, embeddings, search_index
 # or "before booking" are ordinary questions and must not pull superseded figures in.
 OLD_VERSION = re.compile(
     r"\b(old|older|previous|former|outdated|superseded)\s+(\w+\s+){0,3}?(policy|policies|version|rules?|handbook)\b"
-    r"|\bsuperseded\b|\blast year'?s\b|\bused to\b|\bprevious version\b",
+    r"|\bsuperseded\b|\blast year'?s\b|\bused to\b|\bprevious version\b|\bback then\b",
     re.IGNORECASE,
 )
 
@@ -95,12 +97,35 @@ def search_policies(question, role, old_version=False):
         results += [chunk for chunk in extra if chunk["content"] not in seen]
 
     if old:
-        results += _extra_matches(question_vector, levels, statuses=["superseded"])
+        # A historical answer must not substitute today's figures for missing history.
+        historical = _extra_matches(question_vector, levels, statuses=["superseded"])
+        if re.search(r"\b(pto|time off|annual leave|vacation|carryover|carry over)\b", question, re.I):
+            for topic in ("paid time off annual entitlement", "paid time off carryover unused days"):
+                vector = embeddings.embed([topic])[0]
+                historical += _extra_matches(vector, levels, statuses=["superseded"])
+        unique = {}
+        for chunk in historical:
+            unique[chunk["content"]] = chunk
+        return list(unique.values())
     return results
+
+
+@cache
+def historical_policy_files():
+    """Only versioned policy families are approved for historical answers.
+
+    Legacy duplicates without a stable policy ID remain excluded from history.
+    The manifest is packaged with the release so this selection is reproducible.
+    """
+    manifest = json.loads((config.DATA_DIR / "policy_manifest.json").read_text())
+    return [entry["filename"] for entry in manifest
+            if entry["status"] == "superseded" and entry.get("document_id")]
 
 
 def _extra_matches(question_vector, levels, **filters):
     """The closest few passages under an extra filter (a country, or superseded only)."""
+    if filters.get("statuses") == ["superseded"]:
+        filters["filenames"] = historical_policy_files()
     hits = search_index.search(question_vector, levels, **filters)
     chunks = []
     for hit in hits[:3]:

@@ -49,6 +49,7 @@ def package(publish=False, output_dir=None):
                     else:
                         archive.write(path, inside)
         archive.write(ROOT / 'lambda/data/evaluation_questions.json', 'data/evaluation_questions.json')
+        archive.write(ROOT / 'lambda/data/documents/manifest.json', 'data/policy_manifest.json')
         archive.writestr('app/release.json', json.dumps(release))
     release['artifact_sha256'] = digest((target / 'function.zip').read_bytes())
     (target / 'release.json').write_text(json.dumps(release, indent=2))

@@ -15,6 +15,15 @@ class ReleaseTests(unittest.TestCase):
     def test_real_prompt_parses(self):
         validate_prompt((ROOT/'lambda/app/prompts/hr_system.txt').read_text())
 
+    def test_package_includes_the_approved_policy_manifest(self):
+        import json, tempfile, zipfile
+        with tempfile.TemporaryDirectory() as temporary:
+            package(output_dir=temporary)
+            with zipfile.ZipFile(pathlib.Path(temporary) / "function.zip") as archive:
+                packaged = json.loads(archive.read("data/policy_manifest.json"))
+            approved = json.loads((ROOT / "lambda/data/documents/manifest.json").read_text())
+            self.assertEqual(packaged, approved)
+
     def test_extra_variable_rejected(self):
         with self.assertRaises(ValueError):
             validate_prompt('{full_name} {job_title} {department} {secret}')
@@ -79,3 +88,4 @@ class ReleaseTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
