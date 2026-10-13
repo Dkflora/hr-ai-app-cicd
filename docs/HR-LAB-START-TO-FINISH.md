@@ -148,12 +148,14 @@ Setup checks ingestion and makes an authenticated API request automatically. Con
 1. In AWS Console, open Cognito → User pools and select the pool from your Terraform outputs. Inspect its users and app client. Setup has already created the synthetic test accounts. To obtain a test login for your own deployment, run `terraform -chdir=infra/terraform output -raw evaluation_users_secret_arn`, then open that secret in AWS Secrets Manager → Retrieve secret value. Select a test account and use its credentials privately; do not copy the secret into a commit, screenshot or workflow log.
 2. Sign into the chatbot. Follow the browser token → API Gateway → trusted claims → employee permissions flow. Do not display bearer tokens or passwords.
 3. Ask "How many PTO days do employees receive each year?" and a follow-up. Find the session and opaque user identifier in Langfuse, then policy tool, model and inline judge spans. Inspect the numbered prompt version.
-4. Inspect [`ci/auth.py`](../ci/auth.py): pipeline AWS permission allows admin authentication of synthetic users, credentials come from the lab secret, and fresh tokens remain in memory. It does not bypass API or data permissions.
+4. Inspect [`ci/auth.py`](../ci/auth.py): pipeline AWS permission allows admin authentication of synthetic users, credentials come from the deployment’s test-user secret, and fresh tokens remain in memory. It does not bypass API or data permissions.
 5. Distinguish inline judging (before response, bounded revision/fallback) from Langfuse post-run scoring. Neither replaces access controls.
 
 After this section, the chatbot request should appear under the same user and conversation in Langfuse, including retrieval, generation and judge observations.
 
 ## 4. Build branch and PR checks
+
+Terraform has two different roles in this project. During step 2, the setup script runs Terraform to create the AWS resources. In the workflow below, Terraform only checks the infrastructure source: `fmt -check` verifies formatting, `init -backend=false` installs providers without connecting to the deployment state backend, and `validate` checks configuration consistency. These checks catch invalid infrastructure edits before merge. They do not run `plan` or `apply`, create resources, or redeploy the database. A real infrastructure change still requires a separately reviewed plan and apply.
 
 Create `.github/workflows/hr-quality.yml` and paste the complete workflow below. Keep the indentation exactly as shown. This first version runs checks without deploying to AWS.
 
@@ -189,12 +191,14 @@ jobs:
         run: |
           python ci/release.py
           bash scripts/build-layer.sh
+      # Install Terraform for source validation, not infrastructure deployment.
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
           terraform_version: '1.15.9'
       - name: Terraform formatting and static validation
         run: |
+          # Check formatting; install providers without the state backend; validate configuration.
           terraform -chdir=infra/terraform fmt -check
           terraform -chdir=infra/terraform init -backend=false
           terraform -chdir=infra/terraform validate
@@ -574,9 +578,9 @@ See [GitHub Importer](https://docs.github.com/en/migrations/importing-source-cod
 
 GitHub documents these plan requirements in [Deployments and environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
 
-See [the change, test and evidence map](#implementation-and-test-evidence) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
+See [the implementation and test evidence section](#implementation-and-test-evidence) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
 
-Read [the LLM gateway guide](#gateway-implementation) for routing, Aurora separation, configured allowances, tests and remaining production requirements. Gateway setup runs inside the provided bootstrap command.
+Read [the gateway implementation section](#gateway-implementation) for routing, Aurora separation, configured allowances, tests and remaining production requirements. Gateway setup runs inside the provided bootstrap command.
 
 
 
