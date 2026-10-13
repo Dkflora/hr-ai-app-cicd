@@ -10,20 +10,16 @@ Follow the numbered sections in order. Each section links to the configuration, 
 
 ## Delivery model
 
-This project follows this process: create a short-lived branch → make and test a change → open a pull request → review and merge to main → deploy to staging → evaluate → approve the release.
+The branch names below describe the specific change we are making. They are examples, not separate deployments or branches that must already exist. Create each branch when its step instructs you to.
 
-This follows [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow), a documented workflow used by engineering teams. A branch isolates a proposed change while the pull request provides a place for automated checks and human review. After merge, main identifies the reviewed code used by the delivery pipeline. Teams vary in branch naming, deployment triggers and approval rules; this is a common pattern, not a requirement that every company uses the same configuration.
-
-The names below are **examples of temporary change branches**, not branches that must already exist or separate application environments. Create each one only when its numbered exercise instructs you to. Feature branches introduce behavior; fix branches repair defects. The test branch here is specifically for a controlled failure exercise: it proves the release gate can catch a regression and that a repair restores the expected result. Deliberately breaking a change is performed only against synthetic staging; it is not a normal production release practice.
-
-All three changes use the same review path: branch → pull request → checks and review → merge. In this repository, merging to main starts staging deployment and live evaluation; opening the pull request runs branch checks without deployment credentials. The protected production handoff follows passing staging checks and remains a dry run in this project.
-
-| Branch | Purpose |
+| Branch | Why we use it |
 |---|---|
-| `feature/ci-quality-gate` | Add the delivery pipeline |
-| `test/tool-budget-regression` | Reproduce a controlled failure in synthetic staging |
-| `fix/restore-tool-budget` | Restore the tested behavior |
-| `main` | Deploy the reviewed version to staging and run release checks |
+| `feature/ci-quality-gate` | We are adding a new capability: the delivery pipeline and its evaluation checks. The `feature` name identifies that addition. |
+| `test/tool-budget-regression` | We deliberately reduce the tool limit to verify that the pipeline detects the resulting failure. The `test` name identifies this controlled check against synthetic staging. |
+| `fix/restore-tool-budget` | We restore the tool limit and rerun the same cases to verify the repair. The `fix` name identifies the correction. |
+| `main` | This holds the reviewed changes. Merging here triggers staging deployment and release checks. It is the default branch cloned at the beginning. |
+
+These names make the purpose of each change clear in the pull request and workflow history. The feature, test and fix branches are temporary; all use the same pull-request review process before merging to main. The deliberate failure is limited to synthetic staging.
 
 Branch and pull-request checks run without deployment credentials. Merging a reviewed change to main deploys the new version to staging and tests the authenticated API. A candidate is the new version under evaluation. Required failures block approval. A passing run updates the approved staging alias, then starts the production handoff dry run.
 
@@ -508,5 +504,6 @@ GitHub documents these plan requirements in [Deployments and environments](https
 See [the change, test and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
 
 Read [the LLM gateway guide](LLM-GATEWAY.md) for routing, Aurora separation, configured allowances, tests and remaining production requirements. Gateway setup runs inside the provided bootstrap command.
+
 
 
