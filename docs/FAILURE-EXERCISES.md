@@ -10,7 +10,7 @@ Use one exercise live to demonstrate the gate. The others cover additional failu
 4. The `approved` alias is the approved release pointer within staging; the UI/API evaluates the candidate. A failed candidate can be visible in the staging UI even though promotion is blocked. Do not describe approved as a separate production stack.
 5. If a new unexplained baseline failure appears, diagnose it before starting an exercise. A previous passing run is evidence for that run, not a guarantee of all future model outputs.
 
-## Exercise 1: deterministic tool-budget failure (recommended live)
+## Exercise 1: deterministic tool-budget failure
 
 **Break:** In `lambda/app/assistant.py`, change `MAX_TOOL_ROUNDS = 5` to `MAX_TOOL_ROUNDS = 1`. Commit, push, inspect branch checks, open the PR, then have an authorized reviewer approve and merge it for the candidate run.
 

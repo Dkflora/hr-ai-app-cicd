@@ -123,11 +123,13 @@ Setup checks ingestion and makes an authenticated API request automatically. Con
 
 ## 3. Cognito and a real trace
 
-1. Inspect the existing Cognito pool, synthetic users and app client. The project owner supplies synthetic test-account credentials through an approved channel.
+1. In AWS Console, open Cognito → User pools and select the pool from your Terraform outputs. Inspect its users and app client. Setup has already created the synthetic test accounts. To obtain a test login for your own deployment, run `terraform -chdir=infra/terraform output -raw evaluation_users_secret_arn`, then open that secret in AWS Secrets Manager → Retrieve secret value. Select a test account and use its credentials privately; do not copy the secret into a commit, screenshot or workflow log.
 2. Sign into the chatbot. Follow the browser token → API Gateway → trusted claims → employee permissions flow. Do not display bearer tokens or passwords.
 3. Ask "How many PTO days do employees receive each year?" and a follow-up. Find the session and opaque user identifier in Langfuse, then policy tool, model and inline judge spans. Inspect the numbered prompt version.
 4. Inspect [`ci/auth.py`](../ci/auth.py): pipeline AWS permission allows admin authentication of synthetic users, credentials come from the lab secret, and fresh tokens remain in memory. It does not bypass API or data permissions.
 5. Distinguish inline judging (before response, bounded revision/fallback) from Langfuse post-run scoring. Neither replaces access controls.
+
+After this section, the chatbot request should appear under the same user and conversation in Langfuse, including retrieval, generation and judge observations.
 
 ## 4. Build branch and PR checks
 
@@ -193,6 +195,8 @@ git push -u origin feature/pipeline
 ```
 
 In GitHub, click **Compare & pull request**, choose `main` as base and your feature branch as compare, then create the PR. Open its **Checks** tab and inspect Actions. Open one test under `ci/tests/` and identify its input and expected result. Branch/PR code receives no AWS or Langfuse credentials. In repository Settings, configure main protection and required `checks` plus reviewer policy where available. A designated reviewer reviews the PR. GitHub plan/organization features can restrict private-repository protections; state any unavailable control explicitly rather than claiming it exists.
+
+Before continuing, confirm the pull request’s `checks` job passes. Keep this pull request open: step 5 adds deployment and evaluation jobs to the same change before it is merged.
 
 ## 5. Wire protected staging
 
