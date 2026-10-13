@@ -21,6 +21,18 @@ The branch names below describe the specific change we are making. They are exam
 
 These names make the purpose of each change clear in the pull request and workflow history. The feature, test and fix branches are temporary; all use the same pull-request review process before merging to main. The deliberate failure is limited to synthetic staging.
 
+### How the three changes relate
+
+Each temporary branch starts from the latest main and returns to main through its own pull request. They are not development, QA or UAT environments, and we do not merge feature → test → fix.
+
+1. **Add the pipeline:** Create `feature/pipeline` from main. Add the workflow in steps 4 and 5. Push it and open a PR. Keep that PR open while adding the deployment jobs. Once checks and review pass, merge it into main. The merge runs staging deployment and live evaluations. Confirm this baseline passes before continuing.
+2. **Verify failure detection:** Create `test/tool-limit` from the updated main. Reduce the tool rounds from five to one, push and open a new PR. Branch checks may pass because the code remains valid. For this controlled exercise, review and merge the change into synthetic staging. The post-merge live evaluation should fail and block release approval. **The PR is already merged; it is the release gate that is blocked.**
+3. **Repair and verify:** Create `fix/tool-limit` from the latest main, which now includes the reduced limit. Restore five rounds, push and open another PR. After checks and review, merge the repair. This starts a new staging evaluation run. Compare its passing results with the failed run and confirm the repaired release is approved.
+
+The engineer making each change maintains its branch until the PR is merged; the completed branch can then be deleted. Main keeps the history of all three reviewed changes.
+
+If checks fail **before a PR merges**, normally correct the same branch and push again: the existing PR updates automatically. A new fix branch is used in this exercise because the faulty change has already merged and the post-merge release gate rejected it. We do not abandon a blocked PR or bypass its checks.
+
 Branch and pull-request checks run without deployment credentials. Merging a reviewed change to main deploys the new version to staging and tests the authenticated API. A candidate is the new version under evaluation. Required failures block approval. A passing run updates the approved staging alias, then starts the production handoff dry run.
 
 ### From staging to production
@@ -506,6 +518,8 @@ Inspect results in Actions, Langfuse and the downloaded Evidently artifact. Comp
 
 ## 7. Break, inspect, fix and rerun
 
+This exercise demonstrates a post-merge release failure. The test PR merges into main, but live staging tests block release approval. The repair therefore uses a new PR from the latest main. If a PR fails before merging, repair that existing PR instead.
+
 Start this exercise only after the baseline main-branch pipeline passes. The complete break-and-repair steps are below:
 
 ```bash
@@ -930,4 +944,5 @@ Jobs do not automatically share their filesystem. Only explicitly uploaded/downl
 These unit tests check the helpers and application plumbing. The live API evaluation checks deployed behavior. Tool Actions add their configured views of the captured answers. Those stages have different inputs and purposes; running them is not running the same implementation twice.
 
 The application gateway adapter is in `lambda/app/model_gateway.py`; its service and database setup belong to infrastructure/bootstrap, not a duplicate evaluation Action. DeepEval invokes the gateway-backed evaluation Lambda rather than calling Bedrock directly. See [gateway controls](#gateway-implementation).
+
 
