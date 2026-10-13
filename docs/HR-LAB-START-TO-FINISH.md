@@ -14,9 +14,9 @@ The branch names below describe the specific change we are making. They are exam
 
 | Branch | Why we use it |
 |---|---|
-| `feature/ci-quality-gate` | We are adding a new capability: the delivery pipeline and its evaluation checks. The `feature` name identifies that addition. |
-| `test/tool-budget-regression` | We deliberately reduce the tool limit to verify that the pipeline detects the resulting failure. The `test` name identifies this controlled check against synthetic staging. |
-| `fix/restore-tool-budget` | We restore the tool limit and rerun the same cases to verify the repair. The `fix` name identifies the correction. |
+| `feature/pipeline` | We are adding a new capability: the delivery pipeline and its evaluation checks. The `feature` name identifies that addition. |
+| `test/tool-limit` | We deliberately reduce the tool limit to verify that the pipeline detects the resulting failure. The `test` name identifies this controlled check against synthetic staging. |
+| `fix/tool-limit` | We restore the tool limit and rerun the same cases to verify the repair. The `fix` name identifies the correction. |
 | `main` | This holds the reviewed changes. Merging here triggers staging deployment and release checks. It is the default branch cloned at the beginning. |
 
 These names make the purpose of each change clear in the pull request and workflow history. The feature, test and fix branches are temporary; all use the same pull-request review process before merging to main. The deliberate failure is limited to synthetic staging.
@@ -69,7 +69,7 @@ The source repository is public. **Import it into your own GitHub account first*
 git clone https://github.com/YOUR-USERNAME/hr-rag-lab.git
 cd hr-rag-lab
 git remote -v
-git switch -c feature/ci-quality-gate
+git switch -c feature/pipeline
 ```
 
 Replace `YOUR-USERNAME` with your account name. The origin must point to your imported repository, not the source repository. Configure pull requests, Actions, secrets and environments in the GitHub website. Use the GitHub website for repository settings and pull requests.
@@ -138,7 +138,7 @@ mkdir -p .github/workflows
 python -m unittest discover -s ci/tests -v
 git add .github/workflows/hr-quality.yml
 git commit -m "Add HR branch and pull-request checks"
-git push -u origin feature/ci-quality-gate
+git push -u origin feature/pipeline
 ```
 
 In GitHub, click **Compare & pull request**, choose `main` as base and your feature branch as compare, then create the PR. Open its **Checks** tab and inspect Actions. Open one test under `ci/tests/` and identify its input and expected result. Branch/PR code receives no AWS or Langfuse credentials. In repository Settings, configure main protection and required `checks` plus reviewer policy where available. A designated reviewer reviews the PR. GitHub plan/organization features can restrict private-repository protections; state any unavailable control explicitly rather than claiming it exists.
@@ -207,7 +207,7 @@ Use [FAILURE-EXERCISES.md](FAILURE-EXERCISES.md), Exercise 1. Start from the now
 ```bash
 git switch main
 git pull --ff-only
-git switch -c test/tool-budget-regression
+git switch -c test/tool-limit
 ```
 
 In the editor, change only `MAX_TOOL_ROUNDS = 5` to `MAX_TOOL_ROUNDS = 1` in `lambda/app/assistant.py`.
@@ -215,17 +215,17 @@ In the editor, change only `MAX_TOOL_ROUNDS = 5` to `MAX_TOOL_ROUNDS = 1` in `la
 ```bash
 git add lambda/app/assistant.py
 git commit -m "Exercise: limit the agent to one tool round"
-git push -u origin test/tool-budget-regression
+git push -u origin test/tool-limit
 ```
 
-In the GitHub website, open a PR from `test/tool-budget-regression` into `main` and inspect its Checks tab. Static checks can pass despite this behavior regression. After reviewer approval and merge, inspect the **new main run**, its failed live assertions and Langfuse trace. The tool lookup consumes the only round; the next answer-generation turn cannot occur. Confirm promotion/demo are skipped and approved remains the baseline. The staging UI still uses candidate, so it can show the deliberately broken answer while release is blocked.
+In the GitHub website, open a PR from `test/tool-limit` into `main` and inspect its Checks tab. Static checks can pass despite this behavior regression. After reviewer approval and merge, inspect the **new main run**, its failed live assertions and Langfuse trace. The tool lookup consumes the only round; the next answer-generation turn cannot occur. Confirm promotion/demo are skipped and approved remains the baseline. The staging UI still uses candidate, so it can show the deliberately broken answer while release is blocked.
 
 Fix with another short branch/PR:
 
 ```bash
 git switch main
 git pull --ff-only
-git switch -c fix/restore-tool-budget
+git switch -c fix/tool-limit
 ```
 
 Restore `MAX_TOOL_ROUNDS = 5` in the editor.
@@ -233,10 +233,10 @@ Restore `MAX_TOOL_ROUNDS = 5` in the editor.
 ```bash
 git add lambda/app/assistant.py
 git commit -m "Restore the working tool budget"
-git push -u origin fix/restore-tool-budget
+git push -u origin fix/tool-limit
 ```
 
-In GitHub, open a PR from `fix/restore-tool-budget` into `main`, inspect checks and obtain review. After merge, select the newest main run in the Actions tab. Keep the question/reference unchanged; compare failed/fixed traces, case results and exact release identity. All required evaluations must pass before promotion. If model variation causes an unrelated failure, investigate it.
+In GitHub, open a PR from `fix/tool-limit` into `main`, inspect checks and obtain review. After merge, select the newest main run in the Actions tab. Keep the question/reference unchanged; compare failed/fixed traces, case results and exact release identity. All required evaluations must pass before promotion. If model variation causes an unrelated failure, investigate it.
 
 ## 8. Production handoff, recovery and evidence
 
@@ -504,6 +504,7 @@ GitHub documents these plan requirements in [Deployments and environments](https
 See [the change, test and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
 
 Read [the LLM gateway guide](LLM-GATEWAY.md) for routing, Aurora separation, configured allowances, tests and remaining production requirements. Gateway setup runs inside the provided bootstrap command.
+
 
 
 
