@@ -10,7 +10,13 @@ Follow the numbered sections in order. Each section links to the configuration, 
 
 ## Delivery model
 
-This project follows this process: review the change → deploy the new version to staging → run evaluations → approve the release. Use purpose-based branch names:
+This project follows this process: create a short-lived branch → make and test a change → open a pull request → review and merge to main → deploy to staging → evaluate → approve the release.
+
+This follows [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow), a documented workflow used by engineering teams. A branch isolates a proposed change while the pull request provides a place for automated checks and human review. After merge, main identifies the reviewed code used by the delivery pipeline. Teams vary in branch naming, deployment triggers and approval rules; this is a common pattern, not a requirement that every company uses the same configuration.
+
+The names below are **examples of temporary change branches**, not branches that must already exist or separate application environments. Create each one only when its numbered exercise instructs you to. Feature branches introduce behavior; fix branches repair defects. The test branch here is specifically for a controlled failure exercise: it proves the release gate can catch a regression and that a repair restores the expected result. Deliberately breaking a change is performed only against synthetic staging; it is not a normal production release practice.
+
+All three changes use the same review path: branch → pull request → checks and review → merge. In this repository, merging to main starts staging deployment and live evaluation; opening the pull request runs branch checks without deployment credentials. The protected production handoff follows passing staging checks and remains a dry run in this project.
 
 | Branch | Purpose |
 |---|---|
@@ -502,4 +508,5 @@ GitHub documents these plan requirements in [Deployments and environments](https
 See [the change, test and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for what we edit, all 43 application cases, the executing helper or Action, and generated outputs.
 
 Read [the LLM gateway guide](LLM-GATEWAY.md) for routing, Aurora separation, configured allowances, tests and remaining production requirements. Gateway setup runs inside the provided bootstrap command.
+
 
