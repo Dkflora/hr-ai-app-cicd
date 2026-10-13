@@ -131,130 +131,7 @@ Setup checks ingestion and makes an authenticated API request automatically. Con
 
 ## 4. Build branch and PR checks
 
-Create `.github/workflows/hr-quality.yml` in the editor and paste **Block A** from the workflow section below. Keep its exact indentation. This block alone is a valid initial workflow.
-
-```bash
-mkdir -p .github/workflows
-python -m unittest discover -s ci/tests -v
-git add .github/workflows/hr-quality.yml
-git commit -m "Add HR branch and pull-request checks"
-git push -u origin feature/pipeline
-```
-
-In GitHub, click **Compare & pull request**, choose `main` as base and your feature branch as compare, then create the PR. Open its **Checks** tab and inspect Actions. Open one test under `ci/tests/` and identify its input and expected result. Branch/PR code receives no AWS or Langfuse credentials. In repository Settings, configure main protection and required `checks` plus reviewer policy where available. A designated reviewer reviews the PR. GitHub plan/organization features can restrict private-repository protections; state any unavailable control explicitly rather than claiming it exists.
-
-## 5. Wire protected staging
-
-If no role exists, follow [GITHUB-AWS-OIDC-SETUP.md](GITHUB-AWS-OIDC-SETUP.md) to generate reviewed policies and create a scoped role. Otherwise, the project owner supplies an AWS role ARN whose OIDC trust allows **our exact repository** and `hr-staging`, with audience `sts.amazonaws.com`. New repositories can use immutable owner/repository IDs in their OIDC subject; the project owner must inspect that configuration. Do not reuse another repository's role or broaden trust to all repositories. Its scoped permissions cover only our staging Lambda/aliases, test-user secret, Cognito pool, frontend bucket/distribution and invocation of the evaluation Lambda. Model calls from evaluation judges use the gateway through that Lambda. `lambda:GetFunction` is required by the update waiter.
-
-Append **Block B** and **Block C** below to the same workflow file, keeping `candidate` and `production-handoff-dry-run` beneath `jobs`. The Python helpers are supplied; we configure the workflow blocks.
-
-In the GitHub website, open **your repository → Settings → Environments → New environment**. Create `hr-staging` and `hr-production-approval`.
-
-Open `hr-staging`. Under **Environment variables**, click **Add environment variable** for each name in the table below. Read the values from Terraform outputs and the generated frontend file:
-
-```bash
-terraform -chdir=infra/terraform output
-```
-
-For one exact value, use `terraform -chdir=infra/terraform output -raw OUTPUT_NAME`, replacing `OUTPUT_NAME` with the table's output name. Get the AWS role ARN from the OIDC console walkthrough or your AWS account administrator. Use `us-east-1` for this deployment.
-
-Under **Environment secrets**, click **Add environment secret** for `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`, using your saved local key pair. Keys remain outside source code and React. 
-
-| Variable | Source |
-|---|---|
-| AWS_REGION | us-east-1 |
-| AWS_STAGING_ROLE_ARN | Repository-scoped role created through the OIDC walkthrough |
-| HR_STAGING_FUNCTION | candidate_function Terraform output |
-| HR_EVALUATION_FUNCTION | evaluation_function Terraform output |
-| HR_STAGING_ORIGIN | app_url output |
-| HR_TEST_USERS_SECRET_ARN | evaluation_users_secret_arn output |
-| HR_COGNITO_POOL_ID / HR_COGNITO_CLIENT_ID | cognito_user_pool_id / cognito_client_id outputs |
-| HR_STAGING_FRONTEND_BUCKET / HR_STAGING_DISTRIBUTION_ID | frontend_bucket / cloudfront_distribution_id outputs |
-| VITE_COGNITO_AUTHORITY / VITE_COGNITO_DOMAIN | Generated frontend/.env.production |
-| LANGFUSE_BASE_URL | Ignored .env.langfuse |
-| ENABLE_DEEPEVAL / ENABLE_EVIDENTLY | true |
-
-Secrets: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY, read from the ignored local file. No long-lived AWS keys enter GitHub.
-
-In Settings → Environments, restrict staging to main and configure a designated reviewer where available. Configure the production-approval reviewer too. If self-review prevention is enabled, the person initiating a deployment cannot approve it; assign another reviewer. Document any approval features unavailable on your GitHub plan.
-
-```bash
-git add .github/workflows/hr-quality.yml
-git commit -m "Connect staging deployment and AI evaluation gate"
-git push
-```
-
-Open the existing PR in GitHub, confirm its Checks tab passes, and obtain reviewer approval. Then merge the PR in the browser. Merge to main triggers the protected deployment. Approve the environment when required, then:
-
-Open your repository's **Actions** tab, select the newest main-branch run for this merge, and follow the jobs. Approve the staging deployment when required. Read the job summary and logs in the browser; do not select an older passing run.
-
-Follow prompt publication, staging deployment, 43 test cases run twice, evaluation tools, the report and the approved alias. See [the implementation and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for each stage's script, inputs and outputs. All required results must pass. If readiness or deployment fails, inspect the actual failed step; do not skip jobs or weaken assertions.
-
-## 6. Interpret the four tools
-
-- Promptfoo: deterministic required/prohibited facts and source assertions over captured real API answers.
-- Langfuse: dataset experiment outputs and scores by numbered prompt/code release. The experiment replays captured outputs; it does not independently regenerate another sample.
-- DeepEval: prepared reference-aware model grader. Examine one reason; a model grade can be wrong. This step runs when enabled and earlier required steps succeed.
-- Evidently: numeric answer-length/latency comparison with a captured failing nonproduction reference. A distribution shift requests investigation, not automatic rejection of answer quality. Report generation must succeed when enabled.
-
-Inspect results in Actions, Langfuse and the downloaded Evidently artifact. Compare cases and repeat counts before interpreting scores. Human agreement requires independent labels from a domain expert; simulated labels are not real user-outcome validation. The illustrative uncertainty report does not establish a production mistake percentage.
-
-## 7. Break, inspect, fix and rerun
-
-Use [FAILURE-EXERCISES.md](FAILURE-EXERCISES.md), Exercise 1. Start from the now-passing main branch:
-
-```bash
-git switch main
-git pull --ff-only
-git switch -c test/tool-limit
-```
-
-In the editor, change only `MAX_TOOL_ROUNDS = 5` to `MAX_TOOL_ROUNDS = 1` in `lambda/app/assistant.py`.
-
-```bash
-git add lambda/app/assistant.py
-git commit -m "Exercise: limit the agent to one tool round"
-git push -u origin test/tool-limit
-```
-
-In the GitHub website, open a PR from `test/tool-limit` into `main` and inspect its Checks tab. Static checks can pass despite this behavior regression. After reviewer approval and merge, inspect the **new main run**, its failed live assertions and Langfuse trace. The tool lookup consumes the only round; the next answer-generation turn cannot occur. Confirm promotion/demo are skipped and approved remains the baseline. The staging UI still uses candidate, so it can show the deliberately broken answer while release is blocked.
-
-Fix with another short branch/PR:
-
-```bash
-git switch main
-git pull --ff-only
-git switch -c fix/tool-limit
-```
-
-Restore `MAX_TOOL_ROUNDS = 5` in the editor.
-
-```bash
-git add lambda/app/assistant.py
-git commit -m "Restore the working tool budget"
-git push -u origin fix/tool-limit
-```
-
-In GitHub, open a PR from `fix/tool-limit` into `main`, inspect checks and obtain review. After merge, select the newest main run in the Actions tab. Keep the question/reference unchanged; compare failed/fixed traces, case results and exact release identity. All required evaluations must pass before promotion. If model variation causes an unrelated failure, investigate it.
-
-## 8. Production handoff, recovery and evidence
-
-The final job verifies the exact merged commit and passing report, then demonstrates a production handoff. It does not deploy a second stack or move production traffic. React, prompt and backend come from the same reviewed commit; initial Terraform changes require a separate reviewed apply.
-
-Review the prepared `ci/rollback_lab.py` and prior approved-version evidence. Run rollback only after confirming the previous approved version exists; do not roll back or destroy shared infrastructure automatically.
-
-Retain branch/PR and failing/fixed run links, corresponding trace links, the passing report, tool-result explanations and release/recovery reasoning. Review [the combined OWASP coverage map](OWASP-EVIDENCE.md) for controls, tests and remaining gaps across HR and Kubernetes.
-
-## Understand the supplied automation
-
-Read [the CI helper map](../ci/README.md) for every script, its purpose, and why it is needed. It distinguishes official tool Actions, application-specific adapters, deployment helpers and additional analysis. The helpers are supplied; configure and connect their workflow steps rather than copy Python source.
-
-## Exact workflow blocks
-
-Paste A first. Append B and C later in the same file. These blocks define the delivery workflow by job; no Python source needs copying. The starter deliberately has **no active workflow** until we assemble it.
-
-### Block A — branch/PR checks
+Create `.github/workflows/hr-quality.yml` and paste the complete workflow below. Keep the indentation exactly as shown. This first version runs checks without deploying to AWS.
 
 ```yaml
 # Reviewed changes, staging evaluation and release approval.
@@ -307,7 +184,23 @@ jobs:
       - run: npm --prefix frontend run build
 ```
 
-### Block B — protected candidate and evaluation gate
+```bash
+mkdir -p .github/workflows
+python -m unittest discover -s ci/tests -v
+git add .github/workflows/hr-quality.yml
+git commit -m "Add HR branch and pull-request checks"
+git push -u origin feature/pipeline
+```
+
+In GitHub, click **Compare & pull request**, choose `main` as base and your feature branch as compare, then create the PR. Open its **Checks** tab and inspect Actions. Open one test under `ci/tests/` and identify its input and expected result. Branch/PR code receives no AWS or Langfuse credentials. In repository Settings, configure main protection and required `checks` plus reviewer policy where available. A designated reviewer reviews the PR. GitHub plan/organization features can restrict private-repository protections; state any unavailable control explicitly rather than claiming it exists.
+
+## 5. Wire protected staging
+
+If no role exists, follow [GITHUB-AWS-OIDC-SETUP.md](GITHUB-AWS-OIDC-SETUP.md) to generate reviewed policies and create a scoped role. Otherwise, the project owner supplies an AWS role ARN whose OIDC trust allows **our exact repository** and `hr-staging`, with audience `sts.amazonaws.com`. New repositories can use immutable owner/repository IDs in their OIDC subject; the project owner must inspect that configuration. Do not reuse another repository's role or broaden trust to all repositories. Its scoped permissions cover only our staging Lambda/aliases, test-user secret, Cognito pool, frontend bucket/distribution and invocation of the evaluation Lambda. Model calls from evaluation judges use the gateway through that Lambda. `lambda:GetFunction` is required by the update waiter.
+
+Append the two jobs below to `.github/workflows/hr-quality.yml`, after the existing `checks` job. Keep both job names indented beneath `jobs`. Do not replace the workflow header or the checks job.
+
+### Staging deployment and evaluations
 
 ```yaml
   candidate:
@@ -460,7 +353,7 @@ jobs:
           retention-days: 3
 ```
 
-### Block C — production handoff (dry run)
+### Production handoff dry run
 
 ```yaml
   production-handoff-dry-run:
@@ -494,6 +387,107 @@ jobs:
           print('No production resources or traffic are changed by this dry-run job.')
           PY
 ```
+
+In the GitHub website, open **your repository → Settings → Environments → New environment**. Create `hr-staging` and `hr-production-approval`.
+
+Open `hr-staging`. Under **Environment variables**, click **Add environment variable** for each name in the table below. Read the values from Terraform outputs and the generated frontend file:
+
+```bash
+terraform -chdir=infra/terraform output
+```
+
+For one exact value, use `terraform -chdir=infra/terraform output -raw OUTPUT_NAME`, replacing `OUTPUT_NAME` with the table's output name. Get the AWS role ARN from the OIDC console walkthrough or your AWS account administrator. Use `us-east-1` for this deployment.
+
+Under **Environment secrets**, click **Add environment secret** for `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`, using your saved local key pair. Keys remain outside source code and React. 
+
+| Variable | Source |
+|---|---|
+| AWS_REGION | us-east-1 |
+| AWS_STAGING_ROLE_ARN | Repository-scoped role created through the OIDC walkthrough |
+| HR_STAGING_FUNCTION | candidate_function Terraform output |
+| HR_EVALUATION_FUNCTION | evaluation_function Terraform output |
+| HR_STAGING_ORIGIN | app_url output |
+| HR_TEST_USERS_SECRET_ARN | evaluation_users_secret_arn output |
+| HR_COGNITO_POOL_ID / HR_COGNITO_CLIENT_ID | cognito_user_pool_id / cognito_client_id outputs |
+| HR_STAGING_FRONTEND_BUCKET / HR_STAGING_DISTRIBUTION_ID | frontend_bucket / cloudfront_distribution_id outputs |
+| VITE_COGNITO_AUTHORITY / VITE_COGNITO_DOMAIN | Generated frontend/.env.production |
+| LANGFUSE_BASE_URL | Ignored .env.langfuse |
+| ENABLE_DEEPEVAL / ENABLE_EVIDENTLY | true |
+
+Secrets: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY, read from the ignored local file. No long-lived AWS keys enter GitHub.
+
+In Settings → Environments, restrict staging to main and configure a designated reviewer where available. Configure the production-approval reviewer too. If self-review prevention is enabled, the person initiating a deployment cannot approve it; assign another reviewer. Document any approval features unavailable on your GitHub plan.
+
+```bash
+git add .github/workflows/hr-quality.yml
+git commit -m "Connect staging deployment and AI evaluation gate"
+git push
+```
+
+Open the existing PR in GitHub, confirm its Checks tab passes, and obtain reviewer approval. Then merge the PR in the browser. Merge to main triggers the protected deployment. Approve the environment when required, then:
+
+Open your repository's **Actions** tab, select the newest main-branch run for this merge, and follow the jobs. Approve the staging deployment when required. Read the job summary and logs in the browser; do not select an older passing run.
+
+Follow prompt publication, staging deployment, 43 test cases run twice, evaluation tools, the report and the approved alias. See [the implementation and evidence map](CHANGE-TEST-EVIDENCE-MAP.md) for each stage's script, inputs and outputs. All required results must pass. If readiness or deployment fails, inspect the actual failed step; do not skip jobs or weaken assertions.
+
+## 6. Interpret the four tools
+
+- Promptfoo: deterministic required/prohibited facts and source assertions over captured real API answers.
+- Langfuse: dataset experiment outputs and scores by numbered prompt/code release. The experiment replays captured outputs; it does not independently regenerate another sample.
+- DeepEval: prepared reference-aware model grader. Examine one reason; a model grade can be wrong. This step runs when enabled and earlier required steps succeed.
+- Evidently: numeric answer-length/latency comparison with a captured failing nonproduction reference. A distribution shift requests investigation, not automatic rejection of answer quality. Report generation must succeed when enabled.
+
+Inspect results in Actions, Langfuse and the downloaded Evidently artifact. Compare cases and repeat counts before interpreting scores. Human agreement requires independent labels from a domain expert; simulated labels are not real user-outcome validation. The illustrative uncertainty report does not establish a production mistake percentage.
+
+## 7. Break, inspect, fix and rerun
+
+Use [FAILURE-EXERCISES.md](FAILURE-EXERCISES.md), Exercise 1. Start from the now-passing main branch:
+
+```bash
+git switch main
+git pull --ff-only
+git switch -c test/tool-limit
+```
+
+In the editor, change only `MAX_TOOL_ROUNDS = 5` to `MAX_TOOL_ROUNDS = 1` in `lambda/app/assistant.py`.
+
+```bash
+git add lambda/app/assistant.py
+git commit -m "Exercise: limit the agent to one tool round"
+git push -u origin test/tool-limit
+```
+
+In the GitHub website, open a PR from `test/tool-limit` into `main` and inspect its Checks tab. Static checks can pass despite this behavior regression. After reviewer approval and merge, inspect the **new main run**, its failed live assertions and Langfuse trace. The tool lookup consumes the only round; the next answer-generation turn cannot occur. Confirm promotion/demo are skipped and approved remains the baseline. The staging UI still uses candidate, so it can show the deliberately broken answer while release is blocked.
+
+Fix with another short branch/PR:
+
+```bash
+git switch main
+git pull --ff-only
+git switch -c fix/tool-limit
+```
+
+Restore `MAX_TOOL_ROUNDS = 5` in the editor.
+
+```bash
+git add lambda/app/assistant.py
+git commit -m "Restore the working tool budget"
+git push -u origin fix/tool-limit
+```
+
+In GitHub, open a PR from `fix/tool-limit` into `main`, inspect checks and obtain review. After merge, select the newest main run in the Actions tab. Keep the question/reference unchanged; compare failed/fixed traces, case results and exact release identity. All required evaluations must pass before promotion. If model variation causes an unrelated failure, investigate it.
+
+## 8. Production handoff, recovery and evidence
+
+The final job verifies the exact merged commit and passing report, then demonstrates a production handoff. It does not deploy a second stack or move production traffic. React, prompt and backend come from the same reviewed commit; initial Terraform changes require a separate reviewed apply.
+
+Review the prepared `ci/rollback_lab.py` and prior approved-version evidence. Run rollback only after confirming the previous approved version exists; do not roll back or destroy shared infrastructure automatically.
+
+Retain branch/PR and failing/fixed run links, corresponding trace links, the passing report, tool-result explanations and release/recovery reasoning. Review [the combined OWASP coverage map](OWASP-EVIDENCE.md) for controls, tests and remaining gaps across HR and Kubernetes.
+
+## Understand the supplied automation
+
+Read [the CI helper map](../ci/README.md) for every script, its purpose, and why it is needed. It distinguishes official tool Actions, application-specific adapters, deployment helpers and additional analysis. The helpers are supplied; configure and connect their workflow steps rather than copy Python source.
 
 ## Command references
 
