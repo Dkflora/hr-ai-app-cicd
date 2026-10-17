@@ -1,6 +1,6 @@
 # HR policy assistant: evaluation and delivery
 
-An AWS HR application with a React frontend, Python backend, authenticated policy retrieval, LiteLLM model routing, Langfuse tracing and automated release evaluations.
+An AI Chatbot application Deployed in aws with React frontend, Python backend, authenticated policy retrieval, LiteLLM model routing, Langfuse tracing and automated release evaluations.
 
 ## Start here
 
