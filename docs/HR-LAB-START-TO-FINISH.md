@@ -135,7 +135,7 @@ The setup command below configures the trace-export path and stores the keys in 
 
 ```bash
 bash scripts/setup-lab.sh
-source .venv/bin/activate
+source .venv/Scripts/activate 2>/dev/null || source .venv/bin/activate
 terraform -chdir=infra/terraform output -raw app_url
 ```
 

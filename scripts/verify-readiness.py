@@ -19,6 +19,15 @@ while time.monotonic()<deadline:
     time.sleep(10)
 else:raise SystemExit('Ingestion readiness timed out')
 email=json.loads((root/'lambda/data/evaluation_questions.json').read_text())[0]['email']
-response=requests.post(origin+'/api/chat',headers={'Authorization':'Bearer '+token_for(email)},json={'question':'What is the annual leave policy?'},timeout=35);response.raise_for_status()
+headers={'Authorization':'Bearer '+token_for(email)}
+# The first search after ingestion wakes the scaled-to-zero collection and can pass the 29-second API limit, so retry while it warms.
+for attempt in range(3):
+    try:
+        response=requests.post(origin+'/api/chat',headers=headers,json={'question':'What is the annual leave policy?'},timeout=35)
+        if response.status_code<500:break
+    except requests.exceptions.Timeout:pass
+    if attempt<2:print('Chat API still warming up; retrying in 20 seconds');time.sleep(20)
+else:raise SystemExit('Chat API did not become ready; inspect restricted CloudWatch logs')
+response.raise_for_status()
 if not response.json().get('answer'):raise SystemExit('Readiness answer missing')
 print('Ingestion complete; authenticated synthetic API readiness passed')
