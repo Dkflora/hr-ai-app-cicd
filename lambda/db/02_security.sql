@@ -15,6 +15,8 @@ CREATE ROLE hr_app LOGIN PASSWORD 'hr_app_local_only';
 
 GRANT SELECT ON employees, role_access TO hr_app;
 GRANT SELECT, INSERT ON conversations, messages TO hr_app;
+-- People may delete their own chats; the app checks ownership. Messages follow through ON DELETE CASCADE.
+GRANT DELETE ON conversations TO hr_app;
 GRANT INSERT ON request_log, employee_lookup_log TO hr_app;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO hr_app;
 

@@ -21,6 +21,13 @@ def validate_prompt(text):
     # Structural checks are not proof of resistance to prompt injection.
     text.format(full_name='Synthetic User', job_title='Employee', department='Demo')
 
+def generated_entry(name):
+    # A fixed timestamp keeps function.zip identical for identical sources, so Terraform redeploys only real changes.
+    info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+    info.compress_type = zipfile.ZIP_DEFLATED
+    info.external_attr = 0o644 << 16  # readable by the Lambda runtime user
+    return info
+
 def package(publish=False, output_dir=None):
     text = (ROOT / 'lambda/app/prompts/hr_system.txt').read_text(encoding='utf-8')
     validate_prompt(text)
@@ -45,12 +52,12 @@ def package(publish=False, output_dir=None):
                 if path.is_file() and '__pycache__' not in path.parts and path.suffix not in ('.pyc', '.pyo'):
                     inside = (Path(prefix) / path.relative_to(ROOT / source)).as_posix()
                     if inside == 'app/prompts/hr_system.txt':
-                        archive.writestr(inside, text.encode('utf-8'))
+                        archive.writestr(generated_entry(inside), text.encode('utf-8'))
                     else:
                         archive.write(path, inside)
         archive.write(ROOT / 'lambda/data/evaluation_questions.json', 'data/evaluation_questions.json')
         archive.write(ROOT / 'lambda/data/documents/manifest.json', 'data/policy_manifest.json')
-        archive.writestr('app/release.json', json.dumps(release))
+        archive.writestr(generated_entry('app/release.json'), json.dumps(release))
     release['artifact_sha256'] = digest((target / 'function.zip').read_bytes())
     (target / 'release.json').write_text(json.dumps(release, indent=2))
     return release

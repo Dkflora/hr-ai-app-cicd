@@ -11,6 +11,7 @@ Routes (defined in terraform/api_gateway.tf):
     GET  /api/me                                 who is signed in
     GET  /api/conversations                      their chats
     GET  /api/conversations/{id}/messages        one chat, if it's theirs
+    DELETE /api/conversations/{id}               delete one chat, if it's theirs
     POST /api/chat                               ask a question
 """
 
@@ -76,10 +77,24 @@ def handler(event, context):
     if route == "GET /api/conversations/{id}/messages":
         return get_messages(event, employee)
 
+    if route == "DELETE /api/conversations/{id}":
+        return delete_conversation(event, employee)
+
     if route == "POST /api/chat":
         return chat(event, employee)
 
     return respond(404, {"detail": "Not found."})
+
+
+def delete_conversation(event, employee):
+    try:
+        conversation_id = int((event.get("pathParameters") or {}).get("id", ""))
+    except ValueError:
+        return respond(404, {"detail": "Conversation not found."})
+    if not chat_history.delete_conversation(conversation_id, employee["employee_id"]):
+        # Same answer for someone else's chat as for a missing one
+        return respond(404, {"detail": "Conversation not found."})
+    return respond(200, {"deleted": conversation_id})
 
 
 def get_messages(event, employee):
