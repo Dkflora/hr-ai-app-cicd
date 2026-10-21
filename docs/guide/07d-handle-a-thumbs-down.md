@@ -15,6 +15,11 @@ A thumbs down on its own changes nothing. A company decides who looks at it, how
 3. **Review:** an expert reads the trace and records why the answer went wrong.
 4. **Fix and protect:** the fix ships through the pipeline, and the question joins the golden set.
 
+Two tools share the work:
+
+- **Amazon CloudWatch sends the alert.** The chat function writes each vote to its log, which CloudWatch already collects. The project's other alarms, for errors and slow answers, live there too.
+- **Langfuse holds the review.** The trace, with the search passages, the model's answer and the inline judge, is only in Langfuse. So the review happens there.
+
 ## Step 1: Turn on the email alert
 
 Setup created an alarm in Amazon CloudWatch, `hr-ci-ai-chatbot-thumbs-down`. It works like this:
@@ -120,6 +125,6 @@ The lab's alarm emails on every single thumbs down, so you can see it work. With
 - **Send it where the team works.** A Slack or Teams channel, or the on-call tool, instead of one person's inbox.
 - **Compare releases.** Each trace carries its release, such as `v1.0.4`. A thumbs-down rate that doubles after a release is a reason to roll back, as in document 08, even when every golden test passed.
 
-Langfuse can do this too, with its own **Alerts**. An alert can watch a score such as `user_feedback`. Its average is the share of 👍, so you can alert when it drops below a value you choose, such as 0.8 over one day. Langfuse sends the alert to Slack, to a webhook, or to a GitHub Actions workflow. It cannot send email. The free Langfuse plan allows 2 alerts.
+Another option: Langfuse has its own **Alerts**, which can watch the `user_feedback` score and post to Slack. This lab uses CloudWatch, because it sends email and already holds the project's other alarms.
 
 **Next:** [08 Production handoff and rollback](08-production-handoff-and-rollback.md)
