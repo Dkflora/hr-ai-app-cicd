@@ -85,14 +85,20 @@ git push
 
 After it passes, open the application, click **Sign in**, and confirm the Cognito sign-in page loads. The API tests do not cover the browser sign-in.
 
-Confirm that both pointers moved to the version this run published:
+Confirm that both pointers moved to the version this run published. In the AWS console:
+
+1. Check that the region at the top right is **N. Virginia (us-east-1)**.
+2. Open **Lambda → Functions**, then your chat function: your `project_name` followed by `-chat`.
+3. Open the **Aliases** tab.
+
+**Expected:** two rows, `candidate` and `approved`, with the same version number. Click `approved` to see its description, which records the version it replaced. The **Versions** tab lists every version the pipeline has published.
+
+The same check from the terminal:
 
 ```bash
 FN="$(terraform -chdir=infra/terraform output -raw candidate_function)"
 aws lambda list-aliases --function-name "$FN" --query 'Aliases[].[Name,FunctionVersion]' --output table
 ```
-
-**Expected:** `candidate` and `approved` show the same version number.
 
 To see the run's model calls, open the gateway admin UI as in document 03, step 5, and go to **Logs**. The evaluation calls come from the test accounts.
 
