@@ -61,6 +61,19 @@ Each item below is one step in the workflow file, with the script or action it r
 
 If the API test (**Ask the real app**) fails, Langfuse, Promptfoo, Evidently and the report still run, so you can see what broke. **Approve** is skipped, and so is DeepEval.
 
+## The answers file: build/evaluation.json
+
+The API test saves every answer it gets in one file, `build/evaluation.json`, on GitHub's machine. For each of the 104 answers it records:
+
+- Which test case it was, and whether this was the first or second try.
+- The full answer and the policy sources it cited.
+- How long it took.
+- Whether it passed, and if not, why, such as `missing:5` or `slow:22.1s`.
+
+Every later check reads this file instead of asking the app again: retrieval and consistency, Promptfoo, DeepEval, Langfuse, Evidently, the approval step and the report. So every tool judges the same answers, and the model is asked only once per answer.
+
+The file holds full answers, including the test accounts' salary figures. So it is never uploaded with the run's files. It disappears when the job ends. Only the summary and the score files are kept.
+
 ## What is checked, and by which tool
 
 Every check below reads the answers the live test saved. None of them asks the app again.
