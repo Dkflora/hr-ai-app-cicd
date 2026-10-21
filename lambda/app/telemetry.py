@@ -18,6 +18,13 @@ def conversation_context(employee_id, conversation_id):
     try:yield
     finally:_identity.reset(token)
 
+def current_user():
+    """The opaque user ID for the conversation being answered, or None."""
+    grouping = _identity.get()
+    if grouping is None:
+        return None
+    return grouping['user']
+
 def attribute(key,value):
     return {'key':key,'value':{'stringValue':str(value)}}
 def observed(name,kind='span'):
@@ -52,8 +59,21 @@ def observed(name,kind='span'):
                     response=result[0] if isinstance(result,tuple) else None
                     if isinstance(response,dict):
                         attrs.append(attribute('langfuse.observation.usage_details',json.dumps({'input':response.get('usage',{}).get('inputTokens',0),'output':response.get('usage',{}).get('outputTokens',0)})))
-                    if args and isinstance(args[0],str):
-                        attrs.append(attribute('langfuse.observation.model.name',args[0]))
+                    # After a fallback, the model that answered differs from the one asked for.
+                    gateway = {}
+                    if isinstance(response, dict):
+                        gateway = response.get('gateway', {})
+                    model_name = gateway.get('model')
+                    if not model_name and args and isinstance(args[0], str):
+                        model_name = args[0]
+                    if model_name:
+                        attrs.append(attribute('langfuse.observation.model.name', model_name))
+                    # LiteLLM features 2 and 5: Langfuse records which deployment answered
+                    # and what LiteLLM calculated the call cost.
+                    if gateway.get('deployment'):
+                        attrs.append(attribute('langfuse.observation.metadata.gateway_deployment', gateway['deployment']))
+                    if gateway.get('cost_usd'):
+                        attrs.append(attribute('langfuse.observation.metadata.gateway_cost_usd', gateway['cost_usd']))
                 if kind=='tool' and args:
                     attrs.append(attribute('langfuse.observation.metadata.tool',args[0]))
                     attrs.append(attribute('langfuse.observation.metadata.result_characters',len(str(result))))

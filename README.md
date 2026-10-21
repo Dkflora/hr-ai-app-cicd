@@ -1,12 +1,14 @@
 # HR policy assistant: evaluation and delivery
 
-An AI Chatbot application Deployed in aws with React frontend, Python backend, authenticated policy retrieval, LiteLLM model routing, Langfuse tracing and automated release evaluations.
+An AI chatbot application deployed in AWS with React frontend, Python backend, authenticated policy retrieval, LiteLLM model routing, Langfuse tracing and automated release evaluations.
 
 ## Start here
 
-Follow [the complete setup and delivery guide](docs/HR-LAB-START-TO-FINISH.md) in order. It includes repository import, automated AWS setup, Langfuse, Cognito, GitHub-to-AWS access, workflow code, evaluation results, failure exercises and implementation references.
+Follow [the step-by-step guide](docs/guide/hr-rag-cicd.md) in order, from document 00 to 09. Each document ends with a link to the next.
 
-Import this public repository into your own GitHub account before cloning. Your copy must own its Actions settings, environments and secrets. The guide provides the exact steps.
+Import this public repository into your own GitHub account before cloning. Your copy must own its Actions settings, environments and secrets. Document 01 gives the exact steps.
+
+[The full reference](docs/HR-LAB-START-TO-FINISH.md) covers the same lab in one long page, with background on each service, the model gateway and the OWASP coverage. Where the two differ, follow the step-by-step guide.
 
 ## What the repository provides
 
@@ -15,7 +17,9 @@ Import this public repository into your own GitHub account before cloning. Your 
 - `infra/terraform/`: infrastructure for initial setup, including the private model gateway.
 - `scripts/`: automated application setup and configuration helpers.
 - `ci/`: authenticated API tests, evaluation adapters, deployment and reporting helpers.
-- `docs/HR-LAB-START-TO-FINISH.md`: the single project walkthrough.
+- `docs/guide/`: the step-by-step guide, documents 00 to 09 plus the test cases and troubleshooting.
+- `docs/HR-LAB-START-TO-FINISH.md`: the full reference in one page.
+- `OWNERS.md`: who owns each part of the repository, and what each owner checks in a review.
 
 The starter contains no active GitHub Actions workflow. Create it using the code inside the guide. Model and tool permissions remain enforced by the backend; evaluation scores do not grant access.
 

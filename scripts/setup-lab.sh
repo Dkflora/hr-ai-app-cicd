@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One instructor/student setup command, running Terraform plus application bootstrap.
+# One setup command: runs Terraform, then prepares the application.
 #
 #   bash scripts/setup-lab.sh          asks before changing AWS infrastructure
 #   bash scripts/setup-lab.sh --yes    applies infrastructure changes without asking
@@ -133,6 +133,8 @@ if [ -f build/.tfplan-has-changes ]; then
   fi
   if [ "$AUTO_APPROVE" = false ]; then
     read -r -p "  Apply these changes? [y/N] " ANSWER
+    # Windows terminals can send a carriage return with Enter; ignore it and any spaces.
+    ANSWER=$(printf '%s' "$ANSWER" | tr -d '\r[:space:]')
     case "$ANSWER" in
       [yY]|[yY][eE][sS]) ;;
       *) printf '\n  Nothing was changed. Rerun when you are ready.\n'; exit 0 ;;

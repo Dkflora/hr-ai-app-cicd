@@ -124,7 +124,8 @@ def handler(event, context):
         # IAM-only Lambda invocation. The CI caller never receives the gateway key.
         from app.model_gateway import GatewayClient
         payload = event['gateway_judge']
-        return GatewayClient(timeout=30).converse(
+        # LiteLLM feature 8, tags: pipeline judge calls are tagged ci-judge.
+        return GatewayClient(timeout=30, purpose='ci-judge').converse(
             modelId=payload['model'], messages=payload['messages'],
             inferenceConfig={'maxTokens': 2048, 'temperature': 0})
     if (event or {}).get("search"):

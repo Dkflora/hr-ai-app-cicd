@@ -6,14 +6,10 @@ The Lambda reads its scoped gateway key from Secrets Manager using its AWS role.
 Policy retrieval and employee-record permissions remain enforced by the backend.
 """
 
-from app.model_gateway import GatewayUnavailable
-
 import json
 import re
 import time
 from functools import cache
-
-from botocore.exceptions import BotoCoreError, ClientError
 
 from app import config, database, employees, guardrails, retrieval
 from app.inline_judge import validate_answer
@@ -66,7 +62,8 @@ TEMPERATURE = 0.0
 @cache
 def client():
     from app.model_gateway import GatewayClient
-    return GatewayClient(timeout=20)
+    # LiteLLM feature 8, tags: chat answers are tagged hr-chat in the gateway.
+    return GatewayClient(timeout=20, purpose="hr-chat")
 
 
 # The tools, described so the model knows what each one does and what input it
@@ -201,24 +198,21 @@ def _strip_empty_sources(text, sources):
 
 @observed("Bedrock model call", "generation")
 def _call_model(model, request, usage):
-    """Call the model. If it will not answer, try the fallback model instead.
+    """Call the model through the gateway. Returns (response, model_used).
 
-    Returns (response, model_used). Once we have moved to the fallback we stay
-    there for the rest of this question, so the caller keeps the model back.
+    The gateway owns fallback: when the chat model will not answer, it retries the
+    same request on the fallback model and reports which model answered. Once the
+    fallback has answered we stay there for the rest of this question, so the
+    caller keeps the model back.
     """
-    try:
-        return client().converse(modelId=model, **request), model
-    except (BotoCoreError, ClientError, GatewayUnavailable) as error:
-        # A model can be throttled, still warming up, withdrawn, or simply not
-        # enabled in this account. None of that is the user's problem, and every
-        # model here speaks the same Converse shape, so the same conversation
-        # can carry on with a different one.
-        fallback = config.FALLBACK_CHAT_MODEL
-        if not fallback or model == fallback:
-            raise
-        print(f"{model} unavailable ({error}), falling back to {fallback}")
+    response = client().converse(modelId=model, **request)
+    gateway = response.get("gateway", {})
+    # LiteLLM feature 3, fallback: LiteLLM already switched models if it had to.
+    # Here the application only records that it happened.
+    if gateway.get("fallback"):
+        print(f"{model} unavailable, the gateway answered with {gateway.get('model')}")
         usage["tools_used"].append("model_fallback")
-        return client().converse(modelId=fallback, **request), fallback
+    return response, gateway.get("model") or model
 
 
 def _run_requested_tools(message, employee, sources, usage, old_version=False, policy_context=None):
@@ -267,18 +261,30 @@ def policy_question_context(question, history):
     return context
 
 
+def answer(question, history, employee, question_checked=False):
+    """Answer a question. Returns (answer_text, sources).
+
+    1. Guardrail on the question. This runs before the traced part below, so a
+    blocked or masked value never reaches Langfuse, the request log or the model.
+    The chat handler checks the question itself, before storing it, and passes
+    question_checked=True so it is not checked twice.
+    """
+    if not question_checked:
+        status, safe_question = guardrails.check(question, "INPUT")
+        if status == "blocked":
+            usage = {"input_tokens": 0, "output_tokens": 0, "tools_used": ["guardrail_blocked_input"]}
+            log_request(employee, guardrails.REMOVED, usage, time.time())
+            return safe_question, []
+        # "allowed" keeps the question as it was; "masked" replaces parts such as a phone number.
+        question = safe_question
+    return _answer(question, history, employee)
+
+
 @observed("HR answer", "agent")
-def answer(question, history, employee):
-    """Answer a question. Returns (answer_text, sources)."""
+def _answer(question, history, employee):
+    """Answer a question the guardrail has already checked. Returns (answer_text, sources)."""
     started = time.time()
     usage = {"input_tokens": 0, "output_tokens": 0, "tools_used": []}
-
-    # 1. Guardrail on the question
-    blocked, guarded_text = guardrails.check(question, "INPUT")
-    if blocked:
-        usage["tools_used"].append("guardrail_blocked_input")
-        log_request(employee, question, usage, started)
-        return guarded_text, []
 
     # Greetings and thanks get a fixed reply: no model call, and nothing for the
     # ungrounded-answer check below to mistake for an invented answer.
@@ -306,8 +312,8 @@ def answer(question, history, employee):
         retrieval.asks_for_old_version(text) for text in recent_questions + [question]
     )
 
-    # Start on the model we want. If it will not answer, the loop below moves to
-    # the fallback and stays there for the rest of this question.
+    # Start on the model we want. If the gateway answers with the fallback, the
+    # loop below stays on the fallback for the rest of this question.
     model = config.CHAT_MODEL
 
     # 2-3. Ask, run the tools it wants, repeat
@@ -358,8 +364,9 @@ def answer(question, history, employee):
             sources = _cited(text, sources)
 
             # 4. Guardrail on the answer
-            changed, text = guardrails.check(text, "OUTPUT")
-            if changed:
+            # "masked" replaces parts such as an email address; "blocked" replaces the whole answer.
+            status, text = guardrails.check(text, "OUTPUT")
+            if status != "allowed":
                 usage["tools_used"].append("guardrail_changed_output")
 
             log_request(employee, question, usage, started)
@@ -395,4 +402,5 @@ def log_request(employee, question, usage, started):
 @cache
 def judge_client():
     from app.model_gateway import GatewayClient
-    return GatewayClient(timeout=6)
+    # LiteLLM feature 8, tags: inline judge checks are tagged inline-judge.
+    return GatewayClient(timeout=6, purpose="inline-judge")

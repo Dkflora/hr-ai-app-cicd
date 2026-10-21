@@ -20,9 +20,10 @@ import json
 
 from botocore.exceptions import BotoCoreError, ClientError
 
-from app import assistant, chat_history, employees
+from app import assistant, chat_history, employees, guardrails
 from app.prompt_registry import release_identity
-from app.telemetry import conversation_context
+from app.model_gateway import GatewayPolicyDenied, GatewayUnavailable, gateway_context
+from app.telemetry import conversation_context, current_user
 
 
 def respond(status, body):
@@ -129,20 +130,58 @@ def chat(event, employee):
         if not history:
             return respond(404, {"detail": "Conversation not found."})
 
+    # Check the question with the guardrail before it is stored or traced anywhere.
+    # A blocked question is stored as a placeholder. A masked question keeps its
+    # placeholders, such as {PHONE}, everywhere: history, logs, Langfuse and the model.
+    try:
+        status, safe_question = guardrails.check(question, "INPUT")
+    except (BotoCoreError, ClientError) as error:
+        print(f"guardrail unavailable: {error!r}")  # goes to CloudWatch Logs
+        return respond(502, {"detail": "The assistant is unavailable right now. Try again in a moment."})
+    if status == "blocked":
+        stored_question = guardrails.REMOVED
+    else:
+        stored_question = safe_question
+
     # Allocate the conversation before inference so even the first trace is grouped.
     # A failed request may leave an empty conversation for diagnosis.
     if conversation_id is None:
-        conversation_id = chat_history.start_conversation(employee['employee_id'], question)
+        conversation_id = chat_history.start_conversation(employee['employee_id'], stored_question)
+
+    if status == "blocked":
+        # The guardrail's refusal message is the answer. The model is never called.
+        chat_history.add_message(conversation_id, "user", stored_question)
+        chat_history.add_message(conversation_id, "assistant", safe_question, [])
+        return respond(200, {"conversation_id": conversation_id, "answer": safe_question, "sources": []})
 
     try:
+        # Pipeline test accounts (qa.*) are treated differently from people:
+        # LiteLLM feature 4, caching: people get cached answers, test accounts never do.
+        # LiteLLM features 8 and 10: model calls for a person carry their opaque user
+        # ID, so the gateway shows their spend and applies the per-person limit.
+        # Test accounts send no ID, so the pipeline is bounded by the team and key
+        # limits instead of a person's.
+        email = signed_in_email(event) or ""
+        is_test_account = email.lower().startswith("qa.")
         with conversation_context(employee['employee_id'], conversation_id):
-            answer, sources = assistant.answer(question, history, employee)
-    except (BotoCoreError, ClientError) as error:
+            if is_test_account:
+                gateway_user = None
+            else:
+                gateway_user = current_user()
+            with gateway_context(user=gateway_user, use_cache=not is_test_account):
+                answer, sources = assistant.answer(safe_question, history, employee, question_checked=True)
+    except GatewayPolicyDenied as error:
+        # LiteLLM features 5, 6 and 10: the gateway refused the call because a budget
+        # or rate limit was reached, for this person, the team or the key.
+        print(f"gateway limit reached: {error!r}")  # goes to CloudWatch Logs
+        detail = "You've reached the assistant's usage limit. Wait a minute and try again."
+        return respond(429, {"detail": detail})
+    except (BotoCoreError, ClientError, GatewayUnavailable) as error:
         print(f"assistant unavailable: {error!r}")  # goes to CloudWatch Logs
         detail = "The assistant is unavailable right now. Try again in a moment."
         return respond(502, {"detail": detail})
 
-    chat_history.add_message(conversation_id, "user", question)
+    chat_history.add_message(conversation_id, "user", stored_question)
     chat_history.add_message(conversation_id, "assistant", answer, sources)
 
     return respond(200, {

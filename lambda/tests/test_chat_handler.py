@@ -25,7 +25,7 @@ def call(*args, **kwargs):
 
 @pytest.fixture(autouse=True)
 def fake_model(monkeypatch):
-    def fake_answer(question, history, employee):
+    def fake_answer(question, history, employee, question_checked=False):
         return f"Answer for {employee['full_name']} ({len(history)} earlier messages)", []
 
     monkeypatch.setattr(assistant, "answer", fake_answer)

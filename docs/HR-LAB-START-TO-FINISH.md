@@ -142,7 +142,7 @@ Setup first checks your tools, both configuration files and your AWS account. It
 
 Each step prints one line with a green check mark and its duration. Before Terraform changes anything, setup shows the plan summary, names any resource it would delete or recreate, and asks you to confirm. If a step fails, setup prints what to check and the key error line, and saves the full output in `build/setup.log`. Fix the problem and run the same command again. Steps whose inputs have not changed are skipped, and the others leave your deployment as it is.
 
-When setup finishes, it prints the app address and the demo employees you can sign in as. It also saves them in `demo-sign-in.txt` in the project folder, so you can open them in your editor at any time.
+When setup finishes, it prints the app address, the demo employees you can sign in as and the gateway admin UI sign-in. It also saves them in `demo-sign-in.txt` in the project folder, so you can open them in your editor. The file is git-ignored and holds the gateway master key, so keep it on your computer. Run `python scripts/show-demo-users.py` to recreate it.
 
 Setup checks ingestion and makes an authenticated API request automatically. Confirm the returned answer and its model/tool observations in Langfuse. Use only configuration and Terraform state for your own deployment; do not apply changes to someone else's stack.
 
@@ -674,6 +674,57 @@ Spend enforcement uses recorded usage. Accounting delays and in-flight requests 
 
 This allowance covers generation and judges. Titan embeddings and Bedrock Guardrail checks remain direct AWS calls with scoped IAM and are not charged to this LiteLLM key. Overall cost monitoring must include those services and infrastructure too. The application uses a shared service key: this implementation has an application-level budget, not a separate employee budget. Langfuse still groups application traces by user and session.
 
+### Open the gateway admin UI
+
+LiteLLM serves an admin UI on the same port as the proxy. The gateway accepts connections only from the application Lambda, so you reach the UI through an AWS Systems Manager (SSM) tunnel. The tunnel forwards the instance's port 4000 to your computer. Your AWS permissions decide who can open it, and the traffic stays inside the encrypted SSM session.
+
+Install the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) once, open a new terminal, then run:
+
+```bash
+python scripts/open-gateway-ui.py
+```
+
+The script prints the address, `http://localhost:4000/ui`, and the sign-in details. The same details are in `demo-sign-in.txt`. Sign in as `admin` with the printed password. Leave the terminal open while you use the UI, and press Ctrl+C to close the tunnel. If port 4000 is busy on your computer, add `--port 4100` and use that port in the address.
+
+The password is the gateway **master key**. It is stored in Secrets Manager, in the secret named `<project_name>/gateway-settings`, where `<project_name>` is the value in `infra/terraform/terraform.tfvars`. The secret has three fields. The UI password is `master_key`, which starts with `sk-`. The `username` and `password` fields are the gateway's database login and do not sign in to the UI.
+
+To read the master key yourself in the AWS Console:
+
+1. Select the region from `aws_region` in `terraform.tfvars`.
+2. Open **Secrets Manager**, then **Secrets**, and select `<project_name>/gateway-settings`.
+3. Click **Retrieve secret value** and copy the `master_key` value.
+
+Or print only that field from the project folder:
+
+```bash
+aws secretsmanager get-secret-value \
+  --secret-id "$(terraform -chdir=infra/terraform output -raw gateway_settings_secret_arn)" \
+  --query SecretString --output text | python -c "import json,sys; print(json.load(sys.stdin)['master_key'])"
+```
+
+The master key is LiteLLM's root credential. Setup uses it once, to create the application key with its models and limits. It can also create and delete keys, change any limit and sign in to the UI. The application never holds it: the Lambda uses only the scoped application key. Keep the master key out of screenshots, tickets and chat.
+
+Under **Virtual Keys**, open `hr-generation-and-judges`. Compare its allowed models, budget, budget window, rate limits and spend with the controls table above. Spend rises as you chat and as the pipeline runs evaluations. The configuration turns off per-request spend logs, so individual requests appear in Langfuse traces rather than in the UI.
+
+Changes made in the UI are stored in the gateway's database and are absent from the code. The setup script creates the key, so rebuilding the gateway replaces your UI changes. Use the UI to inspect the gateway, and make lasting changes in `gateway-bootstrap.sh.tftpl`.
+
+### How a platform team runs the gateway
+
+In a company, one platform team usually runs a shared gateway for many applications. Application teams consume it the way this application does: they receive a scoped key and never hold model-provider credentials. The parts change as follows.
+
+| Concern | In this project | In a company |
+|---|---|---|
+| Ownership | Created with this application's infrastructure | A platform team owns one gateway that many applications share |
+| Hosting | One instance, HTTP inside the VPC | Several containers behind an internal load balancer with TLS, a managed database, autoscaling and monitoring |
+| UI access | SSM tunnel, master key sign-in | An internal address behind company single sign-on (SSO), with roles such as platform admin, team admin and read-only viewer |
+| Master key | In Secrets Manager, used by setup and the UI | Held by a few platform engineers, rotated, and used only for break-glass recovery. Daily work uses named admin accounts. |
+| Keys | One shared application key | One key per application and environment, often grouped by team, each limited to approved models |
+| Budgets | $5 per 24 hours on the key | Budgets per team, application and environment, with alerts before the limit and chargeback reports from recorded spend |
+| Changes | Bootstrap script, or the UI for experiments | A pull request to a configuration repository. Automation applies reviewed changes through the gateway API, and the UI is mostly read-only. |
+| Evidence | Langfuse traces and key spend | Traces, gateway metrics, spend dashboards and an audit log of admin actions |
+
+A request for a new model, a larger budget or a new key follows the same review path as code: the application team asks, the platform team approves and the change is recorded. LiteLLM provides SSO, audit logs of admin actions, and organization and team admin roles in its paid enterprise edition. Check the current [LiteLLM Enterprise](https://docs.litellm.ai/docs/enterprise) page before planning around them.
+
 ### Changes and evidence
 
 - `infra/terraform/gateway.tf`: service, IAM, secrets, networking and instance.
@@ -681,6 +732,7 @@ This allowance covers generation and judges. Titan embeddings and Bedrock Guardr
 - `lambda/app/setup_db_handler.py`: isolated database/user setup.
 - `lambda/app/model_gateway.py`: native request adapter and fail-closed errors.
 - `scripts/initialize-gateway.py`: automatic initialization wait within setup.
+- `scripts/open-gateway-ui.py`: SSM tunnel to the admin UI.
 - `ci/tests/test_gateway.py`: request preservation, denied limits, allowed models and missing configuration.
 
 Verify an allowed request, unknown model, exhausted budget, token/request throttling, judge use and an unavailable gateway. Denied requests must not fall back directly to Bedrock. Collect proxy status, usage records, application trace and the passing/failing workflow evidence. Do not print keys or raw secret-bearing proxy errors.

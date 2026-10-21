@@ -1,0 +1,212 @@
+# 06a2 Add the deployment jobs
+
+**Goal:** add the deployment and evaluation jobs to the workflow file.
+
+This document only changes the file on your computer. Do not commit it yet. The deployment jobs need GitHub settings first, and document 06b adds them, then commits, pushes and merges.
+
+## Step 1: Append the two deployment jobs
+
+This command **adds** two jobs to the end of the workflow file you created in document 04. It uses `>>`, so the header and the `checks` job stay as they are. Run it only once; running it twice adds the jobs twice.
+
+```bash
+cd ~/hr-rag-lab
+cat >> .github/workflows/hr-quality.yml <<'EOF'
+  # Deploy the reviewed main commit, evaluate it, and approve only passing evidence.
+  candidate:                                                            # job
+    name: Deploy and evaluate staging                                   # job title
+    # Secrets and AWS access are withheld from unreviewed pull-request code.
+    if: >-                                                              # run condition
+      always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
+      needs.checks.result == 'success'
+    needs: checks                                                       # depends on checks
+    runs-on: ubuntu-24.04                                               # agent
+    environment: hr-staging                                             # deploy environment
+    timeout-minutes: 120                                                # time limit
+    permissions:                                                        # token rights
+      contents: read                                                    # read-only code
+      id-token: write                                                   # AWS sign-in (OIDC)
+      pull-requests: write                                              # PR comments
+    env:                                                                # variables
+      AWS_REGION: ${{ vars.AWS_REGION }}                                # setting
+      HR_STAGING_FUNCTION: ${{ vars.HR_STAGING_FUNCTION }}
+      HR_EVALUATION_FUNCTION: ${{ vars.HR_EVALUATION_FUNCTION }}
+      HR_STAGING_ORIGIN: ${{ vars.HR_STAGING_ORIGIN }}
+      HR_TEST_USERS_SECRET_ARN: ${{ vars.HR_TEST_USERS_SECRET_ARN }}
+      HR_COGNITO_POOL_ID: ${{ vars.HR_COGNITO_POOL_ID }}
+      HR_COGNITO_CLIENT_ID: ${{ vars.HR_COGNITO_CLIENT_ID }}
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}           # secret
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+      LANGFUSE_BASE_URL: ${{ vars.LANGFUSE_BASE_URL }}
+      HR_STAGING_FRONTEND_BUCKET: ${{ vars.HR_STAGING_FRONTEND_BUCKET }}
+      HR_STAGING_DISTRIBUTION_ID: ${{ vars.HR_STAGING_DISTRIBUTION_ID }}
+      VITE_AUTH_MODE: cognito                                           # build setting
+      VITE_COGNITO_AUTHORITY: ${{ vars.VITE_COGNITO_AUTHORITY }}
+      VITE_COGNITO_CLIENT_ID: ${{ vars.HR_COGNITO_CLIENT_ID }}
+      VITE_COGNITO_DOMAIN: ${{ vars.VITE_COGNITO_DOMAIN }}
+      EVAL_REPEATS: '2'                                                 # repeat each test
+      DO_NOT_TRACK: '1'                                                 # telemetry off
+      DEEPEVAL_TELEMETRY_OPT_OUT: 'true'                                # telemetry off
+    steps:                                                              # steps
+      - uses: actions/checkout@v7                                       # get code
+        with:                                                           # inputs
+          persist-credentials: false                                    # drop Git token
+      - uses: actions/setup-python@v7                                   # install Python
+        with:
+          python-version: '3.12'                                        # version
+      - run: python -m pip install -r ci/requirements.txt               # install packages
+      # Exchange GitHub identity for short-lived credentials in the scoped AWS role.
+      - uses: aws-actions/configure-aws-credentials@v6                  # AWS sign-in
+        with:
+          role-to-assume: ${{ vars.AWS_STAGING_ROLE_ARN }}              # IAM role
+          aws-region: ${{ vars.AWS_REGION }}                            # region
+      - uses: actions/setup-node@v7                                     # install Node.js
+        with:
+          node-version: '22'
+      # Build the UI from this commit and upload it to the staging frontend.
+      - name: Build and deploy React to staging                         # step title
+        run: |                                                          # script below
+          npm --prefix frontend ci
+          npm --prefix frontend run build
+          python ci/deploy_frontend.py
+      # Publish the prompt version and package it with the matching backend code.
+      - name: Publish exact candidate prompt and package it
+        run: python ci/release.py --publish                             # publish prompt, build zip
+      - name: Deploy the new backend version to staging
+        run: python ci/deploy_candidate.py                              # deploy Lambda version
+      # Obtain fresh test-user tokens and run every reference case twice through the API.
+      - name: Test the real authenticated application
+        id: live                                                        # step ID
+        run: python ci/evaluate_api.py                                  # API tests
+      # Store captured answers and scores for version comparisons; no extra generation here.
+      - name: Record the dataset experiment in Langfuse
+        if: always() && steps.live.outcome != 'skipped'
+        uses: langfuse/experiment-action@76731c8b04fc7f962af689207690d414a0ee4de7 # v1.0.11
+        with:
+          langfuse_public_key: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+          langfuse_secret_key: ${{ secrets.LANGFUSE_SECRET_KEY }}
+          langfuse_base_url: ${{ vars.LANGFUSE_BASE_URL }}
+          experiment_path: ci/langfuse_experiment.py                    # script
+          should_skip_sdk_installation: 'true'                          # skip install
+          should_fail_on_regression: 'true'                             # fail on regression
+          should_fail_on_script_error: 'true'                           # fail on error
+          should_comment_on_pr: 'false'                                 # no PR comment
+      - uses: actions/setup-node@v7                                     # install Node.js
+        with:
+          node-version: '22'
+      - name: Independently assert captured API answers with Promptfoo
+        if: always() && steps.live.outcome != 'skipped'
+        run: python ci/prepare_promptfoo.py                             # build config
+      # Assert expected facts, forbidden disclosures and sources in the captured answers.
+      - name: Promptfoo evaluation action
+        if: always() && steps.live.outcome != 'skipped'
+        uses: promptfoo/promptfoo-action@04839e664f52212b877170219dab0d7ad2bf6440 # v1
+        with:
+          github-token: ${{ github.token }}                             # GitHub token
+          config: ci/promptfoo.generated.json                           # config file
+          promptfoo-version: '0.124.1'
+          use-config-prompts: 'true'                                    # use config prompts
+          force-run: 'true'                                             # always run
+          fail-on-threshold: '100'                                      # 100% must pass
+          no-share: 'true'                                              # no upload
+          disable-comment: 'true'                                       # no PR comment
+          no-cache: 'true'                                              # no cache
+          no-table: 'true'                                              # short log
+          no-progress-bar: 'true'                                       # short log
+      # Use a model grader through the gateway-backed evaluation Lambda.
+      - name: Evaluate answer quality with DeepEval
+        if: vars.ENABLE_DEEPEVAL == 'true'                              # optional
+        run: |
+          python -m pip install -r ci/requirements-demo.txt
+          python ci/deepeval_check.py
+      - name: Prepare Evidently numeric drift inputs
+        if: always() && steps.live.outcome != 'skipped' && vars.ENABLE_EVIDENTLY == 'true'
+        run: python ci/prepare_drift.py                                 # build CSV
+      # Compare latency and answer-length distributions; drift is an investigation signal.
+      - name: Evidently proxy drift report
+        if: always() && steps.live.outcome != 'skipped' && vars.ENABLE_EVIDENTLY == 'true'
+        uses: evidentlyai/evidently-report-action@7b255ad073b66f0a2f511393edf24d2907c15008 # v1
+        with:
+          config_path: ci/evidently_config.py:conf                      # checks
+          input_path: build/drift-current.csv                           # this run
+          reference_path: ci/data/drift-reference.csv                   # baseline
+          output: build/evidently-report                                # output folder
+          test_summary: 'false'                                         # no pass/fail
+          save_dataset: 'false'                                         # skip data
+          save_report: 'true'                                           # keep report
+          upload_artifacts: 'true'                                      # attach report
+          check-link: 'false'                                           # skip link check
+      # Update the approved staging alias only after required preceding checks pass.
+      - name: Approve the exact tested staging version
+        if: success()                                                   # only if all passed
+        run: python ci/promote_lab.py                                   # promote
+      # Retain a sanitized report even when evaluation fails.
+      - name: Publish public-safe report
+        if: always()
+        run: |
+          if test -f build/evaluation.json; then
+            python ci/report.py
+            cat build/report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Evaluation did not complete; release is blocked.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Report on associated pull requests
+        if: always()
+        uses: actions/github-script@v9                                  # GitHub API script
+        with:
+          script: |                                                     # JavaScript below
+            const fs = require('fs');
+            if (!fs.existsSync('build/report.md')) return;
+            const pulls = await github.rest.repos.listPullRequestsAssociatedWithCommit({owner:context.repo.owner,repo:context.repo.repo,commit_sha:context.sha});
+            const body = 'HR staging evaluation report (review all workflow jobs before release)\n\n' + fs.readFileSync('build/report.md','utf8');
+            for (const pr of pulls.data) await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:pr.number,body});
+      - uses: actions/upload-artifact@v7                                # save artifacts
+        if: always()                                                    # always save
+        with:
+          name: hr-candidate-evidence                                   # artifact name
+          # Raw answers are intentionally excluded; inspect them only in approved restricted storage.
+          path: |                                                       # files below
+            build/release.json
+            build/report.md
+            build/function.zip
+            build/previous-approved.json
+          retention-days: 3                                             # keep 3 days
+  # Demonstrate the approval boundary without deploying production infrastructure.
+  production-handoff-dry-run:                                           # job
+    name: Production handoff (dry run)                                  # job title
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: candidate                                                    # depends on candidate
+    runs-on: ubuntu-24.04                                               # agent
+    environment: hr-production-approval                                 # approval gate
+    permissions:                                                        # token rights
+      contents: read                                                    # read-only code
+    steps:                                                              # steps
+      - uses: actions/download-artifact@v8                              # get artifacts
+        with:
+          name: hr-candidate-evidence                                   # artifact name
+          path: evidence                                                # folder
+      - name: Verify exact tested release and show production handoff
+        env:                                                            # step variables
+          EXPECTED_COMMIT: ${{ github.sha }}                            # tested commit
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          release=json.loads(Path('evidence/release.json').read_text())
+          report=Path('evidence/report.md').read_text()
+          if release['commit'] != os.environ['EXPECTED_COMMIT']:
+              raise SystemExit('Release does not match the merged commit')
+          if 'Release gate: PASS.' not in report:
+              raise SystemExit('A passing evaluation report is required')
+          print('DEMONSTRATION ONLY: production would receive the tested backend artifact and exact prompt version.')
+          print('React would be built from this same commit with production configuration.')
+          print('No production resources or traffic are changed by this dry-run job.')
+          PY
+EOF
+grep -nE '^  (checks|candidate|production-handoff-dry-run):' .github/workflows/hr-quality.yml
+```
+
+**Expected:** the last command lists exactly three jobs: `checks` on line 15, `candidate` on line 38 and `production-handoff-dry-run` on line 197.
+
+If a job name appears twice, you ran the block twice. Recreate the file with document 04 step 2, then run this block once.
+
+**Next:** [06b Environments, merge and first run](06b-environments-merge-and-first-run.md)
