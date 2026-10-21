@@ -61,13 +61,15 @@ grep -n '^MAX_TOOL_ROUNDS' lambda/app/assistant.py
 
 **Expected:** `54:MAX_TOOL_ROUNDS = 5`. The number before the colon is the line number.
 
-Make the change in VS Code:
+In VS Code, open `lambda/app/assistant.py`, go to the line `grep` printed, and change it to:
 
-1. Open `lambda/app/assistant.py`.
-2. Press **Ctrl+G**, type the line number from `grep`, and press **Enter**. The cursor jumps to that line.
-3. Change the line to `MAX_TOOL_ROUNDS = 1`.
-4. Save the file with **Ctrl+S** (**Cmd+S** on a Mac).
-5. Open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.0` to `1.0.1`. Save it. Every change that reaches `main` needs a new release number, and the `checks` job fails without one.
+```python
+MAX_TOOL_ROUNDS = 1
+```
+
+This gives the assistant one round only. The policy search uses it up, so no turn is left to write the answer. The code still runs and the unit tests still pass, so only the pipeline's live questions can catch it.
+
+Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.0` to `1.0.1`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. Save both files.
 
 Check the change before you commit:
 
@@ -145,13 +147,13 @@ git switch -c fix/tool-limit
 grep -n '^MAX_TOOL_ROUNDS' lambda/app/assistant.py
 ```
 
-In VS Code:
+In VS Code, open `lambda/app/assistant.py`, go to the line `grep` printed, and change it back to:
 
-1. Open `lambda/app/assistant.py`.
-2. Press **Ctrl+G** and go to the line `grep` printed.
-3. Change it back to `MAX_TOOL_ROUNDS = 5`.
-4. Save the file.
-5. Open `VERSION` and raise the last number by one again, to `1.0.2`. Save it.
+```python
+MAX_TOOL_ROUNDS = 5
+```
+
+Then open `VERSION` and raise the last number by one again, to `1.0.2`. The repair is a new release, so it needs a new number. Save both files.
 
 Then check it:
 

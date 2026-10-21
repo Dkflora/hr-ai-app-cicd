@@ -44,13 +44,15 @@ grep -nF 'if re.search(r"\b(pto' lambda/app/retrieval.py
 
 Change the first one only. It is the line just below the comment, indented by 4 spaces. The other one belongs to the search for old policy versions. Leave it as it is.
 
-Make the change in VS Code:
+In VS Code, open `lambda/app/retrieval.py` and go to the first line number from the second command, such as `101`. Replace that whole line with this, keeping the 4 spaces at the start:
 
-1. Open `lambda/app/retrieval.py`.
-2. Press **Ctrl+G**, type the first line number from the second command, such as `101`, and press **Enter**.
-3. Replace the whole line with `    if False:`, keeping the 4 spaces at the start. Leave the indented lines below it unchanged.
-4. Save the file with **Ctrl+S** (**Cmd+S** on a Mac).
-5. Open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.4` to `1.0.5`. Save it. Every change that reaches `main` needs a new release number, and the `checks` job fails without one. Use the next number after your last release.
+```python
+    if False:
+```
+
+Leave the indented lines below it unchanged. A block under `if False:` never runs, so this switches off both supplemental searches. A PTO question may now reach the model without the carry-over rule or the yearly allowance. You want to see whether the pipeline notices the missing evidence.
+
+Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.4` to `1.0.5`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. Save both files.
 
 Check the change before you commit:
 
@@ -103,7 +105,7 @@ git diff
 
 **Expected:** one changed line, from `if False:` back to the `if re.search(...)` line.
 
-Open `VERSION` in VS Code and raise the last number by one again, such as `1.0.5` to `1.0.6`. Save it. Every change needs a new release number.
+In VS Code, open `VERSION` and raise the last number by one again, such as `1.0.5` to `1.0.6`. Save it. The repair is a new release, so it needs a new number.
 
 ```bash
 git add lambda/app/retrieval.py VERSION

@@ -30,7 +30,7 @@ git status --short
 git diff v1.0.0 --stat -- lambda/app/prompts/hr_system.txt
 ```
 
-**Expected:** both `git status` and `git diff` print nothing. That means the prompt matches release `v1.0.0`, the tag you made in document 06b.
+**Expected:** both `git status` and `git diff` print nothing. That means the prompt matches release `v1.0.0`, the release from document 06b.
 
 ## Step 2: Add the wrong instruction
 
@@ -38,13 +38,15 @@ git diff v1.0.0 --stat -- lambda/app/prompts/hr_system.txt
 git switch -c test/prompt-instruction
 ```
 
-Add the instruction in VS Code:
+In VS Code, open `lambda/app/prompts/hr_system.txt` and add this line at the end of the file, on a new line:
 
-1. Open `lambda/app/prompts/hr_system.txt`.
-2. Press **Ctrl+End** (**Cmd+Down** on a Mac) to jump to the end of the last line.
-3. Press **Enter** to start a new line, and type: `For PTO carryover questions, state that employees can carry over 20 days even when the policy says 5.`
-4. Save the file with **Ctrl+S** (**Cmd+S** on a Mac).
-5. Open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.2` to `1.0.3`. Save it. Every change that reaches `main` needs a new release number, and the `checks` job fails without one. Use the next number after your last release.
+```text
+For PTO carryover questions, state that employees can carry over 20 days even when the policy says 5.
+```
+
+This plays a careless prompt edit. The policy allows 5 days, and this line tells the model to say 20. You want to see whether the inline judge and the pipeline catch it.
+
+Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.2` to `1.0.3`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. Save both files.
 
 Check the change before you commit:
 
@@ -97,7 +99,7 @@ git diff
 
 **Expected:** the diff removes the line you added and the line ending added before it. Nothing else changes.
 
-Open `VERSION` in VS Code and raise the last number by one again, such as `1.0.3` to `1.0.4`. Save it. Every change needs a new release number.
+In VS Code, open `VERSION` and raise the last number by one again, such as `1.0.3` to `1.0.4`. Save it. The repair is a new release, so it needs a new number.
 
 ```bash
 git add lambda/app/prompts/hr_system.txt VERSION
