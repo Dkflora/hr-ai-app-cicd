@@ -1,6 +1,6 @@
 # 05 GitHub-to-AWS access
 
-**Goal:** let the pipeline deploy to AWS without storing any AWS keys in GitHub.
+**Goal:** give the pipeline permission to change your AWS resources. You compare the two usual ways of doing that, then set up the safer one, OIDC.
 
 ## What the pipeline does in AWS
 
@@ -13,20 +13,40 @@ In document 02, setup created every AWS resource, using your AWS sign-in. The pi
 - **Cognito** (`evaluate_api.py`): Signs in as the `qa.*` test accounts.
 - **Lambda, evaluation function** (`deepeval_check.py`): Runs the model that grades answers.
 
-The live tests call the app the same way a browser does: through its public API, signed in with Cognito. Langfuse has its own keys, which you save in GitHub in document 06b.
+The live tests call the app the same way a browser does: through its public API, signed in with Cognito. Lan## Two ways to give the pipeline AWS access
 
-## Why OIDC
+The pipeline runs on a computer that GitHub provides, not on yours. AWS needs proof of who is asking before it allows anything. There are two common ways to give that proof.
 
-The pipeline runs on a computer that GitHub provides. AWS needs proof of who is asking before it allows anything. One way is to store an AWS access key in GitHub. That key works until someone deletes it. Anyone who copies it from a log, or from a hacked action, could use it too.
+### Option 1: an access key stored in GitHub
 
-GitHub Actions uses **OIDC** (OpenID Connect) instead. It works like this:
+You create an IAM user in AWS and give it an **access key**: a key ID and a secret, like a username and password for programs. You save both as secrets in GitHub. Each job reads them and signs in to AWS as that user.
+
+This works, and many older pipelines still do it. It has these problems:
+
+- **The key never expires.** It works until someone deletes it. If it leaks, it keeps working for whoever has it.
+- **It can leak.** A job log, a compromised third-party action, or a debugging step that prints the environment can expose it.
+- **Someone must rotate it.** Good practice is to replace the key regularly and update GitHub each time. This is manual work that teams often forget.
+- **AWS sees only the IAM user.** CloudTrail, the AWS activity log, cannot tell which repository, branch or run used the key.
+
+### Option 2: OIDC, with no stored key
+
+**OIDC** (OpenID Connect) lets AWS trust GitHub directly. It works like this:
 
 1. When a job starts, GitHub gives it a signed token. The token says which repository and which environment the job belongs to.
 2. The job sends the token to AWS.
 3. AWS checks GitHub's signature. Then it compares the token with the role's **trust policy**: the rules that say who may use the role. Here that is your repository, the `hr-staging` environment, and the audience `sts.amazonaws.com`.
 4. If everything matches, AWS gives the job temporary credentials that expire within an hour.
 
-No secret is stored anywhere, so there is nothing to leak or replace. A fork or another repository cannot use the role, because its token names a different repository. A job outside the `hr-staging` environment cannot use it either. In document 06b, you allow only `main` to use that environment. Azure DevOps calls the same idea workload identity federation.
+This removes each problem above:
+
+- **No secret is stored**, so there is nothing to leak, copy or rotate.
+- **The credentials expire within an hour**, even if one leaks from a running job.
+- **Only your repository's `hr-staging` environment can use the role.** A fork or another repository has a token that names a different repository. In document 06b, you allow only `main` to use that environment.
+- **CloudTrail records who asked.** Each sign-in shows the repository and environment named in the token, not just a user name.
+
+This lab uses OIDC. It is what AWS and GitHub recommend for pipelines. Azure DevOps calls the same idea workload identity federation.
+
+t. Azure DevOps calls the same idea workload identity federation.
 
 ## What the script does
 
