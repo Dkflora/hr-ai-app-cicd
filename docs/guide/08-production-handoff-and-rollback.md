@@ -1,37 +1,45 @@
 # 08 Production handoff and rollback
 
-**Goal:** understand where staging approval ends, and practise putting the `approved` pointer back on an earlier version.
+**Goal:** see where the lab's approval in staging stops, and practise moving the `approved` pointer back to an earlier version.
+
+**Staging** is the company's test copy of the app, where every change is tested before approval. **Production** is the copy real employees would use. This lab has no production copy, only a practice step that shows what would happen.
 
 ## What the production job does
 
-The `production-handoff-dry-run` job runs only after the `candidate` job succeeds. It downloads the evidence the candidate job uploaded and checks two things:
+The `production-handoff-dry-run` job starts only after the `candidate` job succeeds. It downloads the files the `candidate` job saved, and checks two things:
 
-1. `release.json` records the same commit that was merged.
+1. `release.json` names the same commit that was merged.
 2. The report contains `Release gate: PASS.`
 
-Then it prints what production would receive. It changes no resources and moves no traffic. Open its log in your last passing run and read the three printed lines.
+Then it prints what production would receive. It changes nothing in AWS and sends no users anywhere. That is why it is called a **dry run**.
+
+To see it, open your last passing run in GitHub's **Actions** tab. Click the **Production handoff (dry run)** job and read the three lines it printed.
 
 ## From staging to production
 
-- **Validate**. This lab: deploy and test the candidate in staging. Production: the same checks against the intended release.
-- **Approve**. This lab: the `hr-production-approval` environment. Production: an authorized release reviewer.
-- **Deploy**. This lab: dry run only. Production: the tested backend package, React build and exact prompt version, with a separate production role and configuration.
-- **Verify and recover**. This lab: keep staging results and the `approved` pointer. Production: smoke-test production, monitor errors and quality, restore the last approved release if needed.
+Each stage of a release, first in this lab, then in a real company:
 
-To make the job real, replace its dry-run step with production deployment and verification steps. Production must use the tested artifact, never a fresh rebuild.
+- **Validate**. This lab: deploy the new version to staging and test it there. Production: run the same checks on the version you plan to release.
+- **Approve**. This lab: the `hr-production-approval` environment in GitHub, which can ask a person to approve. Production: a person allowed to approve releases.
+- **Deploy**. This lab: a dry run only. Production: the tested backend package, the React build and the exact prompt version, with a separate production role and settings.
+- **Verify and recover**. This lab: keep the staging results and the `approved` pointer. Production: test production after the deploy, watch for errors and bad answers, and go back to the last approved release if needed.
+
+To make the job real, replace its dry-run step with steps that deploy to production and check it. Production then gets the exact package that was tested, not a new build.
 
 ## Two Lambda aliases
 
-- `candidate`, moved by `ci/deploy_candidate.py`, on every merge: The version under test. The staging UI and API use it.
-- `approved`, moved by `ci/promote_lab.py`, only after every required check passes: The last version that passed. Production would deploy this one.
+An **alias** is a name that points to one version of the Lambda function. The pipeline uses two:
 
-When `promote_lab.py` moves `approved`, it writes the version it replaced into the alias description, such as `previous approved version: 7`.
+- `candidate`: the version being tested. `ci/deploy_candidate.py` moves it on every merge. The staging app and API use it.
+- `approved`: the last version that passed every check. `ci/promote_lab.py` moves it only after every required check passes. Production would deploy this one.
+
+When `promote_lab.py` moves `approved`, it also notes the version it replaced, in the alias description. For example: `previous approved version: 7`.
 
 ## Rollback: restore the previous approved version
 
-`ci/rollback_lab.py` reads that recorded version from AWS and moves `approved` back to it. It refuses a version outside the staging function, and it never deletes anything.
+A **rollback** means going back to the last version that worked. `ci/rollback_lab.py` reads the recorded version from AWS and moves `approved` back to it. It refuses any version that does not belong to the staging function. It never deletes anything.
 
-This step is optional. It needs at least two passing runs, so that `approved` has an earlier version to go back to. The fix run from use case 1 is one.
+This step is optional. It needs at least two passing runs, so that `approved` has an earlier version to go back to. The fix run from use case 1 counts as one.
 
 ### Step 1: Roll back
 
@@ -42,13 +50,13 @@ python ci/rollback_lab.py
 
 **Expected:** `Rolled back`, the function name, and the two version numbers, such as `approved moved from version 9 to version 7`.
 
-Running it again swaps back, because each rollback records the version it left. The next passing run on `main` also moves `approved` forward again.
+If you run it again, it swaps back, because each rollback notes the version it left. The next passing run on `main` also moves `approved` forward again.
 
 ## Evidence to keep
 
 - The branch, pull request and run links for each change.
-- The failing and passing trace links.
+- The links to the failing and passing traces.
 - The passing report.
-- Your explanation of the tool results, and of the release and recovery steps.
+- Your own explanation of the test results, and of how a release is approved and rolled back.
 
 **Next:** [09 Tear down](09-tear-down.md)

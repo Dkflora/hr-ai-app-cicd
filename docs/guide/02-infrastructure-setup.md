@@ -1,21 +1,21 @@
 # 02 Infrastructure setup
 
-**Goal:** connect Langfuse, set your Terraform names, and deploy the whole application into your AWS account with one setup command.
+**Goal:** connect Langfuse, choose your names, and create the whole application in AWS with one setup command.
 
-The setup checks your machine first, then builds the backend and creates the infrastructure with Terraform. It then loads synthetic employees, indexes the policy documents, deploys the React site and creates the sign-in accounts. Finally it makes a real signed-in API call to prove it works.
+The setup script does everything in order. First it checks that your computer has the right tools. Then it packages the code and creates the AWS resources with Terraform. Next it loads made-up employees, prepares the policy documents for search, and publishes the web page. It creates the sign-in accounts. Finally it signs in and asks the app one real question, to prove everything works.
 
 ## Step 1: Create a Langfuse project and keys
 
-Langfuse records every request: the question, the tools called, the model calls and the judge result. Create the project first, because the next steps need its address and keys.
+Langfuse is the tool that records every request: the question, the tools used, each question to the AI model, and the judge's result. Create your Langfuse project first, because the next steps need its address and keys.
 
 1. Open [Langfuse Cloud](https://cloud.langfuse.com) and sign in with GitHub or Google.
 2. Create an organization, then a project named for the HR application.
-3. Note your region's API address. For a US project it is `https://us.cloud.langfuse.com`.
-4. Open project **Settings → API keys** and create a key pair. The public key starts `pk-lf-`, the secret key starts `sk-lf-`.
+3. Write down your region's API address. For a US project it is `https://us.cloud.langfuse.com`.
+4. In the project, open **Settings → API keys** and create a key pair. The public key starts with `pk-lf-`. The secret key starts with `sk-lf-`.
 
 ## Step 2: Create your two local settings files
 
-Both files are git-ignored, so they never reach GitHub.
+These commands copy two example files. You fill them in next. Git ignores both files, so they never reach GitHub.
 
 ```bash
 cd ~/hr-rag-lab
@@ -25,7 +25,7 @@ cp .env.langfuse.example .env.langfuse
 
 ## Step 3: Add your Langfuse keys to .env.langfuse
 
-Fill in `.env.langfuse` with the key pair and address from step 1:
+Open `.env.langfuse` in your editor. Fill in the two keys and the address from step 1:
 
 ```ini
 LANGFUSE_PUBLIC_KEY=pk-lf-...
@@ -33,11 +33,11 @@ LANGFUSE_SECRET_KEY=sk-lf-...
 LANGFUSE_BASE_URL=https://us.cloud.langfuse.com
 ```
 
-Keep this key pair private. You will paste the same two keys into GitHub in document 06b.
+These keys are private to you. In document 06b you will add the same two keys to GitHub.
 
 ## Step 4: Set your names in terraform.tfvars
 
-Set these values in `infra/terraform/terraform.tfvars`, replacing `yourname` with something unique to you:
+Open `infra/terraform/terraform.tfvars` in your editor. Set these values, and replace `yourname` with something unique to you:
 
 ```hcl
 aws_region = "us-east-1"
@@ -49,78 +49,78 @@ langfuse_base_url = "https://us.cloud.langfuse.com"
 trace_synthetic_content = true
 ```
 
-- `project_name`: Prefix for every AWS resource name. Two students with the same name collide.
-- `cognito_domain_prefix`: Becomes part of the sign-in page address, which must be unique across all of AWS.
-- `langfuse_base_url`: The same Langfuse address as in `.env.langfuse`. The setup stops if the two differ.
-- `trace_synthetic_content`: `true` stores the synthetic questions and answers in traces so you can read them.
+- `project_name`: the start of every AWS resource name. If two students choose the same name, their resources clash.
+- `cognito_domain_prefix`: part of the sign-in page address. It must be unique across all of AWS.
+- `langfuse_base_url`: the same Langfuse address as in `.env.langfuse`. The setup stops if the two are different.
+- `trace_synthetic_content`: `true` lets Langfuse store the made-up questions and answers, so you can read them.
 
 ## What the setup builds
 
-One command creates the whole application in your AWS account. The main parts:
+One command creates the whole application in the AWS account you use for this lab. These are the main parts:
 
-- **Terraform:** the tool that creates the AWS resources from the files in `infra/terraform/`. It records what it created in a state file, so it can change or delete them later.
+- **Terraform:** the tool that creates the AWS resources from the files in `infra/terraform/`. It keeps a record of what it created, called a state file, so it can change or delete those resources later.
 - **Cognito:** the sign-in service. It holds the demo employees and the pipeline's test accounts.
-- **API Gateway and Lambda:** API Gateway receives each question and checks the sign-in token, then a Lambda function, the Python backend, answers it.
-- **Aurora PostgreSQL:** the employee database, with row-level security so each person reads only what their role allows.
-- **OpenSearch:** the search index of the policy documents. **Indexing** means splitting each document into passages and storing them so the app can search them.
-- **Amazon Bedrock:** the AI models and the guardrail.
-- **LiteLLM gateway:** a small server that every model call passes through.
-- **S3 and CloudFront:** S3 stores the React web app, and CloudFront serves it over HTTPS.
-- **Secrets Manager:** stores passwords and keys, so they never sit in code.
+- **API Gateway and Lambda:** API Gateway receives each question and checks the person's sign-in. Then a Lambda function, which runs the Python code, writes the answer.
+- **Aurora PostgreSQL:** the employee database. Row-level security makes sure each person reads only what their role allows.
+- **OpenSearch:** the search engine for the policy documents. **Indexing** means splitting each document into short passages and storing them, so the app can search them.
+- **Amazon Bedrock:** the AWS service that provides the AI models and the guardrail safety filter.
+- **LiteLLM gateway:** a small server that every question to an AI model passes through.
+- **S3 and CloudFront:** S3 stores the web page files. CloudFront serves them to browsers over HTTPS.
+- **Secrets Manager:** stores passwords and keys, so they are never written in the code.
 
 ## Step 5: Start the setup
 
-This creates billable AWS resources.
+This step creates AWS resources that cost money while they run.
 
 ```bash
 bash scripts/setup-lab.sh
 ```
 
-First the script checks your tools, both settings files and your AWS account. If anything is missing, it lists every problem at once and stops before it installs or creates anything. Fix each item and run the same command again.
+First the script checks your tools, both settings files and your AWS account. If anything is missing, it lists every problem at once. It stops before it installs or creates anything. Fix each problem and run the same command again.
 
-Each step then prints one line with a green check mark and how long it took, such as `✓ Python environment (.venv) (2s)`. The full output of every step goes to `build/setup.log`.
+Then each step prints one line with a green check mark and how long it took, such as `✓ Python environment (.venv) (2s)`. The full output of every step goes to the file `build/setup.log`.
 
 ## Step 6: Review the plan and answer y
 
-Before Terraform changes anything, the script prints the plan summary, such as `Plan: 129 to add, 0 to change, 0 to destroy.`, and asks `Apply these changes? [y/N]`. Your resource count may differ by a few. Before answering, check:
+Before Terraform changes anything, the script prints a plan summary and asks a question. The summary looks like `Plan: 129 to add, 0 to change, 0 to destroy.` and the question is `Apply these changes? [y/N]`. Your number of resources may be slightly different. Before you answer, check three things:
 
-- On a first run, the summary says `0 to change, 0 to destroy`. Anything else means the wrong state or account.
-- If the script lists resources under **These will be deleted or recreated**, read the list. On a first run it must be empty.
+- On a first run, the summary says `0 to change, 0 to destroy`. Anything else means you are pointing at the wrong account or the wrong saved state.
+- If the script lists resources under **These will be deleted or recreated**, read that list. On a first run it must be empty.
 - The resource names in `build/setup.log` start with your own `project_name`.
 
-If all three hold, type `y` and press Enter. Any other answer stops the script without changing anything.
+If all three are true, type `y` and press Enter. Any other answer stops the script, and nothing changes.
 
 ## Step 7: Let the setup finish
 
-Creating the infrastructure is the longest step. A timer shows how long it has been running. The script then continues on its own:
+Creating the AWS resources takes the longest. A timer shows how long it has been running. Then the script continues on its own:
 
 1. Creates the database tables, the demo employees and the pipeline's test accounts.
 2. Starts the LiteLLM model gateway and waits until it is ready.
-3. Uploads the policy documents; uploading `manifest.json` starts indexing.
-4. Builds the React site and uploads it to S3 behind CloudFront.
+3. Uploads the policy documents. Uploading `manifest.json` starts the indexing.
+4. Builds the web page and uploads it to S3, behind CloudFront.
 5. Creates the sign-in accounts and stores their passwords in Secrets Manager.
 6. Stores your Langfuse keys in Secrets Manager.
-7. Checks that indexing finished and makes one signed-in API call as a test account.
-8. Deletes the chat that check created, so the app starts with an empty history.
+7. Checks that indexing finished. Then it signs in as a test account and asks one question.
+8. Deletes the chat from that check, so the app starts with an empty history.
 
 **Expected:** `Setup complete.`, followed by the app address, the demo employees and their password.
 
-If a step fails, the script prints a red ✗, what to check, and the key error line. Fix the cause and run the same command again. The script is safe to rerun: steps whose inputs have not changed are skipped, and the others leave your deployment as it is.
+If a step fails, the script prints a red ✗, what to check, and the most important error line. Fix the cause and run the same command again. Running it again is safe. Steps that have nothing new to do are skipped, and the others leave the working parts as they are.
 
 ## Step 8: Open the application
 
-After `Setup complete.`, the script prints the app address, which starts with `https://`. It then lists the four demo employees you can sign in as, with their roles and the one password they share:
+After `Setup complete.`, the script prints the app address, which starts with `https://`. It then lists the four demo employees you can sign in as. It shows each one's role and the one password they all share:
 
 - `amara.diallo@northwind.example`: employee
 - `liam.fischer@northwind.example`: manager
 - `priya.raman@northwind.example`: hr
 - `dana.whitfield@northwind.example`: exec
 
-It also prints the sign-in for the LiteLLM gateway admin UI, which document 03 opens.
+It also prints the sign-in for the LiteLLM gateway admin page, which you open in document 03.
 
-The same details are saved in `demo-sign-in.txt` in the project folder, so you can open them in your editor at any time. The file holds the gateway master key, so keep it on your computer. Run `python scripts/show-demo-users.py` to recreate it.
+The same details are saved in the file `demo-sign-in.txt` in the project folder. You can open it in your editor at any time. It holds the gateway's master key, so it stays on your computer. If you delete it, run `python scripts/show-demo-users.py` to create it again.
 
-Setup also starts `build/github-settings.txt`, one file that collects every value GitHub will need in document 06b, each under the exact name GitHub expects. Document 05 adds the last value. Like everything in `build/`, it never reaches GitHub.
+Setup also creates the file `build/github-settings.txt`. It collects every value GitHub will need in document 06b, each under the exact name GitHub expects. Document 05 adds the last value. Like everything in the `build/` folder, it never reaches GitHub.
 
 If you closed the terminal or lost the output, print the details again:
 
@@ -129,9 +129,9 @@ cd ~/hr-rag-lab
 cat demo-sign-in.txt
 ```
 
-Open the address in your browser. You should see the Northwind HR sign-in page.
+Open the app address in your browser. You should see the Northwind HR sign-in page.
 
-Activate the virtual environment in every new terminal before running Python helpers:
+The lab's Python scripts run in a virtual environment: a folder with the exact Python packages the lab needs. Turn it on in every new terminal before you run them:
 
 ```bash
 source .venv/Scripts/activate 2>/dev/null || source .venv/bin/activate

@@ -1,10 +1,14 @@
 # Reference: OIDC by hand
 
-`scripts/prepare-oidc.py` in document 05 does everything on this page in one command. Follow this page instead if you want to see each step, or to build the same setup yourself in the AWS console. The result is the same role, with the same name, so documents 06b and 09 work either way.
+In document 05, `scripts/prepare-oidc.py` does everything on this page with one command. Use this page if you want to see each step, or to build the same thing yourself in the AWS console.
+
+**OIDC** is how the pipeline signs in to AWS without a stored password. GitHub gives each job a signed token. AWS checks the token and gives the job short-lived access, through an IAM **role**.
+
+You end up with the same role, with the same name, either way. So documents 06b and 09 work the same.
 
 ## Step 1: Write the two policy files
 
-The script's dry run writes both files and checks them, without changing anything in AWS:
+With `--dry-run`, the script writes both files and checks them. It changes nothing in AWS:
 
 ```bash
 cd ~/hr-rag-lab
@@ -12,16 +16,16 @@ source .venv/Scripts/activate 2>/dev/null || source .venv/bin/activate
 python scripts/prepare-oidc.py --dry-run
 ```
 
-It prints the role name it would create, such as `hr-ci-ai-chatbot-github-ci`: your `project_name` followed by `-github-ci`. Note it for step 3.
+It prints the name of the role it would create, such as `hr-ci-ai-chatbot-github-ci`. That is your `project_name` followed by `-github-ci`. Write the name down for step 3.
 
 The two files are in `build/`:
 
-- `github-oidc-trust.json`: who may use the role. Only your repository's `hr-staging` environment, with the audience `sts.amazonaws.com`.
-- `github-oidc-permissions.json`: what the role may do. Six permissions, one per service listed at the top of document 05.
+- `github-oidc-trust.json`: who may use the role. This is the **trust policy**. It allows only jobs in your repository's `hr-staging` environment, with the audience `sts.amazonaws.com`.
+- `github-oidc-permissions.json`: what the role may do. It has six permissions, one for each service listed at the top of document 05.
 
 ## Step 2: Register GitHub as an identity provider
 
-AWS checks GitHub's tokens only once it knows GitHub as an identity provider. You do this once per AWS account.
+AWS can only check GitHub's tokens after you register GitHub as an **identity provider**. You do this once per AWS account.
 
 1. In the AWS console, open **IAM → Identity providers**.
 2. If `token.actions.githubusercontent.com` is already listed, open it and check that `sts.amazonaws.com` is one of its audiences. Then go to step 3.
@@ -31,7 +35,7 @@ AWS checks GitHub's tokens only once it knows GitHub as an identity provider. Yo
    - Audience: `sts.amazonaws.com`
 4. Click **Add provider**.
 
-Other projects in your account may use the same provider. Never delete it or remove its other audiences.
+Other projects in your AWS account may use the same provider, so it stays in place, with any other audiences it already has.
 
 ## Step 3: Create the role with the trust policy
 
@@ -49,7 +53,7 @@ Other projects in your account may use the same provider. Never delete it or rem
 
 ## Step 5: Save the role ARN
 
-On the role's summary page, copy the **ARN**. Save it where the script would, then refresh the settings file for document 06b:
+The **ARN** is the role's full AWS name. On the role's summary page, copy it. Save it in the same file the script would use, then refresh the settings file for document 06b:
 
 ```bash
 cd ~/hr-rag-lab
@@ -63,7 +67,7 @@ Replace `PASTE-THE-ROLE-ARN-HERE` with the ARN before you run it.
 
 ## Check your work
 
-Run the script's dry run again. It finds your role by name, so it plans no new one:
+Run the script with `--dry-run` again. It finds your role by its name, so it plans no new role:
 
 ```bash
 python scripts/prepare-oidc.py --dry-run

@@ -1,25 +1,27 @@
 # 07a Use case 1: tool-limit failure
 
-**Goal:** prove the release gate blocks a broken change that passes every static check.
+**Goal:** prove that the pipeline stops a broken change from being approved, even when every code check passes.
 
-**OWASP LLM risk:** LLM06 Excessive agency and LLM10 Unbounded consumption. The tool limit stops the agent from looping without end.
+**OWASP LLM risk:** LLM06 Excessive agency and LLM10 Unbounded consumption. A limit on tool rounds stops the assistant from looping forever.
 
-You reduce the agent's tool budget from 5 rounds to 1. The code still compiles and the unit tests still pass, so the pull request looks fine. After the merge, the live API test fails and the `approved` pointer stays on the baseline. You then repair it with a second pull request.
+In this use case you break the assistant on purpose. A **tool round** is one turn where the model asks for a tool, such as the policy search, and reads the result. The assistant normally gets 5 rounds. You cut it to 1.
+
+The code still runs and the unit tests still pass, so the pull request looks fine. After you merge it, the test that asks the real app questions fails. The `approved` pointer stays on the last good version. Then you repair the change with a second pull request.
 
 This use case fails the same way every time, so run it first.
 
 ## How the tool loop works
 
-`lambda/app/assistant.py` gives the model up to `MAX_TOOL_ROUNDS` turns. On the first turn the model must call a tool, such as policy search. The next turn writes the answer from what the tool returned.
+`lambda/app/assistant.py` gives the model up to `MAX_TOOL_ROUNDS` turns. On the first turn, the model must call a tool, such as the policy search. On the next turn, it writes the answer from what the tool returned.
 
-With one round, the policy search uses the only turn. No turn is left to write the answer, so the employee gets: `Sorry, I couldn't finish that answer. Please try again.`
+With only one round, the policy search uses up that one turn. No turn is left to write the answer. So the employee gets this message: `Sorry, I couldn't finish that answer. Please try again.`
 
 ## Branches in this use case
 
-- `test/tool-limit` sets `MAX_TOOL_ROUNDS = 1`. After merge: live test fails, approval blocked.
-- `fix/tool-limit` sets `MAX_TOOL_ROUNDS = 5`. After merge: live test passes, approval moves.
+- `test/tool-limit` sets `MAX_TOOL_ROUNDS = 1`. After you merge it, the live test fails and the version is not approved.
+- `fix/tool-limit` sets `MAX_TOOL_ROUNDS = 5`. After you merge it, the live test passes and the version is approved.
 
-Both start from the latest `main` and return to `main` through their own pull request.
+Both branches start from the latest `main`. Each one goes back into `main` through its own pull request.
 
 ## Step 1: Start from a clean, passing main
 
@@ -31,9 +33,15 @@ git status --short
 grep -n '^MAX_TOOL_ROUNDS' lambda/app/assistant.py
 ```
 
-**Expected:** `git status --short` prints nothing, and the last line is `58:MAX_TOOL_ROUNDS = 5`.
+**Expected:** `git status --short` prints nothing, and the last line is `54:MAX_TOOL_ROUNDS = 5`.
 
-Before breaking anything, write down three things from your passing run: the commit, the prompt version, and the Lambda version the `approved` alias points to. Print the alias:
+Before you break anything, write down three things from your last passing run:
+
+- the commit,
+- the prompt version,
+- the Lambda version that the `approved` alias points to.
+
+An **alias** is a name that points to one version of the Lambda function. This command prints the version behind `approved`:
 
 ```bash
 aws lambda get-alias \
@@ -77,14 +85,16 @@ git push -u origin test/tool-limit
 ## Step 3: Open the pull request and merge it
 
 1. In GitHub, open a pull request from `test/tool-limit` into `main`.
-2. Watch the `checks` job. **It passes**, because the code is still valid.
+2. Watch the `checks` job. **It passes**, because the code itself is still valid.
 3. Get reviewer approval and merge.
 
-You merge on purpose. This is an authorized fault test in synthetic staging. Never do this to a live production branch.
+You merge a broken change on purpose here. It is a planned test in staging, with made-up data.
 
 ## Step 4: Watch the gate block the release
 
-Open **Actions** and select the **new** run on `main`.
+The **release gate** is the point in the pipeline where a failed test stops a version from being approved.
+
+In GitHub, open the **Actions** tab. Click the **new** run on `main`.
 
 **Expected:**
 
@@ -94,9 +104,9 @@ Open **Actions** and select the **new** run on `main`.
 - The report says `Release gate: FAIL.`.
 - `Production handoff (dry run)` is **skipped**.
 
-The pull request is already merged. The **release** is what the gate blocked.
+The pull request is already merged. What the gate blocked is the **release**: the broken version is never approved.
 
-Confirm the `approved` alias did not move:
+Check that the `approved` alias did not move:
 
 ```bash
 aws lambda get-alias \
@@ -113,15 +123,19 @@ Sign in to the chatbot as Amara and ask:
 
 > How many PTO days do employees receive each year?
 
-The staging UI uses the `candidate` alias, so it shows the broken answer even though the release is blocked.
+The staging app always runs the newest version, through the `candidate` alias. So it shows the broken answer, even though the release is blocked.
 
-In Langfuse, open that trace. You should see **Agent round 1** with its policy search, and no **Agent round 2**: the limit stopped the agent before it could write the answer. The **HR answer** metadata says `stopped: tool round limit reached (1)`, and its output is the safe "couldn't finish" message.
+In Langfuse, open the trace for that question. You see **Agent round 1** with its policy search, and no **Agent round 2**. The limit stopped the assistant before it could write the answer. On the **HR answer** step, the metadata says `stopped: tool round limit reached (1)`. Its output is the "couldn't finish" message.
 
-To see the same thing from the gateway, open the admin UI as in document 03, step 5. In **Logs**, compare this question's model calls with the same question from your passing run.
+You can see the same thing in the model gateway, which records every call the app makes to the AI model:
+
+1. Open the gateway admin page, as you did in document 03, step 3.
+2. Click **Logs**.
+3. Find this question. Compare its model calls with the same question from your passing run. The broken version makes fewer calls.
 
 ## Step 6: Repair it with a new branch
 
-The broken change is already in `main`, so the repair needs its own branch and pull request.
+The broken change is already in `main`. So the repair needs its own branch and its own pull request.
 
 ```bash
 git switch main
@@ -130,7 +144,14 @@ git switch -c fix/tool-limit
 grep -n '^MAX_TOOL_ROUNDS' lambda/app/assistant.py
 ```
 
-In VS Code, open `lambda/app/assistant.py`, press **Ctrl+G**, go to the line `grep` printed, change it back to `MAX_TOOL_ROUNDS = 5`, and save. Then check it:
+In VS Code:
+
+1. Open `lambda/app/assistant.py`.
+2. Press **Ctrl+G** and go to the line `grep` printed.
+3. Change it back to `MAX_TOOL_ROUNDS = 5`.
+4. Save the file.
+
+Then check it:
 
 ```bash
 git diff
@@ -144,13 +165,13 @@ git commit -m "Restore the working tool budget"
 git push -u origin fix/tool-limit
 ```
 
-Open a pull request from `fix/tool-limit` into `main`, get review, and merge.
+Open a pull request from `fix/tool-limit` into `main`, get it reviewed, and merge it.
 
 ## Step 7: Confirm the repair
 
-Open the **newest** run on `main`.
+In GitHub, open the **newest** run on `main`.
 
-**Expected:** every job green, the report says `Release gate: PASS.`, and the `approved` alias moves to the new version:
+**Expected:** every job is green, the report says `Release gate: PASS.`, and the `approved` alias now points to the new version:
 
 ```bash
 aws lambda get-alias \
@@ -159,9 +180,9 @@ aws lambda get-alias \
   --query FunctionVersion --output text
 ```
 
-Ask the same PTO question again. In Langfuse, the fixed trace shows **Agent round 1** with the policy search, then **Agent round 2** with the answer, the inline judge and the answer guardrail.
+Ask the same PTO question again. In Langfuse, the new trace shows **Agent round 1** with the policy search. Then it shows **Agent round 2** with the answer, the inline judge and the answer guardrail. The **inline judge** is a second model call that checks the answer against the policy text before the employee sees it.
 
-If an unrelated case fails, investigate it. Do not change the expected answers.
+If a different case fails, open its trace in Langfuse to see why.
 
 ## Step 8: Clean up the branches
 
@@ -174,7 +195,7 @@ git branch -D test/tool-limit fix/tool-limit
 ## Evidence to keep
 
 - The bad commit and the fix commit.
-- The failing run link and the passing run link.
+- The link to the failing run and the link to the passing run.
 - The two Langfuse trace links for the PTO question, before and after.
 - The `approved` version before, during and after.
 

@@ -2,23 +2,25 @@
 
 **Goal:** create the first job of the delivery workflow and see it run on a pull request.
 
-This job runs on every push and pull request. It runs the unit tests, builds the backend package with its release identity, and builds the React site. It gets **no AWS or Langfuse credentials**, because pull-request code has not been reviewed yet.
+This job runs every time you push code or open a pull request. It does three things: runs the unit tests, builds the backend package, and builds the React website. It gets **no AWS or Langfuse keys**. Pull-request code has not been reviewed yet, so it must not be able to touch AWS.
 
 ## What a CI workflow is
 
-**CI** (continuous integration) means every change is checked automatically before it is merged. In GitHub Actions, a **workflow** is a YAML file in `.github/workflows/`. It has:
+**CI** stands for continuous integration. It means every change is checked automatically before it is merged into `main`.
 
-- **Triggers** (`on:`): the events that start it, such as a push or a pull request.
-- **Jobs:** groups of work. Each job runs on a fresh machine called a **runner**, and jobs can wait for each other.
-- **Steps:** the commands inside a job, run in order. A step either runs a shell command (`run:`) or a ready-made **action** (`uses:`), such as one that downloads your code.
+In GitHub Actions, a **workflow** is a YAML file in the `.github/workflows/` folder. It has three parts:
 
-If you know Jenkins or Azure DevOps: jobs are like stages, runners are like agents, and actions are like plugins or tasks. The comment at the end of each line in step 2 says what that line does.
+- **Triggers** (`on:`): the events that start the workflow, such as a push or a pull request.
+- **Jobs:** groups of work. Each job runs on a fresh computer that GitHub provides, called a **runner**. One job can wait for another to finish.
+- **Steps:** the commands inside a job, run one after another. A step either runs a shell command (`run:`) or a ready-made **action** (`uses:`). An action is a reusable step someone else wrote, such as one that downloads your code.
 
-This job also builds the backend package with its **release identity**: a `release.json` file inside the package that records the commit and a fingerprint of the prompt. Later, every test result can be traced back to the exact code and prompt it tested.
+If you know Jenkins or Azure DevOps: jobs are like stages, runners are like agents, and actions are like plugins or tasks. In step 2, the comment at the end of each line says what that line does.
+
+The job also stamps the backend package with a **release identity**. This is a `release.json` file inside the package. It records which commit the code came from and a fingerprint of the prompt. Later, you can trace every test result back to the exact code and prompt that were tested.
 
 ## Step 1: Run the unit tests locally
 
-Run the same tests the job will run:
+First, run on your computer the same tests the job will run:
 
 ```bash
 cd ~/hr-rag-lab
@@ -28,11 +30,11 @@ python -m unittest discover -s ci/tests -v
 
 **Expected:** every test ends with `ok`, and the last line is `OK`.
 
-The tests check prompt structure, release packaging, the inline judge, the model gateway adapter and trace handling. See `ci/tests/test_release.py` for an example.
+The tests check the prompt's structure, how the release package is built, the inline judge, the connection to the model gateway, and the tracing code. To see an example, open `ci/tests/test_release.py`.
 
 ## Step 2: Create the workflow file
 
-This command creates `.github/workflows/hr-quality.yml` with the complete first version.
+This command creates the file `.github/workflows/hr-quality.yml` with the first version of the workflow.
 
 ```bash
 mkdir -p .github/workflows
@@ -78,11 +80,11 @@ EOF
 
 What each part does:
 
-- `on:`: Runs on pull requests, on pushes to `main`, `feature/**`, `fix/**` and `test/**`, and on a manual click.
+- `on:`: The workflow starts on pull requests, on pushes to `main`, `feature/**`, `fix/**` and `test/**`, and when you click **Run workflow** in GitHub.
 - `permissions: contents: read`: The job can read the code and nothing else.
-- `concurrency: hr-staging`: One run at a time, so two deployments never overlap in the single staging environment.
-- `persist-credentials: false`: The Git token is not left on the runner after checkout.
-- `ci/release.py`: Checks the prompt and packages the backend with a `release.json` that records the commit and prompt.
+- `concurrency: hr-staging`: Only one run at a time. Two deployments never overlap, because there is only one staging environment.
+- `persist-credentials: false`: The Git token is removed from the runner after the code is downloaded.
+- `ci/release.py`: Checks the prompt and builds the backend package. It adds a `release.json` that records the commit and the prompt.
 
 ## Step 3: Commit and push
 
@@ -94,14 +96,14 @@ git push -u origin feature/pipeline
 
 ## Step 4: Open the pull request
 
-Open your repository on GitHub. Right after a push, a yellow banner above the file list shows `feature/pipeline` with a **Compare & pull request** button. Click it, then click **Create pull request**.
+Open your repository on GitHub. Right after a push, a yellow banner appears above the file list. It shows `feature/pipeline` and a **Compare & pull request** button. Click the button, then click **Create pull request**.
 
-If the banner is gone, open the **Pull requests** tab and click **New pull request**. Set **base** to `main` and **compare** to `feature/pipeline`, then click **Create pull request**.
+If the banner is gone, open the **Pull requests** tab and click **New pull request**. Set **base** to `main` and **compare** to `feature/pipeline`. Then click **Create pull request**.
 
-The pull request page lists the `checks` job near the bottom. Click **Details** to follow its log.
+Near the bottom of the pull request page, you see the `checks` job. Click **Details** to watch its log.
 
 **Expected:** the `checks` job finishes green.
 
-**Do not merge yet.** Documents 06a and 06a2 add the deployment jobs to this same pull request.
+Leave the pull request open for now. In documents 06a and 06a2 you add the deployment jobs to it.
 
 **Next:** [05 GitHub-to-AWS access](05-github-to-aws-access.md)

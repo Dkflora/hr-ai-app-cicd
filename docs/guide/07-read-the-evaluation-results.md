@@ -1,73 +1,81 @@
 # 07 Read the evaluation results
 
-**Goal:** find each tool's result from your first run, and know what a pass or a failure tells you.
+**Goal:** find each tool's result from your first pipeline run, and understand what a pass or a fail tells you.
 
-Document 06a explains what each tool is. This document reads the results.
+Document 06a explains what each tool is. This document shows where to find each result and how to read it.
 
 ## How the live API test decides
 
-`ci/evaluate_api.py` sends one untimed warm-up question, then asks every test question twice. For each answer it checks the expected facts, the forbidden facts, the cited source, the time taken, and that the answer came from the exact release under test. A case passes only if **both** runs pass, and one failed run blocks approval. When it finishes, pass or fail, it deletes the test accounts' chats.
+`ci/evaluate_api.py` first asks one warm-up question, which is not timed or scored. Then it asks every test question twice. For each answer it checks five things:
+
+- The answer contains the facts it must contain.
+- It does not contain the facts it must not show.
+- It names the expected policy as its source.
+- It arrived within the time limit.
+- It came from the exact version being tested.
+
+A case passes only if **both** of its answers pass. One failed answer stops the version from being approved. At the end, pass or fail, the script deletes the test accounts' chats.
 
 ## What a failure means for each tool
 
-- **The live test** fails with `slow`: an answer took longer than 20 seconds. Open its trace in Langfuse and find the slow step, such as the policy search.
-- **Retrieval** fails: search did not return a case's expected policy. Open the **Policy search** step of that question's trace and compare the passages with the policy.
-- **Consistency** fails: the two answers to one question meant different things. Read both answers in the Langfuse experiment, then their traces.
-- **Promptfoo** fails: a real regression in that case. Read the failing assertion in its log.
-- **Langfuse** fails: scores dropped compared with the baseline experiment. Compare the two experiments to see which cases changed.
-- **DeepEval** fails: the log names the case and the metric. For faithfulness, find the claim the passages do not support. For relevancy, check whether the answer drifted off the question. The grader can be wrong, so read the answer before you decide.
-- **Evidently** shows drift: answers got longer or slower than the reference run. Investigate the cause. It does not prove an answer is wrong.
+- **The live test** fails with `slow`: one answer took longer than 20 seconds. Open that question in Langfuse and look for the step that took the longest, such as the policy search.
+- **Retrieval** fails: the search did not find the policy a case expects. Open that question in Langfuse, click its **Policy search** step, and compare the passages it found with the policy.
+- **Consistency** fails: the same question, asked twice, got two answers that mean different things. Read both answers in the Langfuse experiment, then open each one step by step.
+- **Promptfoo** fails: an answer that used to be right is now wrong. Its log shows which rule the answer broke.
+- **Langfuse** fails: some cases scored lower than in the baseline run. Compare the two runs' results to see which cases changed.
+- **DeepEval** fails: the log names the case and the check that failed. For faithfulness, find the sentence the policy passages do not back up. For relevancy, check whether the answer wandered away from the question. The grading model can be wrong, so read the answer yourself before you decide.
+- **Evidently** shows a change: answers got longer or slower than in an earlier run. Find out why. A change does not prove an answer is wrong.
 
 ## Where to find each result
 
-- **Release gate, case counts, latency, retrieval, consistency and DeepEval averages**: Actions run → **Summary** → the report.
-- **Retrieval misses and inconsistent answers**: Actions run → `candidate` job → **Check retrieval quality and answer consistency** step log.
-- **Promptfoo assertions**: Actions run → `candidate` job → **Promptfoo evaluation action** step log.
-- **DeepEval pass or fail**: Actions run → `candidate` job → **Evaluate answer quality with DeepEval** step. Per-case scores go to `build/deepeval.json` on the runner, which the workflow does not upload.
-- **Evidently report**: Actions run → **Artifacts** → download the Evidently report.
-- **Langfuse**: the walkthrough below.
+- **The overall result, case counts, speed, retrieval, consistency and DeepEval scores**: open the run in the **Actions** tab, click **Summary**, and read the report.
+- **Which retrievals missed, and which answers disagreed**: in the run, click the `candidate` job, then the **Check retrieval quality and answer consistency** step.
+- **Promptfoo results**: in the run, click the `candidate` job, then the **Promptfoo evaluation action** step.
+- **DeepEval scores**: in the run, click the `candidate` job, then the **Evaluate answer quality with DeepEval** step. The step's log shows each case's scores. The full file, `build/deepeval.json`, stays on GitHub's machine and is not uploaded.
+- **Evidently report**: on the run page, scroll to **Artifacts** and download the Evidently report.
+- **Langfuse**: follow the steps below.
 
 ## Walk through your run in Langfuse
 
-Open your Langfuse project and follow the pipeline's results in this order.
+Open your Langfuse project and look at these four pages, in this order.
 
 ### 1. The prompt version
 
-Open **Prompts → hr-policy-system**. The newest version is the one your run published, labelled `candidate`. Its config shows the commit it came from.
+Open **Prompts → hr-policy-system**. The newest version is the one your run published. It has the label `candidate`. Its config shows which commit it came from.
 
 ### 2. The dataset
 
-Open **Datasets**, then the dataset whose name starts with `hr-regression-`. Its items are the test questions. Open one item to see the question with its required facts, forbidden facts and source. These items are the golden set from week 6, stored where every experiment can use them.
+Open **Datasets**, then the dataset whose name starts with `hr-regression-`. Each item is one test question. Open an item to see the question, the facts it must contain, the facts it must not show, and its source. This is the "golden set" from week 6: the fixed list of questions every run is scored against.
 
 ### 3. The experiment for your run
 
-In that dataset, open the experiment runs. Each pipeline run adds one, named after its commit and run number. Open yours:
+In that dataset, open the list of runs. Each pipeline run adds one, named after its commit and its run number. Open yours:
 
-- Every item shows the captured answers and a `reference_checks` score: 1 if both runs passed, 0 if not.
+- Every question shows its two answers and a `reference_checks` score: 1 if both answers passed, 0 if not.
 - On a passing run, every score is 1.
-- After a use case breaks something, open two runs side by side to see exactly which cases dropped to 0.
+- After a use case breaks something, open two runs side by side. You see exactly which questions dropped to 0.
 
 ### 4. The traces behind one answer
 
-Open **Traces** and set the time range to your run. The test questions appear as normal traces from the test accounts. Open one and read its steps as in document 03: each agent round with its model call and tool, then the inline judge and the answer guardrail. This is the same view as your first trace in document 03, so a failing case can be followed step by step.
+Open **Traces** and set the time range to when your run happened. Each test question appears as its own trace, from a test account. Open one. You see the same step-by-step view as in document 03. Each agent round shows its model call and tool. Then come the inline judge and the guardrail check on the answer. Use it to follow a failing question step by step.
 
 ## What the thresholds mean
 
-- **Promptfoo at 100%** means every case in this fixed set passed on every run. It does not mean the chatbot answers every possible question correctly.
-- **20 seconds per answer** is the limit the employee waits for. The inline judge needs time inside the same budget.
-- **Retrieval hit rate of 100%** means every expected policy came back for this fixed set. The mean reciprocal rank shows how high it came.
-- **Consistency of 0.75** separates a paraphrase (about 0.87 in testing) from a different answer (about 0.07). It applies to policy answers only.
-- **DeepEval at 0.7** for every metric, where higher is better, is a demonstration threshold. A domain owner must review the rubric before using it as a production quality bar.
-- **Evidently** compares distributions. The supplied reference is a synthetic failing run, so expect differences.
+- **Promptfoo at 100%** means every question in this fixed list passed, every time. It does not mean the chatbot answers every possible question correctly.
+- **20 seconds per answer** is the longest an employee should wait. The inline judge has to fit its check inside that same time.
+- **Retrieval hit rate of 100%** means the search found the expected policy for every question in this list. The mean reciprocal rank shows how near the top of the results it was: 1 means always first.
+- **Consistency of 0.75** tells "the same answer in other words" (about 0.87 in testing) from "a different answer" (about 0.07). It applies to policy answers only.
+- **DeepEval at 0.7** applies to every check, and higher is better. It is a starting value for this lab. Before a real company uses it, an HR expert must review the grading rules.
+- **Evidently** compares the overall pattern of lengths and times between runs. Its stored reference comes from a made-up failing run, so expect differences.
 
-Keep the authorization and data-disclosure checks mandatory. When a case fails, investigate the answer or the grader. Never lower a threshold or edit an expected answer just to pass.
+When a case fails, look at the answer first, then at the check itself.
 
 ## Check your understanding
 
 Open the report from your passing run and answer these:
 
-1. How many cases passed every repetition, and how many application requests were recorded?
+1. How many cases passed both of their answers, and how many questions did the pipeline send in total?
 2. Pick case 2 from [the test cases](reference-test-cases.md). Which fact must the answer **not** contain, and why?
-3. DeepEval grades only 3 cases with a model. What could it catch that the fact checks miss, and what could it get wrong?
+3. DeepEval uses a model to grade only 5 cases. What could it catch that the fact checks miss, and what could it get wrong?
 
 **Next:** [07a Use case 1: tool-limit failure](07a-use-case-1-tool-limit-failure.md)

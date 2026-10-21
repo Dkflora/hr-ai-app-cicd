@@ -2,11 +2,11 @@
 
 **Goal:** add the deployment and evaluation jobs to the workflow file.
 
-This document only changes the file on your computer. Do not commit it yet. The deployment jobs need GitHub settings first, and document 06b adds them, then commits, pushes and merges.
+Here you only change a file on your computer. You commit it in document 06b, after adding the GitHub settings the new jobs read. Without those settings, the first run would fail.
 
 ## Step 1: Append the two deployment jobs
 
-This command **adds** two jobs to the end of the workflow file you created in document 04. It uses `>>`, so the header and the `checks` job stay as they are. Run it only once; running it twice adds the jobs twice.
+This command **adds** two jobs to the end of the workflow file from document 04. The `>>` means "add to the end", so the lines already there stay as they are. Run it once only. Running it twice adds the jobs twice.
 
 ```bash
 cd ~/hr-rag-lab
@@ -211,8 +211,8 @@ EOF
 grep -nE '^  (checks|candidate|production-handoff-dry-run):' .github/workflows/hr-quality.yml
 ```
 
-**Expected:** the last command lists exactly three jobs: `checks` on line 15, `candidate` on line 38 and `production-handoff-dry-run` on line 203.
+**Expected:** the last command prints three jobs: `checks` on line 15, `candidate` on line 38 and `production-handoff-dry-run` on line 203.
 
-If a job name appears twice, you ran the block twice. Recreate the file with document 04 step 2, then run this block once.
+If a job name appears twice, you ran the block twice. Create the file again with document 04, step 2, then run this block once.
 
 **Next:** [06b Environments, merge and first run](06b-environments-merge-and-first-run.md)

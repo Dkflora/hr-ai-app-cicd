@@ -1,10 +1,10 @@
 # 00 Install Node.js
 
-The setup builds the React site with `npm`, so it needs Node.js 20 or later. The current LTS release works.
+The setup builds the chatbot's web page with a tool called `npm`. `npm` comes with Node.js, so you need Node.js version 20 or later. The current LTS (long-term support) release works.
 
 ## Windows (Chocolatey)
 
-From an administrator PowerShell:
+Open PowerShell as an administrator: right-click **PowerShell** and choose **Run as administrator**. Then run:
 
 ```powershell
 choco install nodejs-lts -y
@@ -16,17 +16,17 @@ choco install nodejs-lts -y
 brew install node
 ```
 
-Without Homebrew, use the LTS installer from [nodejs.org](https://nodejs.org/en/download).
+If you do not have Homebrew, download the LTS installer from [nodejs.org](https://nodejs.org/en/download) and run it.
 
 ## Check
 
-In a new terminal:
+Open a new terminal, then run:
 
 ```bash
 node --version
 npm --version
 ```
 
-`node --version` should print `v20` or higher.
+`node --version` should print `v20` or higher. `npm --version` prints a version number too.
 
 **Next:** [01 Import and clone](01-import-and-clone.md)

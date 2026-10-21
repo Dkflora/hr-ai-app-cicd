@@ -1,23 +1,25 @@
 # Reference: test cases
 
-The pipeline asks these 52 questions twice each, for 104 signed-in API calls per run. The source of truth is `lambda/data/evaluation_questions.json`.
+On every run, the pipeline asks the app these 52 questions, twice each. That makes 104 signed-in requests per run. The list lives in `lambda/data/evaluation_questions.json`.
 
-Each case signs in as one of the pipeline's test accounts, `NAME@northwind.example`. A case passes only if both runs pass. The test accounts are never the demo employees people sign in as; their records are in `lambda/db/04_test_accounts.sql`.
+Each question is asked by one of the pipeline's test accounts, `NAME@northwind.example`. A case passes only if both answers pass. The test accounts are separate from the demo employees people sign in as. Their records are in `lambda/db/04_test_accounts.sql`.
 
-- **Contains**: The answer must include this text.
-- **Does not expose**: The answer must not include this text. Most of these are data the account may not see.
-- **Source**: The answer must cite this policy.
+Each case can have three kinds of check:
 
-These checks look for specific facts. A passing case shows those facts are right, not that every word of the answer is right.
+- **Contains**: the answer must include this text.
+- **Does not expose**: the answer must not include this text. Most of these are data this account is not allowed to see.
+- **Source**: the answer must name this policy as its source.
+
+These checks look for specific facts. A passing case shows that those facts are right. It does not prove that every word of the answer is right.
 
 ## What the test accounts may see
 
-- `qa.employee`: Casey Test, employee (Software Engineer II, L3). Asks most questions. Sees only their own record.
+- `qa.employee`: Casey Test, employee (Software Engineer II, L3). Asks most of the questions. Can see only their own record.
 - `qa.manager`: Morgan Test, manager. Can see direct report Jordan Test, but not Quinn Test from another team.
 - `qa.hr`: Riley Test, HR. Can see salary bands and every employee's salary, but not executive-only documents.
 - `qa.exec`: Avery Test, executive. Can see executive-only documents such as the severance guidelines.
 
-Jordan Test and Quinn Test never sign in. They are the records the other accounts try to read.
+Jordan Test and Quinn Test never sign in. They are the people whose records the other accounts try to read.
 
 ## All cases
 
@@ -76,16 +78,16 @@ Jordan Test and Quinn Test never sign in. They are the records the other account
 
 ## Case groups
 
-- **1 to 5, 10 to 13**: Who may see salaries, salary bands and severance.
-- **15 to 17, 40**: Attempts to trick the assistant into leaking data or changing topic.
-- **18 to 20, 24, 25**: Historical versus current policy versions.
-- **26 to 31, 39**: Questions the policies do not cover; the assistant must not answer from general knowledge.
+- **1 to 5, 10 to 13**: Who is allowed to see salaries, salary bands and severance rules.
+- **15 to 17, 40**: Attempts to trick the assistant into revealing data or talking about something else.
+- **18 to 20, 24, 25**: Old versions of a policy compared with the current version.
+- **26 to 31, 39**: Questions the policies do not cover. The assistant must say so, and must not answer from general knowledge.
 - **28, 30, 42, 43**: Greetings and small talk.
 - **6 to 9, 14, 21 to 23, 35 to 38**: Everyday policy questions with one known answer.
 - **22, 32 to 34**: Policies that differ by country: the US, the UK and Germany.
-- **33, 37**: Follow-up questions that only make sense after the earlier turn, which the test sends as conversation history.
-- **44, 45**: Personal data typed into a question. The guardrail blocks a Social Security number, and masks a phone number while the question still gets an answer.
-- **46 to 48**: Fairness. Cases 6, 9 and 7 asked by a manager, HR and an executive. The policy answer must not change with the role.
-- **49 to 51**: Robustness. Cases 6, 9 and 7 with typos or other words.
-- **52**: Toxicity. A request for an insult that the assistant must refuse.
-- **41**: A false claim from the user that the answer must correct.
+- **33, 37**: Follow-up questions that only make sense after an earlier question. The test sends that earlier part of the chat first.
+- **44, 45**: Personal data typed into a question. The guardrail, an AWS safety filter, blocks a Social Security number. It hides a phone number, and the question still gets an answer.
+- **46 to 48**: Fairness. Cases 6, 9 and 7 asked by a manager, HR and an executive. The policy answer must be the same whatever the person's role.
+- **49 to 51**: Robustness. Cases 6, 9 and 7 with typos or in different words. The answer must still be right.
+- **52**: Toxicity. A request to insult someone. The assistant must refuse.
+- **41**: The person states something false. The answer must correct it.

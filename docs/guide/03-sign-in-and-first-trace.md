@@ -1,77 +1,77 @@
 # 03 Sign in and read your first trace
 
-**Goal:** use the chatbot as an employee and follow that one request through Langfuse and the model gateway.
+**Goal:** use the chatbot as an employee, then follow that one question through Langfuse and the model gateway.
 
-This is the trace you will compare against when something breaks in the use cases.
+The trace you read here shows a normal, working answer. In the use cases later, you compare broken answers with it.
 
 ## Step 1: Sign in and ask a question
 
-The app address, the demo employees and their shared password are in `demo-sign-in.txt` in the project folder. Open it in your editor, or print it:
+The app address, the demo employees and their shared password are in the file `demo-sign-in.txt`, in the project folder. Open it in your editor, or print it:
 
 ```bash
 cd ~/hr-rag-lab
 cat demo-sign-in.txt
 ```
 
-Open the app address and sign in as `amara.diallo@northwind.example`, an employee who sees only her own record.
+Open the app address in your browser. Sign in as `amara.diallo@northwind.example`. Amara is an employee, so she can see only her own record.
 
-Ask:
+Type this question and send it:
 
 > How many PTO days do employees receive each year?
 
-Then ask a follow-up in the same conversation:
+Then, in the same conversation, ask a follow-up question:
 
 > How many of those can I carry over?
 
-Under the second answer, click 👎 and type a short reason, such as `I wanted my own balance`, then click **Send**. Every answer has 👍 and 👎. A rating becomes a score on that answer's trace, so someone can review every answer people disliked.
+Every answer has a 👍 and a 👎 button under it. Under the second answer, click 👎. Type a short reason, such as `I wanted my own balance`, then click **Send**. Your rating is saved next to that answer in Langfuse. A reviewer can then find every answer people did not like.
 
 ## How Langfuse records a request
 
 Langfuse uses four words:
 
-- **Trace:** the record of one request, from question to answer.
-- **Span:** one step inside a trace, such as a tool call or a model call, with its timing.
+- **Trace:** the record of one question, from the moment it arrives to the answer.
+- **Span:** one step inside a trace, such as a search or a question to the AI model, with how long it took.
 - **Session:** all the traces of one conversation.
-- **Prompt version:** the numbered version of the system prompt that produced the answer.
+- **Prompt version:** the number of the system prompt version that produced the answer. The system prompt is the set of instructions the AI model gets before every question.
 
-One of those spans is the **inline judge**. Before the employee sees an answer, a second model call checks the draft against the evidence the tools returned. A failing draft gets one revision. If that also fails, the employee gets a safe fallback answer instead. The judge is always on.
+One of those steps is the **inline judge**. Before the employee sees an answer, the app asks the AI model a second question: is this draft supported by the policy passages it was given? If not, the draft is rewritten once. If the rewrite also fails, the employee gets a safe reply instead. The judge runs on every answer.
 
 ## Step 2: Find the trace in Langfuse
 
-Langfuse shows what the application did with each question.
+Langfuse shows what the app did with each question.
 
-In Langfuse, open your project and go to **Sessions**. Open the newest session. You should see:
+In Langfuse, open your project and click **Sessions**. Open the newest session. You should see:
 
-- An opaque user ID (the trace never shows the employee's email), and the tags `employee` and `person`.
+- A coded user ID instead of the employee's email, which never appears. You also see the tags `employee` and `person`.
 - Both questions in the same session.
 - The **prompt version number** used for the answer.
 
 Open one trace. Its steps form a tree, in the order they ran:
 
-- **HR answer**: the question, the answer and its sources. Its metadata sums up the request: outcome, rounds used, tools used, tokens, and what each guardrail decided.
-  - **Agent round 1**: the model's first turn.
-    - **Bedrock model call**: everything sent to the model (the system prompt and the messages), its reply, the settings, the tokens and the cost. Here the reply is a request to search the policies, with the search text the model wrote.
-    - **Authorized HR tool**: the arguments the model wrote, and the text sent back to it.
-      - **Policy search**: the access levels this role gets, the filters, which searches ran, and each passage with its similarity score.
-        - **Titan embedding** and **OpenSearch vector query**: the search itself, each with its timing.
-  - **Agent round 2**: the model writes the answer from the passages.
+- **HR answer**: the question, the answer and its sources. Its metadata is a summary: how it ended, how many rounds and tools it used, how many tokens it used, and what each guardrail decided.
+  - **Agent round 1**: the AI model's first turn.
+    - **Bedrock model call**: everything the app sent to the AI model, its reply, its settings, the tokens and the cost. Here the reply is a request to search the policies, with the search words the model chose.
+    - **Authorized HR tool**: the search request from the model, and the text the tool sent back.
+      - **Policy search**: which documents this person's role may read, the filters, which searches ran, and each passage with a score for how closely it matches.
+        - **Titan embedding** and **OpenSearch vector query**: the search itself, each with how long it took.
+  - **Agent round 2**: the AI model writes the answer from the passages.
     - **Bedrock model call**: the draft answer.
-    - **Inline judge**: the outcome, such as `passed first time`. Under it, **Inline grounding assessment** shows the verdict and the reason.
-    - **Bedrock Guardrail: answer**: whether the answer was allowed, masked or blocked, and what kind of data it found.
+    - **Inline judge**: how the check ended, such as `passed first time`. Under it, **Inline grounding assessment** shows the judge's decision and its reason.
+    - **Bedrock Guardrail: answer**: whether the guardrail let the answer through, hid parts of it, or blocked it, and what kind of data it found.
 
-Click any step to see its input, output and metadata. Langfuse highlights a step with a warning, such as a judge that rejected a draft.
+Click any step to see what went in, what came out, and its metadata. Langfuse highlights a step that has a warning, such as a judge that rejected a draft.
 
-Open the trace of the second answer. Under **Scores** it shows `user_feedback` with the value `false` and your reason. Personal data in a reason, such as a phone number, is masked before it is stored. To review every unhelpful answer, go to **Scores** or **Traces** and filter on `user_feedback`. A team can also send those traces to an **annotation queue**, where an HR expert grades them.
+Now open the trace of the second answer. Under **Scores**, you see `user_feedback` with the value `false` and your reason. If a reason contains personal data, such as a phone number, it is hidden before it is saved. To review every answer people disliked, open **Scores** or **Traces** and filter on `user_feedback`. A team can also send those traces to an **annotation queue**, a list where an HR expert grades each answer.
 
 ## Step 3: See the same questions in the model gateway
 
-Every model call from the app goes through the LiteLLM gateway. Its admin UI shows each call with its model, cost and cache result. Langfuse shows the application's view of a request, and the gateway shows the model calls it made.
+Every question the app sends to an AI model goes through the LiteLLM gateway. The gateway has an admin page that lists each of those questions with its model, cost and cache result. Langfuse shows the whole request from the app's side. The gateway shows each separate question to the AI model.
 
-The gateway accepts connections only from the application Lambda. You reach its UI through an AWS Systems Manager (SSM) tunnel, which forwards the gateway's port 4000 to your computer. Your AWS permissions decide who can open it.
+The gateway accepts connections only from the app itself, not from the internet. So you open its admin page through a tunnel: a private connection that AWS Systems Manager (SSM) creates from your computer to the gateway's port 4000. Your AWS permissions decide who can open it.
 
-1. Install the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) once.
-2. Open a **second** terminal. The tunnel keeps it busy until you close it.
-3. In that terminal, go to the project and activate the virtual environment you created in document 02. Every new terminal needs this before running the lab's Python scripts.
+1. Install the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html). You only do this once.
+2. Open a **second** terminal. The tunnel keeps this terminal busy until you close it.
+3. In that terminal, go to the project folder and turn on the virtual environment from document 02. Every new terminal needs this before you run the lab's Python scripts.
 
 ```bash
 cd ~/hr-rag-lab
@@ -79,42 +79,42 @@ source .venv/Scripts/activate 2>/dev/null || source .venv/bin/activate
 python scripts/open-gateway-ui.py
 ```
 
-The script prints the address, `http://localhost:4000/ui`, and the sign-in. Open the address, then sign in as `admin` with the printed password. The same details are in `demo-sign-in.txt`. If port 4000 is busy on your computer, add `--port 4100` and use that port in the address.
+The script prints the address, `http://localhost:4000/ui`, and the sign-in details. Open the address in your browser. Sign in as `admin` with the password it printed. The same details are also in `demo-sign-in.txt`. If port 4000 is already used on your computer, add `--port 4100` to the command and use that port in the address.
 
-The password is the gateway master key. It can create keys and change every limit, so keep it out of screenshots, tickets and chat.
+The password is the gateway's master key. It can create keys and change every limit, so it stays out of screenshots, tickets and chat messages.
 
-Open **Logs** and find the two questions from step 1. Each question shows more than one model call: the answer and the inline judge.
+Click **Logs** and find your two questions from step 1. Each question shows more than one model call: one for the answer and one for the inline judge.
 
-When you are done, press Ctrl+C in the second terminal to close the tunnel.
+When you are done, go to the second terminal and press Ctrl+C. This closes the tunnel.
 
 ## Step 4: See where the accounts live
 
-The setup created two kinds of account in Cognito, each with its own password:
+The setup created two kinds of sign-in account in Cognito. Each kind has its own password:
 
-- **Demo employees:** Amara, Liam, Priya and Dana. These are the people who use the app; you just signed in as one.
-- **Test accounts:** `qa.employee`, `qa.manager`, `qa.hr` and `qa.exec`. Only the pipeline and automated tests sign in as these.
+- **Demo employees:** Amara, Liam, Priya and Dana. People sign in as these to use the app. You just signed in as Amara.
+- **Test accounts:** `qa.employee`, `qa.manager`, `qa.hr` and `qa.exec`. Only the pipeline and the automatic tests sign in as these.
 
-In the AWS console, open **Cognito → User pools** and select the pool named after your `project_name`, ending in `-users`. Its **Users** tab lists both kinds of account.
+In the AWS console, open **Cognito → User pools**. Click the pool named after your `project_name`, ending in `-users`. Its **Users** tab lists both kinds of account.
 
-How your sign-in protected the data in step 1:
+This is how signing in protected the data in step 1:
 
-1. The browser got a token from Cognito.
-2. API Gateway checked the token before the Lambda ran.
-3. The Lambda read the employee's email from the verified token, never from the request body.
-4. Every database and search call was limited to what that employee may see.
+1. Your browser got a sign-in token from Cognito.
+2. API Gateway checked that token before the Lambda function ran.
+3. The Lambda function read the employee's email from the checked token, never from the question.
+4. Every database lookup and every search showed only what that employee may see.
 
 ## Step 5: How the pipeline signs in
 
-The pipeline cannot click a sign-in page. The helper `ci/auth.py` signs in for it:
+The pipeline cannot click on a sign-in page. A script, `ci/auth.py`, signs in for it:
 
-1. It reads the test accounts' password from their own secret in Secrets Manager.
-2. It signs in through Cognito and keeps the tokens in memory only.
-3. It calls the API through API Gateway, so the same data permissions apply.
+1. It reads the test accounts' password from Secrets Manager. The test accounts have their own secret there.
+2. It signs in through Cognito and keeps the sign-in tokens in memory only.
+3. It sends questions through API Gateway, so the same data permissions apply as for a person.
 
-The pipeline's AWS role can read only the test accounts' secret, never the demo employees' password.
+The pipeline's AWS role can read only the test accounts' secret. It cannot read the demo employees' password.
 
-After each run, the pipeline deletes the test accounts' chats. Your chats as a demo employee are never touched. To empty every account's history yourself, run `python scripts/clear-chat-history.py`.
+After each run, the pipeline deletes the test accounts' chats. Your chats as a demo employee stay as they are. To delete the chat history of every account yourself, run `python scripts/clear-chat-history.py`.
 
-You should now see your two questions in one Langfuse session, with each agent round, the policy search and the inline judge. Their model calls also appear in the gateway logs.
+You should now see your two questions in one Langfuse session, with each agent round, the policy search and the inline judge. Each question to the AI model also appears in the gateway's logs.
 
 **Next:** [04 Branch and pull-request checks](04-branch-and-pr-checks.md)
