@@ -22,13 +22,7 @@ Then, in your new repository, open **Settings → Actions → General**. Make su
 
 Every command in this lab is written for Bash. On Windows, run them in **Git Bash**, never in PowerShell or Command Prompt: many commands fail there. On a Mac, use Terminal.
 
-To open Git Bash inside VS Code, open **Terminal → New Terminal**. Click the small arrow next to **+** in the terminal panel, and choose **Git Bash**. To check which one you are in, run:
-
-```bash
-echo "shell: $BASH_VERSION"
-```
-
-Git Bash prints `shell:` followed by a version number, such as `shell: 5.3.9(1)-release`. PowerShell prints only `shell:`. An error that mentions `Get-ChildItem` also means you are in PowerShell.
+To open Git Bash inside VS Code, open **Terminal → New Terminal**. Click the small arrow next to **+** in the terminal panel, and choose **Git Bash**. A Git Bash prompt ends with `$`. A PowerShell prompt starts with `PS` or shows errors such as `Get-ChildItem`.
 
 These commands download your copy to your computer and create a branch to work on:
 
