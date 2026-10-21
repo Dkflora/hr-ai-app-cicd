@@ -233,3 +233,6 @@ step "Test chat history removed" \
   remove_test_chats
 
 python scripts/show-demo-users.py
+
+# Start the one file that collects every GitHub setting for document 06b. Document 05 adds the role ARN.
+python scripts/github-settings.py || true

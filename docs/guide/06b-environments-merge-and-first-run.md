@@ -21,56 +21,36 @@ In your repository: **Settings → Environments → New environment**. Create:
 - `hr-staging`
 - `hr-production-approval`
 
-## Step 2: Print the values for the staging variables
+## Step 2: Open the settings file
 
-This prints every value you need, already labelled with its GitHub variable name:
+Every value for this document is in one file, written by setup in document 02 and completed by document 05. Refresh it, then open it in your editor:
 
 ```bash
 cd ~/hr-rag-lab
-while read -r variable output; do
-  printf '%-28s %s\n' "$variable" "$(terraform -chdir=infra/terraform output -raw "$output")"
-done <<'EOF'
-HR_STAGING_FUNCTION candidate_function
-HR_EVALUATION_FUNCTION evaluation_function
-HR_STAGING_ORIGIN app_url
-HR_TEST_USERS_SECRET_ARN evaluation_users_secret_arn
-HR_COGNITO_POOL_ID cognito_user_pool_id
-HR_COGNITO_CLIENT_ID cognito_client_id
-HR_STAGING_FRONTEND_BUCKET frontend_bucket
-HR_STAGING_DISTRIBUTION_ID cloudfront_distribution_id
-EOF
-grep -E '^VITE_COGNITO_(AUTHORITY|DOMAIN)=' frontend/.env.production
-grep '^LANGFUSE_BASE_URL=' .env.langfuse
+source .venv/Scripts/activate 2>/dev/null || source .venv/bin/activate
+python scripts/github-settings.py
 ```
+
+**Expected:** `GitHub settings: wrote build/github-settings.txt (15 variables, 2 secrets).` If it lists anything as `still missing`, the line names the document that creates it.
+
+Open `build/github-settings.txt`. Each name is on one line, with its value on the next, in the same order as steps 3 and 4. Copy each name and value from there, exactly as shown.
 
 ## Step 3: Add the staging variables
 
-Open **Settings → Environments → hr-staging**. Under **Environment variables**, click **Add environment variable** once for each row:
+Open **Settings → Environments → hr-staging**. Under **Environment variables**, click **Add environment variable** once for each name under `ENVIRONMENT VARIABLES` in the file:
 
-- `AWS_REGION`: `us-east-1`.
-- `AWS_STAGING_ROLE_ARN`: The role ARN from document 05.
-- `HR_STAGING_FUNCTION`: From step 2.
-- `HR_EVALUATION_FUNCTION`: From step 2.
-- `HR_STAGING_ORIGIN`: From step 2.
-- `HR_TEST_USERS_SECRET_ARN`: From step 2.
-- `HR_COGNITO_POOL_ID`: From step 2.
-- `HR_COGNITO_CLIENT_ID`: From step 2.
-- `HR_STAGING_FRONTEND_BUCKET`: From step 2.
-- `HR_STAGING_DISTRIBUTION_ID`: From step 2.
-- `VITE_COGNITO_AUTHORITY`: From step 2, the text after `=`.
-- `VITE_COGNITO_DOMAIN`: From step 2, the text after `=`.
-- `LANGFUSE_BASE_URL`: From step 2, the text after `=`.
-- `ENABLE_DEEPEVAL`: `true`.
-- `ENABLE_EVIDENTLY`: `true`.
+- `AWS_REGION`, `AWS_STAGING_ROLE_ARN`
+- `HR_STAGING_FUNCTION`, `HR_EVALUATION_FUNCTION`, `HR_STAGING_ORIGIN`
+- `HR_TEST_USERS_SECRET_ARN`, `HR_COGNITO_POOL_ID`, `HR_COGNITO_CLIENT_ID`
+- `HR_STAGING_FRONTEND_BUCKET`, `HR_STAGING_DISTRIBUTION_ID`
+- `VITE_COGNITO_AUTHORITY`, `VITE_COGNITO_DOMAIN`, `LANGFUSE_BASE_URL`
+- `ENABLE_DEEPEVAL`, `ENABLE_EVIDENTLY`
 
 The `VITE_COGNITO` values are public settings. The React build bakes them into the JavaScript, and the build stops if one is missing.
 
 ## Step 4: Add the two secrets
 
-On the same `hr-staging` page, under **Environment secrets**, click **Add environment secret** twice:
-
-- `LANGFUSE_PUBLIC_KEY`: The `pk-lf-` key from your `.env.langfuse`.
-- `LANGFUSE_SECRET_KEY`: The `sk-lf-` key from your `.env.langfuse`.
+On the same `hr-staging` page, under **Environment secrets**, click **Add environment secret** for each name under `ENVIRONMENT SECRETS` in the file: `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`.
 
 These are the only secrets in GitHub. AWS access comes from the OIDC role.
 

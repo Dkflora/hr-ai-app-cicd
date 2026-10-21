@@ -84,6 +84,7 @@ Use case 1 always fails in the same way, so it is the one to run in class. Use c
 ## Reference pages
 
 - [Test cases](reference-test-cases.md): all 45 questions, which test account asks them, and what the answer must and must not contain.
+- [OIDC by hand](reference-oidc-by-hand.md): the AWS console steps behind `scripts/prepare-oidc.py`, one at a time.
 - [Troubleshooting](reference-troubleshooting.md): AWS sign-in errors and other common failures.
 
 ## Rules for the whole lab

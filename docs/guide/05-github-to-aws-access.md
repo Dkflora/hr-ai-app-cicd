@@ -58,6 +58,8 @@ The numbers after `@` are your GitHub account's and repository's fixed IDs. GitH
 
 Running the script again is safe: it updates the role and never deletes anything. Add `--dry-run` to run the checks without changing AWS.
 
-The role ARN is used in document 06b, which saves it in GitHub as the `AWS_STAGING_ROLE_ARN` variable. Print it again at any time with `cat build/github-oidc-role-arn.txt`.
+To see each step the script takes, or to build the same role yourself in the AWS console, follow [Reference: OIDC by hand](reference-oidc-by-hand.md).
+
+The script also adds the role ARN to `build/github-settings.txt`, the file document 06b copies every GitHub value from.
 
 **Next:** [06a How the deployment jobs work](06a-how-the-deployment-jobs-work.md)

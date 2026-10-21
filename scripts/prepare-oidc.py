@@ -271,7 +271,10 @@ def main():
 
     # Step 4: the ARN goes into GitHub in document 06b.
     (build / 'github-oidc-role-arn.txt').write_text(role['Arn'] + '\n', encoding='utf-8')
-    print(f'Done. Role ARN (also saved in build/github-oidc-role-arn.txt):\n  {role["Arn"]}')
+    print(f'Done. Role ARN (also saved in build/github-oidc-role-arn.txt):\n  {role["Arn"]}', flush=True)
+
+    # Add the ARN to the file that collects every GitHub setting for document 06b.
+    subprocess.run([sys.executable, str(ROOT / 'scripts' / 'github-settings.py')], cwd=ROOT)
 
 
 if __name__ == '__main__':

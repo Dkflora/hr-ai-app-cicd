@@ -120,6 +120,8 @@ It also prints the sign-in for the LiteLLM gateway admin UI, which document 03 o
 
 The same details are saved in `demo-sign-in.txt` in the project folder, so you can open them in your editor at any time. The file holds the gateway master key, so keep it on your computer. Run `python scripts/show-demo-users.py` to recreate it.
 
+Setup also starts `build/github-settings.txt`, one file that collects every value GitHub will need in document 06b, each under the exact name GitHub expects. Document 05 adds the last value. Like everything in `build/`, it never reaches GitHub.
+
 If you closed the terminal or lost the output, print the details again:
 
 ```bash

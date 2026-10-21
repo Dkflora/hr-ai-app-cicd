@@ -24,7 +24,7 @@ The script does the rest in order:
 1. Reads your project's names from Terraform.
 2. Runs `terraform destroy`, which lists everything it will delete and asks for `yes`. Check that every name carries your own `project_name`, then type `yes`.
 3. Deletes the pipeline's role from document 05. Terraform did not create it.
-4. Deletes `demo-sign-in.txt` and `.env.langfuse` from your folder.
+4. Deletes `demo-sign-in.txt`, `.env.langfuse` and `build/github-settings.txt` from your folder.
 5. Lists anything in AWS still tagged with your project.
 
 Add `--release-names` if you will set up the lab again with the same `project_name`. AWS otherwise keeps two secret names reserved for 30 days. Add `--dry-run` to see what it would delete without deleting anything.

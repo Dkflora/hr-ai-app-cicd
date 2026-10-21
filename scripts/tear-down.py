@@ -10,7 +10,7 @@ What it does, in order:
   3. Deletes the pipeline's IAM role from document 05 (Terraform did not create it).
   4. With --release-names: force-deletes the two secrets whose names AWS keeps reserved
      for 30 days, so you can set up again with the same project_name straight away.
-  5. Deletes demo-sign-in.txt and .env.langfuse from this folder.
+  5. Deletes demo-sign-in.txt, .env.langfuse and build/github-settings.txt from this folder.
   6. Lists any AWS resource still tagged with your project. Expected: none.
 
 The GitHub identity provider is kept: other projects in the account may use it.
@@ -25,7 +25,7 @@ import boto3
 
 ROOT = Path(__file__).resolve().parents[1]
 ROLE_POLICY = 'HRLabOnly'
-LOCAL_FILES = ['demo-sign-in.txt', '.env.langfuse']
+LOCAL_FILES = ['demo-sign-in.txt', '.env.langfuse', 'build/github-settings.txt']
 
 
 SAVED_NAMES = ROOT / 'build' / 'tear-down-names.json'
