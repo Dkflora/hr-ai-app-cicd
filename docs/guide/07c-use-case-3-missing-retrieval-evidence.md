@@ -132,4 +132,4 @@ Write down:
 - The search passages before and after, from the traces.
 - Whether the repair brought the missing passage back.
 
-**Next:** [08 Production handoff and rollback](08-production-handoff-and-rollback.md)
+**Next:** [07d Handle a thumbs down](07d-handle-a-thumbs-down.md)

@@ -61,3 +61,32 @@ resource "aws_cloudwatch_metric_alarm" "chat_slow" {
   treat_missing_data  = "notBreaching"
   alarm_actions       = [aws_sns_topic.alarms.arn]
 }
+
+# Thumbs down: count each "not helpful" vote, from the score the chat function logs.
+resource "aws_cloudwatch_log_metric_filter" "thumbs_down" {
+  name           = "${local.name}-thumbs-down"
+  log_group_name = aws_cloudwatch_log_group.lambda["chat"].name
+  pattern        = "{ ($.trace_record = \"hr_score\") && ($.score.name = \"user_feedback\") && ($.score.value = 0) }"
+
+  metric_transformation {
+    name      = "ThumbsDown"
+    namespace = "${local.name}/feedback"
+    value     = "1"
+  }
+}
+
+# Email when anyone gives a thumbs down. A company would alert on a rate instead,
+# such as "more than 10% thumbs down in an hour", so one unhappy person does not page anyone.
+resource "aws_cloudwatch_metric_alarm" "thumbs_down" {
+  alarm_name          = "${local.name}-thumbs-down"
+  alarm_description   = "Someone marked an answer as not helpful. Review it in the Langfuse thumbs-down queue."
+  namespace           = "${local.name}/feedback"
+  metric_name         = "ThumbsDown"
+  statistic           = "Sum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 0
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alarms.arn]
+}

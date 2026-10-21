@@ -78,6 +78,7 @@ Work through them in this order. Each one ends with a link to the next.
 - [07a Use case 1: tool-limit failure](07a-use-case-1-tool-limit-failure.md): Break the chatbot on purpose, watch the release gate stop it, and repair it.
 - [07b Use case 2: wrong prompt instruction](07b-use-case-2-wrong-prompt-instruction.md): Add a bad instruction and see whether the inline judge catches it.
 - [07c Use case 3: missing retrieval evidence](07c-use-case-3-missing-retrieval-evidence.md): Turn off one search and see how answers change.
+- [07d Handle a thumbs down](07d-handle-a-thumbs-down.md): Get an email alert for a thumbs down, queue it in Langfuse, and review why the answer went wrong.
 - [08 Production handoff and rollback](08-production-handoff-and-rollback.md): Review the handoff job, and go back to an earlier approved version.
 - [09 Tear down](09-tear-down.md): Delete everything so billing stops.
 
