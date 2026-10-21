@@ -68,6 +68,7 @@ Work through them in this order. Each one ends with a link to the next.
 - [02 Infrastructure setup](02-infrastructure-setup.md): Connect Langfuse, set your names, and run the one-command setup.
 - [03 Sign in and read your first trace](03-sign-in-and-first-trace.md): Use the chatbot, then follow one request in Langfuse.
 - [04 Branch and pull-request checks](04-branch-and-pr-checks.md): Create the first workflow job and open a pull request.
+- [04b Code scans](04b-code-scans.md): Add a second workflow that lints and scans the code, and turn on secret scanning.
 - [05 GitHub-to-AWS access](05-github-to-aws-access.md): Let GitHub sign in to AWS with a limited role, without storing AWS keys.
 - [06a How the deployment jobs work](06a-how-the-deployment-jobs-work.md): What happens after a merge, Lambda versions and aliases, and what Promptfoo, Langfuse, DeepEval and Evidently check.
 - [06a2 Add the deployment jobs](06a2-add-deployment-jobs.md): Add the deployment and test jobs to the workflow.

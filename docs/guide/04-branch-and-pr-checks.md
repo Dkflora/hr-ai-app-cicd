@@ -2,7 +2,7 @@
 
 **Goal:** create the first job of the delivery workflow and see it run on a pull request.
 
-This job runs every time you push code or open a pull request. It does three things: runs the unit tests, builds the backend package, and builds the React website. It gets **no AWS or Langfuse keys**. Pull-request code has not been reviewed yet, so it must not be able to touch AWS.
+This job runs every time you push code or open a pull request. It does four things: checks the release number, runs the unit tests, builds the backend package, and builds the React website. It gets **no AWS or Langfuse keys**. Pull-request code has not been reviewed yet, so it must not be able to touch AWS.
 
 ## What a CI workflow is
 
@@ -111,4 +111,4 @@ Near the bottom of the pull request page, you see the `checks` job. Click **Deta
 
 Leave the pull request open for now. In documents 06a, 06a2 and 06a3 you add the deployment and release jobs to it.
 
-**Next:** [05 GitHub-to-AWS access](05-github-to-aws-access.md)
+**Next:** [04b Code scans](04b-code-scans.md)
