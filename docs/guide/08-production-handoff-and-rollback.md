@@ -29,7 +29,7 @@ When `promote_lab.py` moves `approved`, it writes the version it replaced into t
 
 ## Rollback: restore the previous approved version
 
-`ci/rollback_lab.py` reads that recorded version from AWS and moves `approved` back to it. It refuses a version outside your staging function, and it never deletes anything.
+`ci/rollback_lab.py` reads that recorded version from AWS and moves `approved` back to it. It refuses a version outside the staging function, and it never deletes anything.
 
 This step is optional. It needs at least two passing runs, so that `approved` has an earlier version to go back to. The fix run from use case 1 is one.
 
@@ -40,7 +40,7 @@ cd ~/hr-rag-lab
 python ci/rollback_lab.py
 ```
 
-**Expected:** `Rolled back`, your function name, and the two version numbers, such as `approved moved from version 9 to version 7`.
+**Expected:** `Rolled back`, the function name, and the two version numbers, such as `approved moved from version 9 to version 7`.
 
 Running it again swaps back, because each rollback records the version it left. The next passing run on `main` also moves `approved` forward again.
 

@@ -95,7 +95,8 @@ After document 06b, your next merge to `main` also fixes it, because the pipelin
 
 1. Find the case number in the report, then look it up in [the test cases](reference-test-cases.md).
 2. In Langfuse, find that question's trace from the run, using the time and test account.
-3. Read the tool output: was the right policy passage retrieved?
-4. Read the judge span: did it change or withhold the draft?
+3. Open **Policy search**: did the right passage come back, and which searches ran?
+4. Open **Inline judge**: what was its outcome? **Inline grounding assessment** under it gives the verdict and the reason.
+5. Open each **Bedrock model call**: what exactly did the model receive, and what did it reply?
 
 Investigate the answer, the retrieval or the grader. Never change the expected answer to make the case pass.

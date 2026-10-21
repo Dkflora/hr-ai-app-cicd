@@ -40,12 +40,24 @@ Langfuse shows what the application did with each question.
 
 In Langfuse, open your project and go to **Sessions**. Open the newest session. You should see:
 
-- An opaque user ID (the trace never shows the employee's email).
+- An opaque user ID (the trace never shows the employee's email), and the tags `employee` and `person`.
 - Both questions in the same session.
-- For each question: a **policy search** tool span, the **model generation**, and the **inline judge**.
 - The **prompt version number** used for the answer.
 
-Open one trace and click through its spans. Note the order: tool call, then model turn, then judge, then final answer.
+Open one trace. Its steps form a tree, in the order they ran:
+
+- **HR answer**: the question, the answer and its sources. Its metadata sums up the request: outcome, rounds used, tools used, tokens, and what each guardrail decided.
+  - **Agent round 1**: the model's first turn.
+    - **Bedrock model call**: everything sent to the model (the system prompt and the messages), its reply, the settings, the tokens and the cost. Here the reply is a request to search the policies, with the search text the model wrote.
+    - **Authorized HR tool**: the arguments the model wrote, and the text sent back to it.
+      - **Policy search**: the access levels this role gets, the filters, which searches ran, and each passage with its similarity score.
+        - **Titan embedding** and **OpenSearch vector query**: the search itself, each with its timing.
+  - **Agent round 2**: the model writes the answer from the passages.
+    - **Bedrock model call**: the draft answer.
+    - **Inline judge**: the outcome, such as `passed first time`. Under it, **Inline grounding assessment** shows the verdict and the reason.
+    - **Bedrock Guardrail: answer**: whether the answer was allowed, masked or blocked, and what kind of data it found.
+
+Click any step to see its input, output and metadata. Langfuse highlights a step with a warning, such as a judge that rejected a draft.
 
 ## Step 3: See the same questions in the model gateway
 
@@ -99,6 +111,6 @@ The pipeline's AWS role can read only the test accounts' secret, never the demo 
 
 After each run, the pipeline deletes the test accounts' chats. Your chats as a demo employee are never touched. To empty every account's history yourself, run `python scripts/clear-chat-history.py`.
 
-You should now see your two questions in one Langfuse session, with policy search, generation and judge spans, and their model calls in the gateway logs.
+You should now see your two questions in one Langfuse session, with each agent round, the policy search and the inline judge. Their model calls also appear in the gateway logs.
 
 **Next:** [04 Branch and pull-request checks](04-branch-and-pr-checks.md)

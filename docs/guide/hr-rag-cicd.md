@@ -6,7 +6,7 @@ The application is already built. In this lab you build the **delivery pipeline*
 
 ## What you will have at the end
 
-- Your own copy of the application running in AWS (one staging environment).
+- The company's HR assistant running in AWS, in one staging environment the whole team uses.
 - A GitHub Actions workflow with three jobs:
   - **checks**: unit tests and builds on every branch and pull request, with no AWS access.
   - **candidate**: on every merge to `main`, deploys to staging and asks every test question twice through the real API.
@@ -23,7 +23,7 @@ Each part gets its own explanation when you first use it. In one line each:
 - **Bedrock Guardrail:** blocks harmful questions, prompt attacks and sensitive numbers such as Social Security numbers. It masks email addresses and phone numbers, so the rest of the question still gets an answer.
 - **LiteLLM gateway:** every model call passes through it. It allows only approved models and enforces budgets and rate limits.
 - **Langfuse:** records every request, step by step, so you can see why an answer came out the way it did.
-- **Staging:** your private copy of the app, where every change is deployed and tested.
+- **Staging:** the team's pre-production copy of the app, where every change is deployed and tested. Engineers, the HR domain expert and the pipeline all use it.
 - **CI/CD pipeline:** the GitHub Actions workflow that checks, deploys and tests every change.
 - **Release gate:** the point in the pipeline where one failed test blocks the release.
 

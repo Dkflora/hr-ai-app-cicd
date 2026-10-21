@@ -99,7 +99,7 @@ Sign in to the chatbot as Amara and ask:
 
 The staging UI uses the `candidate` alias, so it shows the broken answer even though the release is blocked.
 
-In Langfuse, open that trace. You should see the policy search tool span, and then no second model turn. The answer is the safe "couldn't finish" message.
+In Langfuse, open that trace. You should see **Agent round 1** with its policy search, and no **Agent round 2**: the limit stopped the agent before it could write the answer. The **HR answer** metadata says `stopped: tool round limit reached (1)`, and its output is the safe "couldn't finish" message.
 
 To see the same thing from the gateway, open the admin UI as in document 03, step 5. In **Logs**, compare this question's model calls with the same question from your passing run.
 
@@ -138,7 +138,7 @@ aws lambda get-alias \
   --query FunctionVersion --output text
 ```
 
-Ask the same PTO question again. In Langfuse, the fixed trace shows: policy search, a model turn after it, the inline judge, then the final answer.
+Ask the same PTO question again. In Langfuse, the fixed trace shows **Agent round 1** with the policy search, then **Agent round 2** with the answer, the inline judge and the answer guardrail.
 
 If an unrelated case fails, investigate it. Do not change the expected answers.
 

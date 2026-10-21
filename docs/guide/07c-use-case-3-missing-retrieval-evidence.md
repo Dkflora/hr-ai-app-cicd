@@ -60,7 +60,7 @@ Sign in to the chatbot as Amara and ask these three questions in one conversatio
 
 > What are the current rules?
 
-In Langfuse, open each trace and read the **policy search** tool output. Compare the passages with the same questions in your baseline trace. Is the annual entitlement passage missing? Did the answer give a number the passages do not support?
+In Langfuse, open each trace and its **Policy search** step. Its metadata lists `searches_run`: with the supplemental search switched off, `supplemental annual entitlement` is missing. Then read the passages it returned. Compare the passages with the same questions in your baseline trace. Is the annual entitlement passage missing? Did the answer give a number the passages do not support?
 
 ## Step 5: Repair it
 

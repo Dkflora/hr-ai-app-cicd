@@ -23,7 +23,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 from app import assistant, chat_history, employees, guardrails
 from app.prompt_registry import release_identity
 from app.model_gateway import GatewayPolicyDenied, GatewayUnavailable, gateway_context
-from app.telemetry import conversation_context, current_user
+from app.telemetry import conversation_context, current_user, span, update_current_span
 
 
 def respond(status, body):
@@ -142,6 +142,16 @@ def chat(event, employee):
         stored_question = guardrails.REMOVED
     else:
         stored_question = safe_question
+    # What the question check found, by type only, for the trace below.
+    question_guardrail = {"decision": status, "findings": guardrails.LAST_FINDINGS or "none"}
+
+    # Tags let you filter traces in Langfuse: by role, and people apart from test accounts.
+    email = signed_in_email(event) or ""
+    is_test_account = email.lower().startswith("qa.")
+    if is_test_account:
+        trace_tags = [employee["role"], "test-account"]
+    else:
+        trace_tags = [employee["role"], "person"]
 
     # Allocate the conversation before inference so even the first trace is grouped.
     # A failed request may leave an empty conversation for diagnosis.
@@ -150,6 +160,11 @@ def chat(event, employee):
 
     if status == "blocked":
         # The guardrail's refusal message is the answer. The model is never called.
+        # The trace records that it happened and what kind of data it found, never the question.
+        with conversation_context(employee['employee_id'], conversation_id, tags=trace_tags + ["blocked"]):
+            with span("Blocked question", "guardrail"):
+                update_current_span(metadata=question_guardrail, level="WARNING",
+                                    status_message="The guardrail blocked the question before any model call")
         chat_history.add_message(conversation_id, "user", stored_question)
         chat_history.add_message(conversation_id, "assistant", safe_question, [])
         return respond(200, {"conversation_id": conversation_id, "answer": safe_question, "sources": []})
@@ -161,15 +176,14 @@ def chat(event, employee):
         # ID, so the gateway shows their spend and applies the per-person limit.
         # Test accounts send no ID, so the pipeline is bounded by the team and key
         # limits instead of a person's.
-        email = signed_in_email(event) or ""
-        is_test_account = email.lower().startswith("qa.")
-        with conversation_context(employee['employee_id'], conversation_id):
+        with conversation_context(employee['employee_id'], conversation_id, tags=trace_tags):
             if is_test_account:
                 gateway_user = None
             else:
                 gateway_user = current_user()
             with gateway_context(user=gateway_user, use_cache=not is_test_account):
-                answer, sources = assistant.answer(safe_question, history, employee, question_checked=True)
+                answer, sources = assistant.answer(safe_question, history, employee, question_checked=True,
+                                                   question_guardrail=question_guardrail)
     except GatewayPolicyDenied as error:
         # LiteLLM features 5, 6 and 10: the gateway refused the call because a budget
         # or rate limit was reached, for this person, the team or the key.

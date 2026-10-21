@@ -34,7 +34,7 @@ One script, `scripts/prepare-oidc.py`, sets everything up in your AWS account:
 
 1. Reads your repository from the folder's Git remote, the same address `git remote -v` shows.
 2. Writes two policy files to `build/`: who may use the role, and what the role may do.
-3. Checks both files. Only your repository's `hr-staging` environment may use the role, and every permission names one of your project's resources in your AWS account. Any problem stops the script before AWS changes.
+3. Checks both files. Only your repository's `hr-staging` environment may use the role, and every permission names one of the project's resources in the AWS account you are signed in to. Any problem stops the script before AWS changes.
 4. Reuses the GitHub identity provider if your account has one, and creates it if not.
 5. Creates the deployment role, named after your project, or updates it if it exists.
 6. Prints the role ARN and saves it in `build/github-oidc-role-arn.txt`.

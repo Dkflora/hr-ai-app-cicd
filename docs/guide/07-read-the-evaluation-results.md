@@ -45,7 +45,7 @@ In that dataset, open the experiment runs. Each pipeline run adds one, named aft
 
 ### 4. The traces behind one answer
 
-Open **Traces** and set the time range to your run. The test questions appear as normal traces from the test accounts. Open one and read its spans in order: tool call, model call, inline judge, final answer. This is the same view as your first trace in document 03, so a failing case can be followed step by step.
+Open **Traces** and set the time range to your run. The test questions appear as normal traces from the test accounts. Open one and read its steps as in document 03: each agent round with its model call and tool, then the inline judge and the answer guardrail. This is the same view as your first trace in document 03, so a failing case can be followed step by step.
 
 ## What the thresholds mean
 

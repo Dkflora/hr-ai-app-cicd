@@ -1,8 +1,10 @@
 # 01 Import and clone
 
-**Goal:** get your own copy of the repository on GitHub and on your workstation.
+**Goal:** get a working copy of the company's repository on GitHub and on your workstation.
 
-You need your own GitHub copy because the pipeline uses that repository's Actions settings, environments and secrets. A plain clone of the source repository gives you none of those.
+In a company, the repository and the app belong to the team. For this lab, you import the repository into your GitHub account, so you can set up its pipeline the way the team's platform engineer would.
+
+A plain clone of the source repository would not give you its Actions settings, environments and secrets.
 
 ## Step 1: Import the repository into your GitHub account
 

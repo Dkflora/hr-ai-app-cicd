@@ -51,3 +51,49 @@ def test_returns_the_masked_text_when_contact_details_are_anonymized(monkeypatch
             {"type": "PHONE", "action": "ANONYMIZED"}]}}],
     })
     assert guardrails.check("Call me on 555-201-3344 about PTO", "INPUT") == ("masked", "Call me on {PHONE} about PTO")
+
+
+def test_findings_name_the_type_and_action_never_the_text(monkeypatch):
+    # The chat handler adds these findings to the trace, so they must never hold the value itself.
+    use_fake(monkeypatch, {
+        "action": "GUARDRAIL_INTERVENED",
+        "outputs": [{"text": "Blocked."}],
+        "assessments": [{"sensitiveInformationPolicy": {"piiEntities": [
+            {"type": "US_SOCIAL_SECURITY_NUMBER", "match": "536-22-1234", "action": "BLOCKED"}]}}],
+    })
+    guardrails.check("My SSN is 536-22-1234", "INPUT")
+    assert guardrails.LAST_FINDINGS == ["sensitiveInformationPolicy: US_SOCIAL_SECURITY_NUMBER BLOCKED"]
+
+
+def test_inside_a_trace_the_check_records_its_decision_but_not_the_question(monkeypatch, capsys):
+    import json
+    from app.telemetry import span
+
+    monkeypatch.setenv("HR_TRACING_ENABLED", "true")
+    monkeypatch.setenv("HR_TRACE_SYNTHETIC_CONTENT", "true")
+    monkeypatch.setenv("LAB_ENVIRONMENT", "staging")
+    use_fake(monkeypatch, {
+        "action": "GUARDRAIL_INTERVENED",
+        "outputs": [{"text": "Call me on {PHONE} about PTO"}],
+        "assessments": [{"sensitiveInformationPolicy": {"piiEntities": [
+            {"type": "PHONE", "action": "ANONYMIZED"}]}}],
+    })
+    with span("HR answer", "agent"):
+        guardrails.check("Call me on 555-201-3344 about PTO", "INPUT")
+
+    printed = capsys.readouterr().out
+    check_span = json.loads(printed.splitlines()[0])["span"]
+    assert check_span["name"] == "Bedrock Guardrail: question"
+    assert "masked" in printed and "PHONE ANONYMIZED" in printed
+    assert "555-201-3344" not in printed
+
+
+def test_findings_never_use_the_matched_text(monkeypatch):
+    # Word-list findings carry the matched word in "match"; only the policy's kind is kept.
+    use_fake(monkeypatch, {
+        "action": "GUARDRAIL_INTERVENED",
+        "outputs": [{"text": "Blocked."}],
+        "assessments": [{"wordPolicy": {"customWords": [{"match": "secret-word", "action": "BLOCKED"}]}}],
+    })
+    guardrails.check("this has secret-word in it", "INPUT")
+    assert guardrails.LAST_FINDINGS == ["wordPolicy: finding BLOCKED"]

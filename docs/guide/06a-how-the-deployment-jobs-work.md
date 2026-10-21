@@ -9,7 +9,7 @@ There is nothing to run in this document.
 Every merge to `main` starts the same chain of jobs. In plain words:
 
 1. **Check** the code: tests and a build. This is the `checks` job from document 04.
-2. **Deploy** the new version to **staging**, a private copy of the app that only you and the pipeline use.
+2. **Deploy** the new version to **staging**: the company's pre-production copy of the app. The engineers, the HR domain expert who reviews the answers, and the pipeline all use it before a version is approved.
 3. **Test** the deployed app by asking it real questions, the way an employee would.
 4. **Decide:** if every test passed, mark this version as **approved**. If any test failed, stop. The failing version is never approved.
 5. **Report** what happened, pass or fail.
@@ -33,7 +33,7 @@ The chat function has two aliases:
 
 So when a merge breaks something, `candidate` points to the broken version and `approved` still points to the last good one. The staging app shows the broken answers, because it follows `candidate`. Documents 07a to 07c use this to show a failure safely.
 
-Right now your function has only `candidate`. The first passing run in document 06b creates `approved`.
+Right now the chat function has only `candidate`. The first passing run in document 06b creates `approved`.
 
 ## What the candidate job does, in order
 

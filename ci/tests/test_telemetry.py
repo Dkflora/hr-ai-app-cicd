@@ -21,10 +21,12 @@ from unittest.mock import patch
 # The code under test lives in lambda/app, so add lambda/ to the import path.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'lambda'))
 
-from app.telemetry import observed, redact, conversation_context
+from app.telemetry import observed, redact, conversation_context, span, update_current_span
 
 # Tracing is off unless this variable is set, so every test turns it on.
 TRACING_ON = {'HR_TRACING_ENABLED': 'true'}
+# Content (questions, messages, answers) is recorded only in the staging lab with this switch on.
+CONTENT_ON = {'HR_TRACING_ENABLED': 'true', 'HR_TRACE_SYNTHETIC_CONTENT': 'true', 'LAB_ENVIRONMENT': 'staging'}
 
 
 def printed_spans(captured_output):
@@ -142,6 +144,87 @@ class TelemetryTests(unittest.TestCase):
         # Langfuse links a trace to a prompt only when the version is sent as a number.
         self.assertEqual(attributes['langfuse.observation.prompt.version'], {'intValue': '5'})
         self.assertEqual(attributes['langfuse.release']['stringValue'], 'source-hash')
+
+    # ---- update_current_span(): what a step adds to its own span ----
+
+    def test_content_is_recorded_only_with_the_switch_on_and_redacted(self):
+        @observed('tool', 'tool')
+        def tool():
+            update_current_span(input={'query': 'PTO carryover', 'key': 'sk-lf-example-secret'},
+                                output={'result': '5 days'}, metadata={'tool': 'search_hr_policies'})
+
+        # Switch off: metadata yes, content no.
+        captured = io.StringIO()
+        with patch.dict(os.environ, TRACING_ON), contextlib.redirect_stdout(captured):
+            tool()
+        attributes = span_attributes(printed_spans(captured)[0])
+        self.assertEqual(attributes['langfuse.observation.metadata.tool'], 'search_hr_policies')
+        self.assertNotIn('langfuse.observation.input', attributes)
+        self.assertNotIn('PTO carryover', captured.getvalue())
+
+        # Switch on: content too, with the key replaced by [REDACTED].
+        captured = io.StringIO()
+        with patch.dict(os.environ, CONTENT_ON), contextlib.redirect_stdout(captured):
+            tool()
+        attributes = span_attributes(printed_spans(captured)[0])
+        self.assertIn('PTO carryover', attributes['langfuse.observation.input'])
+        self.assertIn('5 days', attributes['langfuse.observation.output'])
+        self.assertNotIn('sk-lf-example-secret', captured.getvalue())
+
+    def test_model_details_usage_and_cost_are_recorded(self):
+        @observed('model', 'generation')
+        def model():
+            update_current_span(model='amazon.nova-pro-v1:0', model_parameters={'maxTokens': 800},
+                                usage={'input': 120, 'output': 40}, cost_usd='0.00012',
+                                level='WARNING', status_message='fallback used')
+
+        captured = io.StringIO()
+        with patch.dict(os.environ, TRACING_ON), contextlib.redirect_stdout(captured):
+            model()
+        attributes = span_attributes(printed_spans(captured)[0])
+        self.assertEqual(attributes['langfuse.observation.model.name'], 'amazon.nova-pro-v1:0')
+        self.assertEqual(json.loads(attributes['langfuse.observation.usage_details']), {'input': 120, 'output': 40})
+        self.assertEqual(json.loads(attributes['langfuse.observation.cost_details']), {'total': 0.00012})
+        self.assertEqual(attributes['langfuse.observation.level'], 'WARNING')
+
+    def test_span_block_nests_and_records_errors_by_type_only(self):
+        # `with span(...)` makes one part of a function its own step, such as one agent round.
+        @observed('request', 'agent')
+        def request():
+            with span('Agent round 1', 'chain'):
+                raise ValueError('private-token')
+
+        captured = io.StringIO()
+        with patch.dict(os.environ, TRACING_ON), contextlib.redirect_stdout(captured), \
+             self.assertRaises(ValueError):
+            request()
+
+        round_span, request_span = printed_spans(captured)
+        self.assertEqual(round_span['parentSpanId'], request_span['spanId'])
+        self.assertEqual(round_span['status']['code'], 2)
+        self.assertEqual(span_attributes(round_span)['langfuse.observation.level'], 'ERROR')
+        self.assertNotIn('private-token', captured.getvalue())
+
+    def test_conversation_tags_reach_every_span(self):
+        @observed('root')
+        def root():
+            return 'ok'
+
+        captured = io.StringIO()
+        with patch.dict(os.environ, TRACING_ON), contextlib.redirect_stdout(captured):
+            with conversation_context('synthetic-employee', 7, tags=['employee', 'test-account']):
+                root()
+        record = printed_spans(captured)[0]
+        tags = [a for a in record['attributes'] if a['key'] == 'langfuse.trace.tags'][0]
+        values = [item['stringValue'] for item in tags['value']['arrayValue']['values']]
+        self.assertEqual(values, ['employee', 'test-account'])
+
+    def test_update_outside_a_span_does_nothing(self):
+        # Called when tracing is off or before a trace starts, it must not fail or print.
+        captured = io.StringIO()
+        with patch.dict(os.environ, CONTENT_ON), contextlib.redirect_stdout(captured):
+            update_current_span(input={'question': 'hello'}, metadata={'a': 1})
+        self.assertEqual(captured.getvalue(), '')
 
 
 if __name__ == '__main__':
