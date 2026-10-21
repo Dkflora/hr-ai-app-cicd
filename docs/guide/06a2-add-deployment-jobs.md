@@ -169,12 +169,14 @@ cat >> .github/workflows/hr-quality.yml <<'EOF'
         if: always()                                                    # always save
         with:
           name: hr-candidate-evidence                                   # artifact name
-          # Raw answers are intentionally excluded; inspect them only in approved restricted storage.
+          # Raw answers stay out. Score files quote parts of answers; a company keeps them in restricted storage.
           path: |                                                       # files below
             build/release.json
             build/report.md
             build/function.zip
             build/previous-approved.json
+            build/deepeval.json
+            build/quality.json
           retention-days: 3                                             # keep 3 days
 EOF
 grep -nE '^  (checks|candidate):' .github/workflows/hr-quality.yml

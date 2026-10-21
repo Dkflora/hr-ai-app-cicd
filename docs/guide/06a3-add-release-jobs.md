@@ -72,7 +72,7 @@ EOF
 grep -nE '^  (checks|candidate|production-handoff-dry-run|tag-release):' .github/workflows/hr-quality.yml
 ```
 
-**Expected:** the last command prints four jobs: `checks` on line 15, `candidate` on line 41, `production-handoff-dry-run` on line 206 and `tag-release` on line 237.
+**Expected:** the last command prints four jobs: `checks` on line 15, `candidate` on line 41, `production-handoff-dry-run` on line 208 and `tag-release` on line 239.
 
 If a job name appears twice, you ran a block twice. Create the file again with document 04, step 2, then run the 06a2 block and this block once each.
 

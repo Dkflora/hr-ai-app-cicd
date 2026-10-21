@@ -31,7 +31,7 @@ A case passes only if **both** of its answers pass. One failed answer stops the 
 - **The overall result, case counts, speed, retrieval, consistency and DeepEval scores**: open the run in the **Actions** tab, click **Summary**, and read the report.
 - **Which retrievals missed, and which answers disagreed**: in the run, click the `candidate` job, then the **Check retrieval quality and answer consistency** step.
 - **Promptfoo results**: in the run, click the `candidate` job, then the **Promptfoo evaluation action** step.
-- **DeepEval scores**: in the run, click the `candidate` job, then the **Evaluate answer quality with DeepEval** step. The step's log shows each case's scores. The full file, `build/deepeval.json`, stays on GitHub's machine and is not uploaded.
+- **DeepEval scores**: in the run, click the `candidate` job, then the **Evaluate answer quality with DeepEval** step. The step's log shows each case's scores. For every score and the judge's reasons, scroll to **Artifacts** on the run page, download `hr-candidate-evidence` and open `deepeval.json`. `quality.json` in the same download holds the retrieval and consistency results.
 - **Evidently report**: on the run page, scroll to **Artifacts** and download the Evidently report.
 - **Langfuse**: follow the steps below.
 
