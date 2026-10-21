@@ -20,10 +20,6 @@ Then, in your new repository, open **Settings → Actions → General**. Make su
 
 ## Step 2: Clone your copy and create the feature branch
 
-Every command in this lab is written for Bash. On Windows, run them in **Git Bash**, never in PowerShell or Command Prompt: many commands fail there. On a Mac, use Terminal.
-
-To open Git Bash inside VS Code, open **Terminal → New Terminal**. Click the small arrow next to **+** in the terminal panel, and choose **Git Bash**. A Git Bash prompt ends with `$`. A PowerShell prompt starts with `PS` or shows errors such as `Get-ChildItem`.
-
 These commands download your copy to your computer and create a branch to work on:
 
 ```bash
