@@ -10,6 +10,8 @@ Open PowerShell as an administrator: right-click **PowerShell** and choose **Run
 choco install nodejs-lts -y
 ```
 
+This is the only PowerShell command in the lab. Every other command is written for **Git Bash**, which comes with Git for Windows.
+
 ## Mac (Homebrew)
 
 ```bash
@@ -20,7 +22,7 @@ If you do not have Homebrew, download the LTS installer from [nodejs.org](https:
 
 ## Check
 
-Open a new terminal, then run:
+Open a new terminal (Git Bash on Windows, Terminal on a Mac), then run:
 
 ```bash
 node --version
