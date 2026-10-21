@@ -184,11 +184,15 @@ Ask the same PTO question again. In Langfuse, the new trace shows **Agent round 
 
 If a different case fails, open its trace in Langfuse to see why.
 
-## Step 8: Clean up the branches
+## Step 8: Tag the repair and clean up
+
+The repair is a fix that passed every check, so it becomes a patch release, `v1.0.1`:
 
 ```bash
 git switch main
 git pull --ff-only
+git tag -a v1.0.1 -m "Restore the working tool budget"
+git push origin v1.0.1
 git branch -D test/tool-limit fix/tool-limit
 ```
 

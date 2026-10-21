@@ -25,7 +25,7 @@ The `if re.search(...)` line decides when the supplemental searches run. You rep
 git switch main
 git pull --ff-only
 git status --short
-git diff baseline --stat -- lambda/app/retrieval.py
+git diff v1.0.0 --stat -- lambda/app/retrieval.py
 ```
 
 **Expected:** both commands print nothing.
@@ -86,17 +86,17 @@ In Langfuse, open the trace for each question. Click its **Policy search** step 
 - `searches_run` lists the searches that ran. With your change, `supplemental annual entitlement` and `supplemental carryover` are missing.
 - The passages show the policy text the model received.
 
-Compare these passages with the same questions in your baseline trace. Is the yearly allowance or the carry-over passage missing? Did the answer give a number that the passages do not support?
+Compare these passages with the same questions in the trace from your `v1.0.0` run. Is the yearly allowance or the carry-over passage missing? Did the answer give a number that the passages do not support?
 
 ## Step 5: Repair it
 
-Put the file back exactly as it was at the baseline:
+Put the file back exactly as it was in release `v1.0.0`:
 
 ```bash
 git switch main
 git pull --ff-only
 git switch -c fix/retrieval-evidence
-git restore --source=baseline lambda/app/retrieval.py
+git restore --source=v1.0.0 lambda/app/retrieval.py
 git diff
 ```
 
@@ -115,8 +115,12 @@ Open a pull request, get it reviewed, and merge it. Then check that the newest r
 ```bash
 git switch main
 git pull --ff-only
+git tag -a v1.0.3 -m "Restore the supplemental PTO searches"
+git push origin v1.0.3
 git branch -D test/retrieval-evidence fix/retrieval-evidence
 ```
+
+The repair passed every check, so it is the next patch release, `v1.0.3`.
 
 Write down:
 

@@ -27,10 +27,10 @@ cd ~/hr-rag-lab
 git switch main
 git pull --ff-only
 git status --short
-git diff baseline --stat -- lambda/app/prompts/hr_system.txt
+git diff v1.0.0 --stat -- lambda/app/prompts/hr_system.txt
 ```
 
-**Expected:** both `git status` and `git diff` print nothing. That means the prompt matches the `baseline` tag you made in document 06b.
+**Expected:** both `git status` and `git diff` print nothing. That means the prompt matches release `v1.0.0`, the tag you made in document 06b.
 
 ## Step 2: Add the wrong instruction
 
@@ -80,17 +80,17 @@ In Langfuse, open the trace for that question. Read its steps in this order:
 3. The inline judge: did it reject the draft?
 4. The rewritten answer, if there is one, and the final answer.
 
-Then compare the prompt version on this trace with the version on your baseline trace.
+Then compare the prompt version on this trace with the version on the trace from your `v1.0.0` run.
 
 ## Step 5: Repair it
 
-Put the prompt back exactly as it was at the baseline:
+Put the prompt back exactly as it was in release `v1.0.0`:
 
 ```bash
 git switch main
 git pull --ff-only
 git switch -c fix/prompt-instruction
-git restore --source=baseline lambda/app/prompts/hr_system.txt
+git restore --source=v1.0.0 lambda/app/prompts/hr_system.txt
 git diff
 ```
 
@@ -109,13 +109,17 @@ Open a pull request, get it reviewed, and merge it. Then check that the newest r
 ```bash
 git switch main
 git pull --ff-only
+git tag -a v1.0.2 -m "Remove the incorrect carryover instruction"
+git push origin v1.0.2
 git branch -D test/prompt-instruction fix/prompt-instruction
 ```
+
+The repair passed every check, so it is the next patch release, `v1.0.2`.
 
 Write down:
 
 - Which outcome you got: corrected, withheld or escaped.
-- The three prompt versions: baseline, bad, restored.
+- The three prompt versions: from `v1.0.0`, the bad one, and the restored one.
 - The trace links for the bad and restored versions.
 
 **To discuss:** the inline judge checks every answer while the employee waits. The pipeline checks a fixed list of questions before a release. What does each one catch that the other misses?

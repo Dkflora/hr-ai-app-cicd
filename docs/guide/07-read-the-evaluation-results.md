@@ -22,7 +22,7 @@ A case passes only if **both** of its answers pass. One failed answer stops the 
 - **Retrieval** fails: the search did not find the policy a case expects. Open that question in Langfuse, click its **Policy search** step, and compare the passages it found with the policy.
 - **Consistency** fails: the same question, asked twice, got two answers that mean different things. Read both answers in the Langfuse experiment, then open each one step by step.
 - **Promptfoo** fails: an answer that used to be right is now wrong. Its log shows which rule the answer broke.
-- **Langfuse** fails: some cases scored lower than in the baseline run. Compare the two runs' results to see which cases changed.
+- **Langfuse** fails: some cases scored lower than in your `v1.0.0` run. Compare the two runs' results to see which cases changed.
 - **DeepEval** fails: the log names the case and the check that failed. For faithfulness, find the sentence the policy passages do not back up. For relevancy, check whether the answer wandered away from the question. The grading model can be wrong, so read the answer yourself before you decide.
 - **Evidently** shows a change: answers got longer or slower than in an earlier run. Find out why. A change does not prove an answer is wrong.
 
