@@ -61,6 +61,8 @@ Open one trace. Its steps form a tree, in the order they ran:
 
 Click any step to see what went in, what came out, and its metadata. Langfuse highlights a step that has a warning, such as a judge that rejected a draft.
 
+In Langfuse, a **score** is a grade attached to a trace. It can be yes or no, a number, or a category, and a person, a script or an AI judge can add it. Your 👎 is one.
+
 Now open the trace of the second answer. Under **Scores**, you see `user_feedback` with the value `false` and your reason. If a reason contains personal data, such as a phone number, it is hidden before it is saved. To review every answer people disliked, open **Scores** or **Traces** and filter on `user_feedback`. A team can also send those traces to an **annotation queue**, a list where an HR expert grades each answer.
 
 ## Step 3: See the same questions in the model gateway

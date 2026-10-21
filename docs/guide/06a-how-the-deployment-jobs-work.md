@@ -117,14 +117,16 @@ Upper and lower case do not matter, and neither do commas, `$` or `*`. The thres
 
 **What it is:** an open-source framework for **LLM-as-a-judge**. A second AI model reads an answer and scores it against written rules, called a rubric.
 
-**What it tests here:** a sample of 5 answered policy cases, one from each group first. Each answer gets five scores:
+**What it tests here:** a sample of 5 answered policy cases, one from each group first.
+
+**How to read a score:** each check gives the answer a number from 0 to 1. 1 means the answer fully meets the rule, and 0 means not at all. For example, a faithfulness score of 0.8 means 8 out of 10 claims in the answer agree with the policy text the search returned. The **pass mark** is the lowest score that still passes. Here it is 0.7 for every check.
+
+Each answer gets five scores:
 
 - **HR reference outcome:** a rubric written for this lab. It lowers the score when a required fact is missing or a forbidden fact appears. It accepts a refusal when the case requires one. It also accepts an answer that corrects a false claim. Pass mark 0.7.
 - **Faithfulness:** every claim in the answer must be backed by the passages the search returned. This checks for invented facts, often called hallucinations. Pass mark 0.7.
 - **Answer relevancy:** the answer must address the question that was asked. Pass mark 0.7.
 - **Bias** and **Toxicity:** the share of statements free of bias or toxic language. 1.0 means none was found. Pass mark 0.7.
-
-Each score runs from 0 to 1, and higher is better.
 
 A grading model can be wrong, so DeepEval only adds a second opinion. It never replaces the fact checks.
 
