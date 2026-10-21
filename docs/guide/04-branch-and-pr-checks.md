@@ -59,11 +59,14 @@ jobs:                                                                   # stages
       - uses: actions/checkout@v7                                       # get code
         with:                                                           # inputs
           persist-credentials: false                                    # drop Git token
+          fetch-depth: 0                                                # all history and release tags
       - uses: actions/setup-python@v7                                   # install Python
         with:
           python-version: '3.12'                                        # version
       - name: Install delivery helper dependencies                      # step title
         run: python -m pip install -r ci/requirements.txt               # install packages
+      - name: Release version is new                                    # step title
+        run: python ci/check_version.py                                 # VERSION newer than last tag
       - name: Prompt structure and release contract tests
         run: python -m unittest discover -s ci/tests -v                 # unit tests
       - name: Build backend candidate with release identity
@@ -84,6 +87,8 @@ What each part does:
 - `permissions: contents: read`: The job can read the code and nothing else.
 - `concurrency: hr-staging`: Only one run at a time. Two deployments never overlap, because there is only one staging environment.
 - `persist-credentials: false`: The Git token is removed from the runner after the code is downloaded.
+- `fetch-depth: 0`: Downloads the full history, including the release tags, so the next step can compare versions.
+- `Release version is new`: The `VERSION` file at the top of the repository holds the release number, such as `1.0.0`. `ci/check_version.py` checks that it is newer than every release tag, so a number is never used twice.
 - `ci/release.py`: Checks the prompt and builds the backend package. It adds a `release.json` that records the commit and the prompt.
 
 ## Step 3: Commit and push
@@ -104,6 +109,6 @@ Near the bottom of the pull request page, you see the `checks` job. Click **Deta
 
 **Expected:** the `checks` job finishes green.
 
-Leave the pull request open for now. In documents 06a and 06a2 you add the deployment jobs to it.
+Leave the pull request open for now. In documents 06a, 06a2 and 06a3 you add the deployment and release jobs to it.
 
 **Next:** [05 GitHub-to-AWS access](05-github-to-aws-access.md)

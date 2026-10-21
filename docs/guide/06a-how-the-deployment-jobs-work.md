@@ -1,6 +1,6 @@
 # 06a How the deployment jobs work
 
-**Goal:** understand what the deployment jobs do, before you add them to your workflow in document 06a2.
+**Goal:** understand what the deployment jobs do, before you add them to your workflow in documents 06a2 and 06a3.
 
 There is nothing to run in this document.
 
@@ -136,6 +136,17 @@ You met Langfuse traces in document 03. The pipeline uses three more Langfuse fe
 The test questions also appear as normal traces from the test accounts. So you can open any failing answer and follow it step by step.
 
 **Where the result appears:** in Langfuse. Document 07 walks you through each page.
+
+## One release number everywhere
+
+The `VERSION` file holds the release number, such as `1.0.3`. Each change raises it: the last number for a fix, the middle number for a new feature, the first number for a change that breaks something. This is called **semantic versioning**. The pipeline stamps the number on everything it builds, so each place shows which release it belongs to:
+
+- **The package:** `release.json` records the version, the commit and the prompt.
+- **Langfuse prompt:** the prompt version gets the label `v1.0.3`, next to `candidate`.
+- **Lambda:** the published version's description reads `v1.0.3 (commit a21bc86)`. AWS still numbers versions 1, 2, 3, and the description says which release each one is.
+- **Traces:** every trace's **Release** field shows `v1.0.3`.
+- **API answers:** each answer carries the header `x-hr-release: v1.0.3`.
+- **Git:** after the release gate passes, the `tag-release` job tags the tested commit `v1.0.3` and pushes the tag to GitHub. A release that fails the gate gets no tag.
 
 ## What these checks still do not cover
 

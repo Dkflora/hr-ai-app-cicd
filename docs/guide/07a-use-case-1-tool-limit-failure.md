@@ -67,6 +67,7 @@ Make the change in VS Code:
 2. Press **Ctrl+G**, type the line number from `grep`, and press **Enter**. The cursor jumps to that line.
 3. Change the line to `MAX_TOOL_ROUNDS = 1`.
 4. Save the file with **Ctrl+S** (**Cmd+S** on a Mac).
+5. Open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.0` to `1.0.1`. Save it. Every change that reaches `main` needs a new release number, and the `checks` job fails without one.
 
 Check the change before you commit:
 
@@ -74,10 +75,10 @@ Check the change before you commit:
 git diff
 ```
 
-**Expected:** the diff shows exactly one changed line, from `5` to `1`.
+**Expected:** two changed lines: `MAX_TOOL_ROUNDS` from `5` to `1`, and `VERSION` from `1.0.0` to `1.0.1`.
 
 ```bash
-git add lambda/app/assistant.py
+git add lambda/app/assistant.py VERSION
 git commit -m "Exercise: limit the agent to one tool round"
 git push -u origin test/tool-limit
 ```
@@ -150,6 +151,7 @@ In VS Code:
 2. Press **Ctrl+G** and go to the line `grep` printed.
 3. Change it back to `MAX_TOOL_ROUNDS = 5`.
 4. Save the file.
+5. Open `VERSION` and raise the last number by one again, to `1.0.2`. Save it.
 
 Then check it:
 
@@ -157,10 +159,10 @@ Then check it:
 git diff
 ```
 
-**Expected:** one changed line, from `1` back to `5`.
+**Expected:** two changed lines: `MAX_TOOL_ROUNDS` from `1` back to `5`, and `VERSION` from `1.0.1` to `1.0.2`. Release `1.0.1` failed the gate, so it never gets a tag. The repair is a new release, `1.0.2`.
 
 ```bash
-git add lambda/app/assistant.py
+git add lambda/app/assistant.py VERSION
 git commit -m "Restore the working tool budget"
 git push -u origin fix/tool-limit
 ```
@@ -184,17 +186,18 @@ Ask the same PTO question again. In Langfuse, the new trace shows **Agent round 
 
 If a different case fails, open its trace in Langfuse to see why.
 
-## Step 8: Tag the repair and clean up
+## Step 8: Find the new release and clean up
 
-The repair is a fix that passed every check, so it becomes a patch release, `v1.0.1`:
+The repair passed the release gate, so the `tag-release` job tagged it `v1.0.2`. The broken release, `v1.0.1`, has no tag.
 
 ```bash
 git switch main
 git pull --ff-only
-git tag -a v1.0.1 -m "Restore the working tool budget"
-git push origin v1.0.1
+git tag --list 'v*'
 git branch -D test/tool-limit fix/tool-limit
 ```
+
+**Expected:** `git tag` prints `v1.0.0` and `v1.0.2`.
 
 ## Evidence to keep
 

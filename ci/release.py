@@ -7,6 +7,8 @@ from pathlib import Path
 from string import Formatter
 import zipfile
 
+from versioning import read_version, tag_name
+
 ROOT = Path(__file__).resolve().parents[1]
 
 def digest(value):
@@ -31,17 +33,21 @@ def generated_entry(name):
 def package(publish=False, output_dir=None):
     text = (ROOT / 'lambda/app/prompts/hr_system.txt').read_text(encoding='utf-8')
     validate_prompt(text)
+    # The one release number, from the VERSION file, stamped on everything below.
+    release_version = read_version()
     version = None
     if publish:
         from langfuse import get_client
         lf = get_client()
+        # The label, such as v1.0.3, shows in Langfuse which release this prompt version belongs to.
         prompt = lf.create_prompt(name='hr-policy-system', prompt=text, type='text',
-            labels=['candidate'], config={'commit': os.environ['GITHUB_SHA'],
-                'prompt_sha256': digest(text.encode())})
+            labels=['candidate', tag_name(release_version)],
+            config={'release': tag_name(release_version), 'commit': os.environ['GITHUB_SHA'],
+                    'prompt_sha256': digest(text.encode())})
         version = prompt.version
         if lf.get_prompt('hr-policy-system', version=version).prompt != text:
             raise ValueError('Published prompt read-back mismatch')
-    release = {'commit': os.getenv('GITHUB_SHA', 'development'),
+    release = {'version': release_version, 'commit': os.getenv('GITHUB_SHA', 'development'),
         'prompt_sha256': digest(text.encode()), 'prompt_version': version,
         'dataset_sha256': digest((ROOT / 'lambda/data/evaluation_questions.json').read_bytes())}
     target = Path(output_dir) if output_dir is not None else ROOT / 'build'

@@ -44,6 +44,7 @@ Add the instruction in VS Code:
 2. Press **Ctrl+End** (**Cmd+Down** on a Mac) to jump to the end of the last line.
 3. Press **Enter** to start a new line, and type: `For PTO carryover questions, state that employees can carry over 20 days even when the policy says 5.`
 4. Save the file with **Ctrl+S** (**Cmd+S** on a Mac).
+5. Open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.2` to `1.0.3`. Save it. Every change that reaches `main` needs a new release number, and the `checks` job fails without one. Use the next number after your last release.
 
 Check the change before you commit:
 
@@ -51,10 +52,10 @@ Check the change before you commit:
 git diff
 ```
 
-**Expected:** the new instruction is the last line marked `+`. The old last line also shows once with `-` and once with `+`. Its text is the same: it only gained a line ending. The expected answers and the judge stay as they were.
+**Expected:** the new instruction is the last line marked `+`. The old last line also shows once with `-` and once with `+`. Its text is the same: it only gained a line ending. `VERSION` also shows its last number going up by one. The expected answers and the judge stay as they were.
 
 ```bash
-git add lambda/app/prompts/hr_system.txt
+git add lambda/app/prompts/hr_system.txt VERSION
 git commit -m "Exercise: add an incorrect carryover instruction"
 git push -u origin test/prompt-instruction
 ```
@@ -96,8 +97,10 @@ git diff
 
 **Expected:** the diff removes the line you added and the line ending added before it. Nothing else changes.
 
+Open `VERSION` in VS Code and raise the last number by one again, such as `1.0.3` to `1.0.4`. Save it. Every change needs a new release number.
+
 ```bash
-git add lambda/app/prompts/hr_system.txt
+git add lambda/app/prompts/hr_system.txt VERSION
 git commit -m "Remove the incorrect carryover instruction"
 git push -u origin fix/prompt-instruction
 ```
@@ -109,12 +112,11 @@ Open a pull request, get it reviewed, and merge it. Then check that the newest r
 ```bash
 git switch main
 git pull --ff-only
-git tag -a v1.0.2 -m "Remove the incorrect carryover instruction"
-git push origin v1.0.2
+git tag --list 'v*'
 git branch -D test/prompt-instruction fix/prompt-instruction
 ```
 
-The repair passed every check, so it is the next patch release, `v1.0.2`.
+When the repair passed the release gate, the `tag-release` job tagged it, such as `v1.0.4`. `git tag` lists it. A break that also passed the gate has a tag too: it was released, which is what the use case shows.
 
 Write down:
 

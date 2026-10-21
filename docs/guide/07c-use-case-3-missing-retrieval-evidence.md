@@ -50,6 +50,7 @@ Make the change in VS Code:
 2. Press **Ctrl+G**, type the first line number from the second command, such as `101`, and press **Enter**.
 3. Replace the whole line with `    if False:`, keeping the 4 spaces at the start. Leave the indented lines below it unchanged.
 4. Save the file with **Ctrl+S** (**Cmd+S** on a Mac).
+5. Open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.4` to `1.0.5`. Save it. Every change that reaches `main` needs a new release number, and the `checks` job fails without one. Use the next number after your last release.
 
 Check the change before you commit:
 
@@ -57,10 +58,10 @@ Check the change before you commit:
 git diff
 ```
 
-**Expected:** one changed line. The old line starts `if re.search(r"\b(pto|time off|annual leave`. The new line is `if False:`.
+**Expected:** one changed line in `retrieval.py`, and `VERSION` going up by one. The old line starts `if re.search(r"\b(pto|time off|annual leave`. The new line is `if False:`.
 
 ```bash
-git add lambda/app/retrieval.py
+git add lambda/app/retrieval.py VERSION
 git commit -m "Exercise: disable the supplemental PTO searches"
 git push -u origin test/retrieval-evidence
 ```
@@ -102,8 +103,10 @@ git diff
 
 **Expected:** one changed line, from `if False:` back to the `if re.search(...)` line.
 
+Open `VERSION` in VS Code and raise the last number by one again, such as `1.0.5` to `1.0.6`. Save it. Every change needs a new release number.
+
 ```bash
-git add lambda/app/retrieval.py
+git add lambda/app/retrieval.py VERSION
 git commit -m "Restore the supplemental PTO searches"
 git push -u origin fix/retrieval-evidence
 ```
@@ -115,12 +118,11 @@ Open a pull request, get it reviewed, and merge it. Then check that the newest r
 ```bash
 git switch main
 git pull --ff-only
-git tag -a v1.0.3 -m "Restore the supplemental PTO searches"
-git push origin v1.0.3
+git tag --list 'v*'
 git branch -D test/retrieval-evidence fix/retrieval-evidence
 ```
 
-The repair passed every check, so it is the next patch release, `v1.0.3`.
+When the repair passed the release gate, the `tag-release` job tagged it, such as `v1.0.6`. `git tag` lists it. A break that also passed the gate has a tag too: it was released, which is what the use case shows.
 
 Write down:
 

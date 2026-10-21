@@ -104,25 +104,25 @@ To see every question the pipeline sent to the AI model, open the LiteLLM page a
 
 If a step fails, click it to open its log and find the cause. For AWS sign-in errors, see [Troubleshooting](reference-troubleshooting.md).
 
-## Step 8: Update your local main and tag the first release
+## Step 8: Find release v1.0.0 everywhere
 
-This commit passed every check, so it is your first release. Give it a **tag**: a fixed name for one commit.
-
-Teams name releases with **semantic versioning**, `MAJOR.MINOR.PATCH`. The patch number goes up for a fix. The minor number goes up for a new feature that keeps everything else working. The major number goes up for a change that breaks something people rely on. This first release is `v1.0.0`. Each repair in the use cases becomes a patch release: `v1.0.1`, `v1.0.2` and `v1.0.3`.
+Your first passing run is release `v1.0.0`, the number in the `VERSION` file. The `tag-release` job tagged the tested commit `v1.0.0` and pushed the tag to GitHub. Bring the tag to your computer and look at it:
 
 ```bash
 git switch main
 git pull --ff-only
-git tag -a v1.0.0 -m "First approved release"
-git push origin v1.0.0
 git log --oneline --decorate -3
-git rev-list -n 1 v1.0.0
+git tag --list 'v*'
 ```
 
-`-a` makes an **annotated tag**, which records who tagged the commit, when, and why. `git push origin v1.0.0` sends the tag to GitHub, because pushing a branch does not send its tags. A tag push does not start the pipeline: the workflow only runs for pushes to branches.
+**Expected:** the first `git log` line shows `tag: v1.0.0`, and `git tag` prints `v1.0.0`.
 
-**Expected:** the first `git log` line shows `tag: v1.0.0`, and on GitHub the tag appears under your repository's **Tags**.
+The same release number shows in every other place:
 
-**Save for later:** the link to this passing run, the commit the last command printed, and the prompt version shown in Langfuse. The use cases compare their results with release `v1.0.0`, and put files back from it.
+- **GitHub:** your repository's **Tags** list shows `v1.0.0`.
+- **Lambda:** in the AWS console, open your chat function's **Versions** tab. The newest version's description reads `v1.0.0 (commit ...)`.
+- **Langfuse:** under **Prompts**, `hr-policy-system` version 1 has the label `v1.0.0`. Each trace from the run shows `v1.0.0` as its **Release**.
+
+**Save for later:** the link to this passing run and the prompt version shown in Langfuse. The use cases compare their results with release `v1.0.0`, and put files back from it.
 
 **Next:** [07 Read the evaluation results](07-read-the-evaluation-results.md)

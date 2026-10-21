@@ -19,6 +19,15 @@ import boto3
 
 ROOT = Path(__file__).resolve().parents[1]
 RECORD = re.compile(r'previous approved version: (\d+)')
+RELEASE = re.compile(r'v\d+\.\d+\.\d+')   # a release name such as v1.0.3, in a description
+
+
+def release_of(description):
+    """The release named in a Lambda description, or 'an unnamed release' for older versions."""
+    match = RELEASE.search(description or '')
+    if match:
+        return match.group(0)
+    return 'an unnamed release'
 
 
 def staging_function():
@@ -63,13 +72,16 @@ def roll_back(client, function):
     if config.get('Environment', {}).get('Variables', {}).get('LAB_ENVIRONMENT') != 'staging':
         sys.exit(f'Version {target} is not marked as isolated staging. Not restoring it.')
 
+    # The version's own description names its release, such as "v1.0.2 (commit a21bc86)".
+    target_release = release_of(config.get('Description'))
     client.update_alias(
         FunctionName=function,
         Name='approved',
         FunctionVersion=target,
         RevisionId=alias['RevisionId'],   # fails safely if someone moved the alias meanwhile
-        Description=f'Lab approved release pointer; previous approved version: {current}',
+        Description=f'Lab approved release pointer; release {target_release}; previous approved version: {current}',
     )
+    print(f'approved now points to {target_release}; it pointed to {release_of(alias.get("Description"))}.')
     return current, target
 
 

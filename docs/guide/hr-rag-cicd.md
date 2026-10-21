@@ -71,6 +71,7 @@ Work through them in this order. Each one ends with a link to the next.
 - [05 GitHub-to-AWS access](05-github-to-aws-access.md): Let GitHub sign in to AWS with a limited role, without storing AWS keys.
 - [06a How the deployment jobs work](06a-how-the-deployment-jobs-work.md): What happens after a merge, Lambda versions and aliases, and what Promptfoo, Langfuse, DeepEval and Evidently check.
 - [06a2 Add the deployment jobs](06a2-add-deployment-jobs.md): Add the deployment and test jobs to the workflow.
+- [06a3 Add the release jobs](06a3-add-release-jobs.md): Add the production handoff and the job that tags each approved release.
 - [06b Environments, merge and first run](06b-environments-merge-and-first-run.md): Add the GitHub settings, merge, and watch the first full run.
 - [07 Read the evaluation results](07-read-the-evaluation-results.md): Find each tool's result from your first run, and learn what it tells you.
 - [07a Use case 1: tool-limit failure](07a-use-case-1-tool-limit-failure.md): Break the chatbot on purpose, watch the release gate stop it, and repair it.

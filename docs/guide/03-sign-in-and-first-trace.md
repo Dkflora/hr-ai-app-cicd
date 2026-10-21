@@ -44,7 +44,7 @@ In Langfuse, open your project and click **Sessions**. Open the newest session. 
 
 - A coded user ID instead of the employee's email, which never appears. You also see the tags `employee` and `person`.
 - Both questions in the same session.
-- The **prompt version number** used for the answer.
+- The **prompt version number** used for the answer, and the **Release**, such as `v1.0.0`, once the pipeline has deployed one.
 
 Open one trace. Its steps form a tree, in the order they ran:
 

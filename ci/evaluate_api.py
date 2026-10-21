@@ -26,7 +26,8 @@ def request(session, origin, token, question, release, conversation=None):
     response.raise_for_status()
     if response.status_code != 200:
         raise ValueError('Unexpected API status')
-    for key, value in [('x-hr-commit', release['commit']),
+    for key, value in [('x-hr-release', 'v' + release['version']),
+                       ('x-hr-commit', release['commit']),
                        ('x-hr-prompt-sha256', release['prompt_sha256']),
                        ('x-hr-prompt-version', str(release['prompt_version'])),
                        ('x-hr-lambda-version', str(release['lambda_version']))]:

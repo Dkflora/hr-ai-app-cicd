@@ -129,7 +129,8 @@ class TelemetryTests(unittest.TestCase):
             return 'ok'
 
         # release_identity() normally reads the deployed release record. Here it returns fixed values.
-        identity = {'x-hr-commit': 'source-hash',
+        identity = {'x-hr-release': 'v1.0.3',
+                    'x-hr-commit': 'source-hash',
                     'x-hr-prompt-sha256': 'prompt-hash',
                     'x-hr-prompt-version': '5'}
         captured = io.StringIO()
@@ -143,7 +144,9 @@ class TelemetryTests(unittest.TestCase):
         self.assertEqual(attributes['langfuse.version']['stringValue'], 'hr-policy-system v5')
         # Langfuse links a trace to a prompt only when the version is sent as a number.
         self.assertEqual(attributes['langfuse.observation.prompt.version'], {'intValue': '5'})
-        self.assertEqual(attributes['langfuse.release']['stringValue'], 'source-hash')
+        # The release field is the release number; the commit is kept in metadata.
+        self.assertEqual(attributes['langfuse.release']['stringValue'], 'v1.0.3')
+        self.assertEqual(attributes['langfuse.observation.metadata.commit']['stringValue'], 'source-hash')
 
     # ---- update_current_span(): what a step adds to its own span ----
 

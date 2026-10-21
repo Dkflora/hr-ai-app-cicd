@@ -176,43 +176,12 @@ cat >> .github/workflows/hr-quality.yml <<'EOF'
             build/function.zip
             build/previous-approved.json
           retention-days: 3                                             # keep 3 days
-  # Demonstrate the approval boundary without deploying production infrastructure.
-  production-handoff-dry-run:                                           # job
-    name: Production handoff (dry run)                                  # job title
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: candidate                                                    # depends on candidate
-    runs-on: ubuntu-24.04                                               # agent
-    environment: hr-production-approval                                 # approval gate
-    permissions:                                                        # token rights
-      contents: read                                                    # read-only code
-    steps:                                                              # steps
-      - uses: actions/download-artifact@v8                              # get artifacts
-        with:
-          name: hr-candidate-evidence                                   # artifact name
-          path: evidence                                                # folder
-      - name: Verify exact tested release and show production handoff
-        env:                                                            # step variables
-          EXPECTED_COMMIT: ${{ github.sha }}                            # tested commit
-        run: |
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          release=json.loads(Path('evidence/release.json').read_text())
-          report=Path('evidence/report.md').read_text()
-          if release['commit'] != os.environ['EXPECTED_COMMIT']:
-              raise SystemExit('Release does not match the merged commit')
-          if 'Release gate: PASS.' not in report:
-              raise SystemExit('A passing evaluation report is required')
-          print('DEMONSTRATION ONLY: production would receive the tested backend artifact and exact prompt version.')
-          print('React would be built from this same commit with production configuration.')
-          print('No production resources or traffic are changed by this dry-run job.')
-          PY
 EOF
-grep -nE '^  (checks|candidate|production-handoff-dry-run):' .github/workflows/hr-quality.yml
+grep -nE '^  (checks|candidate):' .github/workflows/hr-quality.yml
 ```
 
-**Expected:** the last command prints three jobs: `checks` on line 15, `candidate` on line 38 and `production-handoff-dry-run` on line 203.
+**Expected:** the last command prints two jobs: `checks` on line 15 and `candidate` on line 41.
 
 If a job name appears twice, you ran the block twice. Create the file again with document 04, step 2, then run this block once.
 
-**Next:** [06b Environments, merge and first run](06b-environments-merge-and-first-run.md)
+**Next:** [06a3 Add the release jobs](06a3-add-release-jobs.md)

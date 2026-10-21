@@ -193,7 +193,9 @@ def _base_attributes(kind):
         readable = 'hr-policy-system v' + prompt_version
     else:
         readable = 'hr-policy-system unpublished'
-    attrs += [attribute('langfuse.release', identity['x-hr-commit']),
+    # The release field shows the release number, such as v1.0.3, so traces can be filtered by release.
+    attrs += [attribute('langfuse.release', identity.get('x-hr-release', identity['x-hr-commit'])),
+              attribute('langfuse.observation.metadata.commit', identity['x-hr-commit']),
               attribute('langfuse.version', readable),
               attribute('langfuse.observation.metadata.prompt_version', prompt_version),
               attribute('langfuse.observation.metadata.release_stage', 'candidate'),
