@@ -49,7 +49,7 @@ Each item below is one step in the workflow file, with the script or action it r
 - **Deploy the backend** (`ci/deploy_candidate.py`): uploads the code as a new Lambda version, and moves `candidate` to it.
 
 **Test**
-- **Ask the real app** (`ci/evaluate_api.py`): signs in as the test accounts and asks one warm-up question that is not timed. Then it asks every question in [the test cases](reference-test-cases.md) twice. A wrong answer, or an answer slower than 20 seconds, fails the step.
+- **Ask the real app**, also called the **API test** (`ci/evaluate_api.py`): signs in as the test accounts and asks one warm-up question that is not timed. Then it asks every question in [the test cases](reference-test-cases.md) twice. A wrong answer, or an answer slower than 20 seconds, fails the step.
 - **Check retrieval and consistency** (`ci/quality_checks.py`): checks that the search finds each case's expected policy, and that both answers to each question say the same thing.
 
 **Evaluate the answers**
@@ -59,7 +59,7 @@ Each item below is one step in the workflow file, with the script or action it r
 - **Approve** (`ci/promote_lab.py`): moves `approved` to this version, but only if every step above passed.
 - **Report** (`ci/report.py`): writes a summary on the run page and on the pull request. It never includes employees' answers.
 
-If the API test fails, Langfuse, Promptfoo, Evidently and the report still run, so you can see what broke. **Approve** is skipped, and so is DeepEval.
+If the API test (**Ask the real app**) fails, Langfuse, Promptfoo, Evidently and the report still run, so you can see what broke. **Approve** is skipped, and so is DeepEval.
 
 ## What is checked, and by which tool
 
