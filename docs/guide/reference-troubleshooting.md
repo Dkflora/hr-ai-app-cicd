@@ -17,7 +17,7 @@ Check that these four things match exactly:
 
 Check the subject first. A subject with names only, such as `repo:USERNAME/hr-rag-lab:environment:hr-staging`, does not match a token that also carries numeric IDs, such as `repo:USERNAME@OWNER-ID/hr-rag-lab@REPO-ID:environment:hr-staging`.
 
-To fix it, run the document 05 script again. It reads your repository's IDs from GitHub and updates the trust policy to match. If you switched an older repository to immutable subject claims yourself, add `--subject-prefix` with the ID form.
+To fix it, run the document 05 script again. It reads your repository's IDs from GitHub and updates the trust policy to match.
 
 ```bash
 cd ~/hr-rag-lab

@@ -57,9 +57,8 @@ def repository_from_git():
 def subject_prefix_from_github(full_name):
     """Work out the start of the "sub" claim in this repository's GitHub OIDC tokens.
 
-    Repositories created after 15 July 2026 put fixed numeric IDs in the claim,
-    for example repo:octo@123/hr-rag-lab@456. Older ones use names only, repo:octo/hr-rag-lab.
-    The IDs and the creation date are public, so we read them from the GitHub API.
+    GitHub puts fixed numeric IDs of the owner and the repository in the claim,
+    for example repo:octo@123/hr-rag-lab@456. The IDs are public, so we read them from the GitHub API.
     """
     url = f'https://api.github.com/repos/{full_name}'
     try:
@@ -72,20 +71,15 @@ def subject_prefix_from_github(full_name):
 
     owner = details['owner']['login']
     repo = details['name']
-    created = details['created_at'][:10]
-    if created > '2026-07-15':
-        prefix = f"repo:{owner}@{details['owner']['id']}/{repo}@{details['id']}"
-    else:
-        prefix = f'repo:{owner}/{repo}'
-    print(f'Repository created {created}, so its OIDC subject starts with: {prefix}')
-    print('If you switched this repository to immutable subject claims yourself, rerun with --subject-prefix.')
+    prefix = f"repo:{owner}@{details['owner']['id']}/{repo}@{details['id']}"
+    print(f'OIDC subject starts with: {prefix}')
     return prefix
 
 
 def check_prefix_names_this_repository(prefix, full_name):
     """Refuse a prefix with wildcards, extra claims or another repository's name."""
     owner, repo = full_name.split('/')
-    allowed = rf'repo:{re.escape(owner)}(?:@[0-9]+)?/{re.escape(repo)}(?:@[0-9]+)?'
+    allowed = rf'repo:{re.escape(owner)}@[0-9]+/{re.escape(repo)}@[0-9]+'
     if not re.fullmatch(allowed, prefix):
         sys.exit('Subject prefix must identify exactly this repository, with no wildcards or custom claims')
 
@@ -206,13 +200,12 @@ def main():
     parser = argparse.ArgumentParser(description='Create or update the pipeline\'s AWS role.')
     parser.add_argument('--repo', help='owner/name; defaults to the git remote "origin"')
     parser.add_argument('--region', default='us-east-1')
-    parser.add_argument('--subject-prefix', help='Exact repository subject prefix copied from GitHub settings')
     parser.add_argument('--dry-run', action='store_true', help='check and show the plan, change nothing')
     args = parser.parse_args()
 
     # Step 1: the repository and its token subject.
     repository = args.repo or repository_from_git()
-    prefix = args.subject_prefix or subject_prefix_from_github(repository)
+    prefix = subject_prefix_from_github(repository)
     check_prefix_names_this_repository(prefix, repository)
 
     # Step 2: build both policies from Terraform's outputs and the signed-in AWS account.

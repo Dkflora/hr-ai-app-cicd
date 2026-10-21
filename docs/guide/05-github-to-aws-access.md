@@ -54,7 +54,7 @@ python scripts/prepare-oidc.py
 - It also says the 6 permissions are limited to your project's resources in your account.
 - The last line is `Done.` and the role ARN, such as `arn:aws:iam::123456789012:role/hr-ci-ai-chatbot-github-ci`.
 
-The numbers after `@` are fixed IDs of your GitHub account and repository. GitHub adds them to the token for repositories created after 15 July 2026. So if someone later creates a repository with the same name, it cannot pass as yours.
+The numbers after `@` are fixed IDs of your GitHub account and repository. So if someone later creates a repository with the same name, it cannot pass as yours.
 
 You can run the script again safely. It updates the role and never deletes anything. To run only the checks, without changing AWS, add `--dry-run`.
 
