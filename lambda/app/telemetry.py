@@ -135,6 +135,33 @@ def update_current_span(input=None, output=None, metadata=None, level=None, stat
         extra['langfuse.observation.cost_details'] = json.dumps({'total': float(cost_usd)})
 
 
+_last_trace = {'id': None}   # the newest trace this Lambda started, for the chat response
+
+
+def last_trace_id():
+    """The ID of the trace the most recent request created, or None when tracing is off.
+
+    The chat API returns it with the answer, so feedback on that answer joins the same trace.
+    """
+    return _last_trace['id']
+
+
+def record_score(trace_id, name, value, comment=None):
+    """Attach a score, such as a person's thumbs up (1) or down (0), to a trace.
+
+    Printed like a span, so the exporter Lambda sends it to Langfuse. The score ID is fixed
+    per trace and name, so a changed vote replaces the earlier one instead of adding a second.
+    A comment is content: it is kept only when content is allowed, and always redacted.
+    """
+    if not tracing_enabled():
+        return
+    score = {'id': f'{trace_id}-{name}', 'traceId': trace_id, 'name': name,
+             'value': value, 'dataType': 'BOOLEAN', 'environment': 'staging'}
+    if comment and content_allowed():
+        score['comment'] = redact(comment)[:1000]
+    print(json.dumps({'trace_record': 'hr_score', 'hr_score': True, 'score': score}, separators=(',', ':')))
+
+
 def _start(name, kind):
     """Open a span under the current one, and return what _finish needs to close it."""
     parent = _current.get()
@@ -142,6 +169,7 @@ def _start(name, kind):
         trace_id = parent['trace']
     else:
         trace_id = uuid.uuid4().hex
+        _last_trace['id'] = trace_id
     state = {'trace': trace_id, 'id': uuid.uuid4().hex[:16], 'extra': {}}
     token = _current.set(state)
     return {'name': name, 'kind': kind, 'parent': parent, 'state': state, 'token': token, 'start': time.time_ns()}

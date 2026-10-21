@@ -44,9 +44,25 @@ aws lambda get-alias \
 
 ## Step 2: Break it
 
+Create the branch and find the line:
+
 ```bash
 git switch -c test/tool-limit
-sed -i.bak 's/^MAX_TOOL_ROUNDS = 5$/MAX_TOOL_ROUNDS = 1/' lambda/app/assistant.py && rm lambda/app/assistant.py.bak
+grep -n '^MAX_TOOL_ROUNDS' lambda/app/assistant.py
+```
+
+**Expected:** `54:MAX_TOOL_ROUNDS = 5`. The number before the colon is the line number.
+
+Make the change in VS Code:
+
+1. Open `lambda/app/assistant.py`.
+2. Press **Ctrl+G**, type the line number from `grep`, and press **Enter**. The cursor jumps to that line.
+3. Change the line to `MAX_TOOL_ROUNDS = 1`.
+4. Save the file with **Ctrl+S** (**Cmd+S** on a Mac).
+
+Check the change before you commit:
+
+```bash
 git diff
 ```
 
@@ -111,7 +127,12 @@ The broken change is already in `main`, so the repair needs its own branch and p
 git switch main
 git pull --ff-only
 git switch -c fix/tool-limit
-sed -i.bak 's/^MAX_TOOL_ROUNDS = 1$/MAX_TOOL_ROUNDS = 5/' lambda/app/assistant.py && rm lambda/app/assistant.py.bak
+grep -n '^MAX_TOOL_ROUNDS' lambda/app/assistant.py
+```
+
+In VS Code, open `lambda/app/assistant.py`, press **Ctrl+G**, go to the line `grep` printed, change it back to `MAX_TOOL_ROUNDS = 5`, and save. Then check it:
+
+```bash
 git diff
 ```
 

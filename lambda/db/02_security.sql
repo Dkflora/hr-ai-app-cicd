@@ -49,10 +49,10 @@ CREATE POLICY employees_visible_to_viewer ON employees
 -- Signing in happens before we know who is asking, so the policy would hide everyone.
 -- This function returns one person's basic profile by email: no salary, no time off.
 CREATE FUNCTION employee_by_email(p_email text)
-RETURNS TABLE (employee_id text, full_name text, role text, department text, job_title text)
+RETURNS TABLE (employee_id text, full_name text, role text, department text, job_title text, location text)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
 AS $$
-    SELECT e.employee_id, e.full_name, e.role, e.department, e.job_title
+    SELECT e.employee_id, e.full_name, e.role, e.department, e.job_title, e.location
     FROM employees e
     WHERE e.email = lower(p_email)
 $$;

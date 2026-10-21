@@ -79,6 +79,9 @@ def run():
                           timeout=35, allow_redirects=False)
     if denied.status_code not in (401, 403):
         raise ValueError('Unauthenticated request was not denied')
+    # Warm-up: one untimed question first. A search index that has been idle can take
+    # over 20 seconds to answer its first query; that is a cold start, not this release.
+    warm_up(session, origin, cases[0]['email'])
     try:
         evaluate_cases(session, origin, release, cases, repeats, records)
     finally:
@@ -88,7 +91,18 @@ def run():
     if len(records) != result['expected'] or any(not r['passed'] for r in records):
         raise SystemExit('Evaluation gate failed; inspect the restricted report')
 
+def warm_up(session, origin, email):
+    """Ask one question whose answer is not recorded, so every timed answer finds the app awake."""
+    try:
+        session.post(origin + '/api/chat', json={'question': 'What is the mileage reimbursement rate?'},
+                     headers={'Authorization': 'Bearer ' + token_for(email)}, timeout=60)
+    except requests.RequestException:
+        pass  # the timed cases report any real problem
+
+
 def evaluate_cases(session, origin, release, cases, repeats, records):
+    # Latency gate: an answer slower than this fails its case, like a wrong answer does.
+    max_seconds = float(os.getenv('EVAL_MAX_LATENCY_SECONDS', '20'))
     for index, case in enumerate(cases):
         for repeat in range(repeats):
             record = {'case_id': str(index), 'repeat': repeat, 'passed': False}
@@ -102,6 +116,8 @@ def evaluate_cases(session, origin, release, cases, repeats, records):
                 body, latency = request(session, origin, token_for(case['email']),
                                          case['question'], release, conversation)
                 problems = check(case, body['answer'], body['sources'])
+                if latency > max_seconds:
+                    problems.append(f'slow:{latency:.1f}s over {max_seconds:.0f}s')
                 record.update(passed=not problems, problems=problems, latency_seconds=latency,
                               answer=body['answer'], sources=body['sources'])
             except Exception as error:

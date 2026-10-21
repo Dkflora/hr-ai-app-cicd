@@ -6,18 +6,22 @@ Document 06a explains what each tool is. This document reads the results.
 
 ## How the live API test decides
 
-`ci/evaluate_api.py` asks every test question twice. For each answer it checks the expected facts, the forbidden facts, the cited source, and that the answer came from the exact release under test. A case passes only if **both** runs pass, and one failed run blocks approval. When it finishes, pass or fail, it deletes the test accounts' chats.
+`ci/evaluate_api.py` sends one untimed warm-up question, then asks every test question twice. For each answer it checks the expected facts, the forbidden facts, the cited source, the time taken, and that the answer came from the exact release under test. A case passes only if **both** runs pass, and one failed run blocks approval. When it finishes, pass or fail, it deletes the test accounts' chats.
 
 ## What a failure means for each tool
 
+- **The live test** fails with `slow`: an answer took longer than 20 seconds. Open its trace in Langfuse and find the slow step, such as the policy search.
+- **Retrieval** fails: search did not return a case's expected policy. Open the **Policy search** step of that question's trace and compare the passages with the policy.
+- **Consistency** fails: the two answers to one question meant different things. Read both answers in the Langfuse experiment, then their traces.
 - **Promptfoo** fails: a real regression in that case. Read the failing assertion in its log.
 - **Langfuse** fails: scores dropped compared with the baseline experiment. Compare the two experiments to see which cases changed.
-- **DeepEval** fails: compare the failing case's answer with its reference answer. The grader can be wrong, so read both before you decide.
+- **DeepEval** fails: the log names the case and the metric. For faithfulness, find the claim the passages do not support. For relevancy, check whether the answer drifted off the question. The grader can be wrong, so read the answer before you decide.
 - **Evidently** shows drift: answers got longer or slower than the reference run. Investigate the cause. It does not prove an answer is wrong.
 
 ## Where to find each result
 
-- **Release gate and case counts**: Actions run → **Summary** → the report.
+- **Release gate, case counts, latency, retrieval, consistency and DeepEval averages**: Actions run → **Summary** → the report.
+- **Retrieval misses and inconsistent answers**: Actions run → `candidate` job → **Check retrieval quality and answer consistency** step log.
 - **Promptfoo assertions**: Actions run → `candidate` job → **Promptfoo evaluation action** step log.
 - **DeepEval pass or fail**: Actions run → `candidate` job → **Evaluate answer quality with DeepEval** step. Per-case scores go to `build/deepeval.json` on the runner, which the workflow does not upload.
 - **Evidently report**: Actions run → **Artifacts** → download the Evidently report.
@@ -50,7 +54,10 @@ Open **Traces** and set the time range to your run. The test questions appear as
 ## What the thresholds mean
 
 - **Promptfoo at 100%** means every case in this fixed set passed on every run. It does not mean the chatbot answers every possible question correctly.
-- **DeepEval at 0.7** is a demonstration threshold. A domain owner must review the rubric before using it as a production quality bar.
+- **20 seconds per answer** is the limit the employee waits for. The inline judge needs time inside the same budget.
+- **Retrieval hit rate of 100%** means every expected policy came back for this fixed set. The mean reciprocal rank shows how high it came.
+- **Consistency of 0.75** separates a paraphrase (about 0.87 in testing) from a different answer (about 0.07). It applies to policy answers only.
+- **DeepEval at 0.7** for every metric, where higher is better, is a demonstration threshold. A domain owner must review the rubric before using it as a production quality bar.
 - **Evidently** compares distributions. The supplied reference is a synthetic failing run, so expect differences.
 
 Keep the authorization and data-disclosure checks mandatory. When a case fails, investigate the answer or the grader. Never lower a threshold or edit an expected answer just to pass.

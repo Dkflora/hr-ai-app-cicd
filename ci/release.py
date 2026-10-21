@@ -14,12 +14,12 @@ def digest(value):
 
 def validate_prompt(text):
     fields = {field for _, field, _, _ in Formatter().parse(text) if field}
-    if fields != {'full_name', 'job_title', 'department'}:
+    if fields != {'full_name', 'job_title', 'department', 'location'}:
         raise ValueError(f'Unexpected prompt variables: {sorted(fields)}')
     if not text.strip() or len(text) > 30000:
         raise ValueError('Empty or oversized prompt')
     # Structural checks are not proof of resistance to prompt injection.
-    text.format(full_name='Synthetic User', job_title='Employee', department='Demo')
+    text.format(full_name='Synthetic User', job_title='Employee', department='Demo', location='Austin, TX')
 
 def generated_entry(name):
     # A fixed timestamp keeps function.zip identical for identical sources, so Terraform redeploys only real changes.

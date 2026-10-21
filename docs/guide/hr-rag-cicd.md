@@ -22,7 +22,7 @@ Each part gets its own explanation when you first use it. In one line each:
 - **Inline judge:** a second model call that checks every draft answer against the evidence before the employee sees it.
 - **Bedrock Guardrail:** blocks harmful questions, prompt attacks and sensitive numbers such as Social Security numbers. It masks email addresses and phone numbers, so the rest of the question still gets an answer.
 - **LiteLLM gateway:** every model call passes through it. It allows only approved models and enforces budgets and rate limits.
-- **Langfuse:** records every request, step by step, so you can see why an answer came out the way it did.
+- **Langfuse:** records every request, step by step, so you can see why an answer came out the way it did. People's 👍 and 👎 on answers are stored there too, on each answer's trace.
 - **Staging:** the team's pre-production copy of the app, where every change is deployed and tested. Engineers, the HR domain expert and the pipeline all use it.
 - **CI/CD pipeline:** the GitHub Actions workflow that checks, deploys and tests every change.
 - **Release gate:** the point in the pipeline where one failed test blocks the release.
@@ -45,7 +45,7 @@ Week 6 followed one request through 10 stops, each with its own risks and contro
 
 8. **Tracing:** Langfuse records every request as a trace, with a span per tool call, model call and judge check. You read your first trace in document 03.
 9. **Evals + CI/CD** (LLM09): the golden set is [the test cases](reference-test-cases.md). The pipeline asks every one through the real API, and Promptfoo, DeepEval and Langfuse score the answers. One failure blocks the release. Documents 04 to 07 build and read this gate.
-10. **Drift + the loop:** Evidently compares answer length and response time with a reference run. Each use case walks the loop: read the trace, fix the cause, merge, and let the pipeline prove the fix.
+10. **Drift + the loop:** Evidently compares answer length and response time with a reference run. People's 👎 ratings land on the traces, so a reviewer can find the answers to fix. Each use case walks the loop: read the trace, fix the cause, merge, and let the pipeline prove the fix.
 
 ## How a request flows through the application
 
@@ -83,7 +83,7 @@ Use case 1 always fails in the same way, so it is the one to run in class. Use c
 
 ## Reference pages
 
-- [Test cases](reference-test-cases.md): all 45 questions, which test account asks them, and what the answer must and must not contain.
+- [Test cases](reference-test-cases.md): all 52 questions, which test account asks them, and what the answer must and must not contain.
 - [OIDC by hand](reference-oidc-by-hand.md): the AWS console steps behind `scripts/prepare-oidc.py`, one at a time.
 - [Troubleshooting](reference-troubleshooting.md): AWS sign-in errors and other common failures.
 

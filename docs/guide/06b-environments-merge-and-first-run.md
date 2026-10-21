@@ -77,7 +77,7 @@ git push
 
 1. Open the **Actions** tab and select the **newest** run on `main`, the one your merge started.
 2. Approve the `hr-staging` deployment if it asks for approval.
-3. Follow the `candidate` job: prompt publication, deployment, 90 API answers, the four evaluation tools, approval and report.
+3. Follow the `candidate` job: prompt publication, deployment, 104 API answers, the retrieval and consistency check, the evaluation tools, approval and report.
 4. Open the run **Summary** to read the report.
 5. Approve `hr-production-approval` if asked, and read the dry-run output.
 

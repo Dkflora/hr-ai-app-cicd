@@ -79,7 +79,7 @@ def search_policies(question, role, old_version=False):
         return []
 
     old = old_version or asks_for_old_version(question)
-    # Tracing: which extra searches ran. Use case 3 switches off the entitlement search.
+    # Tracing: which extra searches ran. Use case 3 switches off the supplemental PTO searches.
     searches_run = ["main"]
     question_vector = embeddings.embed([question])[0]
     results = _current_matches(question, question_vector, levels)
@@ -94,15 +94,19 @@ def search_policies(question, role, old_version=False):
         seen = {chunk["content"] for chunk in local}
         results = local + [chunk for chunk in results if chunk["content"] not in seen]
 
-    # A PTO question can retrieve carryover alone. Include annual entitlement
-    # evidence too, under the same permissions and current-policy filter.
+    # A PTO question can retrieve carryover alone, or the annual entitlement alone.
+    # Include both, under the same permissions and current-policy filter. Without
+    # the carryover rule in the evidence, a follow-up such as "what does the current
+    # policy say?" was answered with an invented "no carryover allowed".
     if re.search(r"\b(pto|time off|annual leave|vacation|carryover|carry over)\b", question, re.I):
         searches_run.append("supplemental annual entitlement")
-        entitlement = "annual paid time off entitlement days per year"
-        vector = embeddings.embed([entitlement])[0]
-        extra = _current_matches(entitlement, vector, levels)
-        seen = {chunk["content"] for chunk in results}
-        results += [chunk for chunk in extra if chunk["content"] not in seen]
+        searches_run.append("supplemental carryover")
+        for topic in ("annual paid time off entitlement days per year",
+                      "unused paid time off carryover days into next year"):
+            vector = embeddings.embed([topic])[0]
+            extra = _current_matches(topic, vector, levels)
+            seen = {chunk["content"] for chunk in results}
+            results += [chunk for chunk in extra if chunk["content"] not in seen]
 
     if old:
         # A historical answer must not substitute today's figures for missing history.

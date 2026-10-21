@@ -4,7 +4,7 @@
 
 **OWASP LLM risk:** LLM08 Vector and embedding weaknesses, leading to LLM09 Misinformation. Missing evidence can produce an unsupported answer.
 
-A PTO carry-over question can retrieve the carry-over rule without the annual entitlement. `lambda/app/retrieval.py` runs a second, supplemental search for the annual entitlement. You switch that search off. Permissions stay exactly the same.
+A PTO question can retrieve the carry-over rule without the annual entitlement, or the entitlement without the carry-over rule. `lambda/app/retrieval.py` runs two supplemental searches for PTO questions, one for each. You switch both off. Permissions stay exactly the same.
 
 **This result depends on retrieval and the model.** The answer may give an unsupported number, fall back to a safe answer, or still be correct. If every case still passes, record that this change did not reproduce a failure. Do not edit the expected answers to force one.
 
@@ -15,7 +15,7 @@ cd ~/hr-rag-lab
 grep -n -A7 'A PTO question can retrieve carryover alone' lambda/app/retrieval.py
 ```
 
-The `if re.search(...)` line decides when to run the supplemental search. You replace it with `if False:`, which never runs, and leave the indented block as it is.
+The `if re.search(...)` line decides when to run the supplemental searches. You replace it with `if False:`, which never runs, and leave the indented block as it is.
 
 ## Step 1: Start from a clean, passing main
 
@@ -28,11 +28,28 @@ git diff baseline --stat -- lambda/app/retrieval.py
 
 **Expected:** both commands print nothing.
 
-## Step 2: Switch off the supplemental search
+## Step 2: Switch off the supplemental searches
+
+Create the branch and find the line:
 
 ```bash
 git switch -c test/retrieval-evidence
-sed -i.bak 's/^    if re\.search(r"\\b(pto|time off|annual leave.*$/    if False:/' lambda/app/retrieval.py && rm lambda/app/retrieval.py.bak
+grep -n -A1 'A PTO question can retrieve carryover alone' lambda/app/retrieval.py
+grep -nF 'if re.search(r"\b(pto' lambda/app/retrieval.py
+```
+
+**Expected:** the first command prints the comment line, such as `97:`. The second prints two `if re.search(...)` lines, such as `101:` and `114:`. Change the first one only: it is the one just below the comment, indented by 4 spaces. The other belongs to the old-version search and stays as it is.
+
+Make the change in VS Code:
+
+1. Open `lambda/app/retrieval.py`.
+2. Press **Ctrl+G**, type the first line number from the second command, such as `101`, and press **Enter**.
+3. Replace the whole line with `    if False:`, keeping the 4 spaces at the start. Leave the indented lines below it unchanged.
+4. Save the file with **Ctrl+S** (**Cmd+S** on a Mac).
+
+Check the change before you commit:
+
+```bash
 git diff
 ```
 
@@ -40,7 +57,7 @@ git diff
 
 ```bash
 git add lambda/app/retrieval.py
-git commit -m "Exercise: disable the supplemental entitlement search"
+git commit -m "Exercise: disable the supplemental PTO searches"
 git push -u origin test/retrieval-evidence
 ```
 
@@ -60,7 +77,7 @@ Sign in to the chatbot as Amara and ask these three questions in one conversatio
 
 > What are the current rules?
 
-In Langfuse, open each trace and its **Policy search** step. Its metadata lists `searches_run`: with the supplemental search switched off, `supplemental annual entitlement` is missing. Then read the passages it returned. Compare the passages with the same questions in your baseline trace. Is the annual entitlement passage missing? Did the answer give a number the passages do not support?
+In Langfuse, open each trace and its **Policy search** step. Its metadata lists `searches_run`: with the supplemental searches switched off, `supplemental annual entitlement` and `supplemental carryover` are missing. Then read the passages it returned. Compare the passages with the same questions in your baseline trace. Is the annual entitlement or the carry-over passage missing? Did the answer give a number the passages do not support?
 
 ## Step 5: Repair it
 
@@ -78,7 +95,7 @@ git diff
 
 ```bash
 git add lambda/app/retrieval.py
-git commit -m "Restore the supplemental entitlement search"
+git commit -m "Restore the supplemental PTO searches"
 git push -u origin fix/retrieval-evidence
 ```
 

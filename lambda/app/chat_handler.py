@@ -13,17 +13,19 @@ Routes (defined in terraform/api_gateway.tf):
     GET  /api/conversations/{id}/messages        one chat, if it's theirs
     DELETE /api/conversations/{id}               delete one chat, if it's theirs
     POST /api/chat                               ask a question
+    POST /api/feedback                           thumbs up or down on one answer
 """
 
 import base64
 import json
+import re
 
 from botocore.exceptions import BotoCoreError, ClientError
 
 from app import assistant, chat_history, employees, guardrails
 from app.prompt_registry import release_identity
 from app.model_gateway import GatewayPolicyDenied, GatewayUnavailable, gateway_context
-from app.telemetry import conversation_context, current_user, span, update_current_span
+from app.telemetry import conversation_context, current_user, last_trace_id, record_score, span, update_current_span
 
 
 def respond(status, body):
@@ -84,7 +86,50 @@ def handler(event, context):
     if route == "POST /api/chat":
         return chat(event, employee)
 
+    if route == "POST /api/feedback":
+        return feedback(event, employee)
+
     return respond(404, {"detail": "Not found."})
+
+
+def feedback(event, employee):
+    """A person rates one answer. The rating becomes a score on that answer's Langfuse trace.
+
+    Body: {"conversation_id": 12, "trace_id": "...", "helpful": true, "comment": "optional"}
+    Reviewers can then list every unhelpful answer in Langfuse and open its full trace.
+    """
+    try:
+        body = read_body(event)
+        conversation_id = int(body.get("conversation_id"))
+    except (ValueError, TypeError):
+        return respond(400, {"detail": "The feedback wasn't valid."})
+    trace_id = str(body.get("trace_id") or "")
+    helpful = body.get("helpful")
+    if not re.fullmatch(r"[0-9a-f]{32}", trace_id) or not isinstance(helpful, bool):
+        return respond(400, {"detail": "The feedback wasn't valid."})
+
+    # Only the person who owns the conversation may rate its answers.
+    if not chat_history.get_messages(conversation_id, employee["employee_id"]):
+        return respond(404, {"detail": "Conversation not found."})
+
+    # A comment is checked like a question: personal data is masked, a blocked comment is dropped.
+    comment = str(body.get("comment") or "").strip()[:1000]
+    if comment:
+        try:
+            status, safe_comment = guardrails.check(comment, "INPUT")
+        except (BotoCoreError, ClientError):
+            safe_comment, status = "", "blocked"
+        if status == "blocked":
+            comment = ""
+        else:
+            comment = safe_comment
+
+    if helpful:
+        value = 1
+    else:
+        value = 0
+    record_score(trace_id, "user_feedback", value, comment or None)
+    return respond(200, {"recorded": True})
 
 
 def delete_conversation(event, employee):
@@ -202,4 +247,6 @@ def chat(event, employee):
         "conversation_id": conversation_id,
         "answer": answer,
         "sources": source_names(sources),
+        # Feedback on this answer is attached to this trace in Langfuse.
+        "trace_id": last_trace_id(),
     })

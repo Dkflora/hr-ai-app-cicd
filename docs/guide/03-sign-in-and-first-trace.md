@@ -23,6 +23,8 @@ Then ask a follow-up in the same conversation:
 
 > How many of those can I carry over?
 
+Under the second answer, click 👎 and type a short reason, such as `I wanted my own balance`, then click **Send**. Every answer has 👍 and 👎. A rating becomes a score on that answer's trace, so someone can review every answer people disliked.
+
 ## How Langfuse records a request
 
 Langfuse uses four words:
@@ -58,6 +60,8 @@ Open one trace. Its steps form a tree, in the order they ran:
     - **Bedrock Guardrail: answer**: whether the answer was allowed, masked or blocked, and what kind of data it found.
 
 Click any step to see its input, output and metadata. Langfuse highlights a step with a warning, such as a judge that rejected a draft.
+
+Open the trace of the second answer. Under **Scores** it shows `user_feedback` with the value `false` and your reason. Personal data in a reason, such as a phone number, is masked before it is stored. To review every unhelpful answer, go to **Scores** or **Traces** and filter on `user_feedback`. A team can also send those traces to an **annotation queue**, where an HR expert grades them.
 
 ## Step 3: See the same questions in the model gateway
 

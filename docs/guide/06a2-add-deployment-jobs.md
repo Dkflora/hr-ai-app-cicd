@@ -44,6 +44,8 @@ cat >> .github/workflows/hr-quality.yml <<'EOF'
       VITE_COGNITO_CLIENT_ID: ${{ vars.HR_COGNITO_CLIENT_ID }}
       VITE_COGNITO_DOMAIN: ${{ vars.VITE_COGNITO_DOMAIN }}
       EVAL_REPEATS: '2'                                                 # repeat each test
+      EVAL_MAX_LATENCY_SECONDS: '20'                                    # slower answer fails
+      EVAL_MIN_CONSISTENCY: '0.75'                                      # two answers must agree
       DO_NOT_TRACK: '1'                                                 # telemetry off
       DEEPEVAL_TELEMETRY_OPT_OUT: 'true'                                # telemetry off
     steps:                                                              # steps
@@ -77,10 +79,14 @@ cat >> .github/workflows/hr-quality.yml <<'EOF'
       - name: Test the real authenticated application
         id: live                                                        # step ID
         run: python ci/evaluate_api.py                                  # API tests
+      # Retrieval must return each case's expected policy, and the two answers must agree.
+      - name: Check retrieval quality and answer consistency            # step title
+        if: always() && steps.live.outcome != 'skipped'                 # run condition
+        run: python ci/quality_checks.py                                # retrieval + consistency
       # Store captured answers and scores for version comparisons; no extra generation here.
       - name: Record the dataset experiment in Langfuse
         if: always() && steps.live.outcome != 'skipped'
-        uses: langfuse/experiment-action@76731c8b04fc7f962af689207690d414a0ee4de7 # v1.0.11
+        uses: langfuse/experiment-action@c7c4efe432e37d4e3693a018de469233c0018de4 # v1.0.12
         with:
           langfuse_public_key: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
           langfuse_secret_key: ${{ secrets.LANGFUSE_SECRET_KEY }}
@@ -112,7 +118,7 @@ cat >> .github/workflows/hr-quality.yml <<'EOF'
           no-cache: 'true'                                              # no cache
           no-table: 'true'                                              # short log
           no-progress-bar: 'true'                                       # short log
-      # Use a model grader through the gateway-backed evaluation Lambda.
+      # Model-graded checks on a sample: reference facts, faithfulness, relevancy, bias, toxicity.
       - name: Evaluate answer quality with DeepEval
         if: vars.ENABLE_DEEPEVAL == 'true'                              # optional
         run: |
@@ -205,7 +211,7 @@ EOF
 grep -nE '^  (checks|candidate|production-handoff-dry-run):' .github/workflows/hr-quality.yml
 ```
 
-**Expected:** the last command lists exactly three jobs: `checks` on line 15, `candidate` on line 38 and `production-handoff-dry-run` on line 197.
+**Expected:** the last command lists exactly three jobs: `checks` on line 15, `candidate` on line 38 and `production-handoff-dry-run` on line 203.
 
 If a job name appears twice, you ran the block twice. Recreate the file with document 04 step 2, then run this block once.
 

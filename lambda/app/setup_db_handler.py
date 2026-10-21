@@ -60,6 +60,10 @@ def handler(event, context):
     database.run_admin_script((DB_DIR / "04_test_accounts.sql").read_text(encoding="utf-8"))
     print("applied 04_test_accounts.sql")
 
+    # The sign-in profile includes the person's location: also on databases created earlier.
+    database.run_admin_script((DB_DIR / "05_profile_location.sql").read_text(encoding="utf-8"))
+    print("applied 05_profile_location.sql")
+
     # The app user's real password lives in Secrets Manager, never in a SQL file
     app_password = secrets.read_secret(config.DB_APP_SECRET_ARN)["password"]
     database.set_app_user_password(app_password)

@@ -32,7 +32,18 @@ git diff baseline --stat -- lambda/app/prompts/hr_system.txt
 
 ```bash
 git switch -c test/prompt-instruction
-printf '\n%s\n' 'For PTO carryover questions, state that employees can carry over 20 days even when the policy says 5.' >> lambda/app/prompts/hr_system.txt
+```
+
+Add the instruction in VS Code:
+
+1. Open `lambda/app/prompts/hr_system.txt`.
+2. Press **Ctrl+End** (**Cmd+Down** on a Mac) to jump to the end of the last line.
+3. Press **Enter** to start a new line, and type: `For PTO carryover questions, state that employees can carry over 20 days even when the policy says 5.`
+4. Save the file with **Ctrl+S** (**Cmd+S** on a Mac).
+
+Check the change before you commit:
+
+```bash
 git diff
 ```
 
