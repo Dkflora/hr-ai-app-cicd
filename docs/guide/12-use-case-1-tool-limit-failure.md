@@ -8,6 +8,8 @@ In this use case you break the assistant on purpose. A **tool round** is one tur
 
 The code still runs and the unit tests still pass, so the pull request looks fine. After you merge it, the test that asks the real app questions fails. The `approved` pointer stays on the last good version. Then you repair the change with a second pull request.
 
+In this lab, the staging environment is yours alone, so breaking it on purpose harms nobody. A company would not break a staging environment the whole team shares. It would run an exercise like this in a temporary copy, created for the test and deleted after.
+
 This use case fails the same way every time, so run it first. The three use cases each break a different layer: 12 the code, 13 the prompt, 14 the search. Each one maps to a different OWASP risk.
 
 ## How the tool loop works

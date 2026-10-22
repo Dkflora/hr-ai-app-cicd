@@ -63,6 +63,12 @@ def quality_section(quality, deepeval):
                      f"mean reciprocal rank {retrieval['mean_reciprocal_rank']}.")
         lines.append(f"- Consistency: lowest similarity between two answers to the same question "
                      f"{consistency['lowest']:.2f} (minimum {consistency['threshold']}).")
+        differ = consistency.get('numbers_differ', [])
+        if differ:
+            # Case numbers only: the numbers themselves come from answers and stay out of the report.
+            cases = ', '.join(str(int(case_id) + 1) for case_id in differ)
+            lines.append(f"- Check by hand: the two answers mention different numbers in case {cases}. "
+                         "This does not fail the gate.")
         if retrieval['misses'] or consistency['failures']:
             passed = False
     if deepeval:

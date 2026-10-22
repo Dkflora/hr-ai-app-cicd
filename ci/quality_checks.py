@@ -18,6 +18,7 @@ Writes build/quality.json for the report. Exits with an error if either check fa
 """
 import json
 import os
+import re
 from pathlib import Path
 
 import boto3
@@ -82,6 +83,21 @@ def retrieval_quality(cases):
     }
 
 
+def numbers_in(text):
+    """The numbers an answer mentions, such as {'5', '28'}. Commas are ignored: 1,000 is 1000."""
+    return set(re.findall(r'\d+(?:\.\d+)?', text.replace(',', '')))
+
+
+def numbers_differ(first, second):
+    """True when the two answers mention different numbers.
+
+    Embeddings cannot see this: "carry over 5 days" and "carry over 20 days" scored 0.896 with
+    Titan, more than a correct rewording. So the pairs are compared number by number too.
+    A correct answer can add a number the other leaves out, so this only asks a person to look.
+    """
+    return numbers_in(first) != numbers_in(second)
+
+
 def answer_consistency(cases, records):
     """For each case asked twice: how close in meaning were the two answers?"""
     answers = {}
@@ -103,15 +119,17 @@ def answer_consistency(cases, records):
         scores += call_evaluation_lambda({'similarity': batch})
 
     results = []
-    for case_id, score in zip(case_ids, scores):
+    for case_id, score, pair in zip(case_ids, scores, pairs):
         question = cases[int(case_id)]['question']
         results.append({'case_id': case_id, 'question': question, 'similarity': score,
-                        'passed': score >= MIN_CONSISTENCY})
+                        'passed': score >= MIN_CONSISTENCY, 'numbers_differ': numbers_differ(*pair)})
     return {
         'cases': len(results),
         'threshold': MIN_CONSISTENCY,
         'lowest': min((result['similarity'] for result in results), default=1.0),
         'failures': [result for result in results if not result['passed']],
+        # Report only: a person compares these pairs by hand. The gate does not use it.
+        'numbers_differ': [result['case_id'] for result in results if result['numbers_differ']],
         'results': results,
     }
 
@@ -141,6 +159,8 @@ def main():
         print(f"  retrieval miss: expected {miss['expected']!r}")
     for failure in consistency['failures']:
         print(f"  inconsistent: case {int(failure['case_id']) + 1} scored {failure['similarity']:.3f}")
+    for case_id in consistency['numbers_differ']:
+        print(f"  check by hand: the two answers to case {int(case_id) + 1} mention different numbers")
 
     if retrieval['misses'] or consistency['failures']:
         raise SystemExit('Retrieval or consistency check failed; see build/quality.json')

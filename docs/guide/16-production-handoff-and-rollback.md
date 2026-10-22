@@ -39,6 +39,8 @@ When `promote_lab.py` moves `approved`, it also notes the release and the versio
 
 A **rollback** means going back to the last version that worked. `ci/rollback_lab.py` reads the recorded version from AWS and moves `approved` back to it. It refuses any version that does not belong to the staging function. It never deletes anything.
 
+**What it changes here:** only the `approved` pointer. The staging app follows `candidate`, so it keeps showing the latest merged version. In production, people are served from the approved version, and this is the step that puts them back on the last good one in seconds. To put this lab's staging app back on an earlier version, revert the change instead, as the [runbook](reference-runbook.md) shows.
+
 This step is optional. It needs at least two passing runs, so that `approved` has an earlier version to go back to. The fix run from use case 1 counts as one.
 
 ### Step 1: Roll back

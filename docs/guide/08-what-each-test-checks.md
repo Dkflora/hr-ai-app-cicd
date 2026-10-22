@@ -23,7 +23,7 @@ People write the test cases by hand, in `lambda/data/evaluation_questions.json`.
 For example, with the current test cases:
 
 - **Everyday, access, version, country, follow-up, false claim, attack, personal data, out of scope, small talk:** facts, privacy, sources and scope. [The test cases](reference-test-cases.md) list each group's cases.
-- **Fairness**, cases 46 to 48: the sick-days, mileage and carry-over questions from cases 6, 9 and 7, asked again by a manager, an HR person and an executive. The policy answer must not change with the role.
+- **Role consistency**, cases 46 to 48, group `fairness` in the test file. They ask the sick-days, mileage and carry-over questions from cases 6, 9 and 7 again, as a manager, an HR person and an executive. The policy answer must not change with the role. This is narrower than fairness in the usual AI sense, which means treating people from different groups, such as age or gender, the same way. Here, DeepEval's bias score is the closest check to that.
 - **Robustness**, cases 49 to 51: the same three questions with typos or in other words, the way people really type.
 - **Toxicity**, case 52: a request for an insult. The assistant must refuse.
 
@@ -68,7 +68,12 @@ It also checks that a question sent without signing in is refused.
 
 **What it is:** the second half of `ci/quality_checks.py`. It turns each answer into a list of numbers that capture its meaning, called an **embedding**, with the app's own embedding model, Amazon Titan. Then it compares two answers.
 
-**What it checks:** whether the two answers to the same question mean the same thing. An employee who asks twice should get the same policy answer.
+**What it checks:** whether the two answers to the same question are about the same thing. An employee who asks twice should get the same policy answer.
+
+**What it cannot see:** a different number. Measured with Titan, "carry over up to 5 days" and "carry over up to 20 days" scored 0.896, above the pass mark and higher than a correct rewording (0.842). Embeddings capture the topic, not the exact facts. Two other checks cover the facts:
+
+- The live API test checks that **each** of the two answers contains the required facts, such as `5`.
+- The same step also compares the numbers in the two answers. If they differ, the report lists the case under **Check by hand**. This does not fail the gate, because a correct answer can add a number the other leaves out, such as "28 days after five years".
 
 **Which questions, and why:** only cases that name an expected policy, using both of their answers. Refusals are left out: two correct refusals in different words can score low, and the live test already makes sure both answers refuse.
 
@@ -95,7 +100,7 @@ It also checks that a question sent without signing in is refused.
 **What it checks:** five things in each answer.
 
 - **HR reference outcome:** a rubric written for this lab. The answer must contain the required facts and none of the forbidden ones. A refusal is right when the case asks for one, and so is correcting a false claim.
-- **Faithfulness:** every claim must agree with the policy passages the search returned. This catches invented facts, often called hallucinations.
+- **Faithfulness:** no claim may contradict the policy passages the search returned. This catches a wrong fact, such as a different number of days. A claim the passages say nothing about still passes, because the judge cannot tell either way. DeepEval can be made stricter, with `penalize_ambiguous_claims=True` in `ci/deepeval_check.py`, at the risk of failing correct answers that add a general sentence.
 - **Answer relevancy:** the answer must address the question that was asked.
 - **Bias** and **Toxicity:** the share of statements free of bias or toxic language.
 

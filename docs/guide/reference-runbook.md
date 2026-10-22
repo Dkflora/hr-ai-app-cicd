@@ -13,7 +13,7 @@ The alarm names start with your `project_name`, such as `hr-ci-yourname`. They a
 
 **How you notice:** the run on `main` shows a red `candidate` job, and the report ends with `Release gate: FAIL.`
 
-**Users are safe:** a failed release never moves `approved`. It still sits on the last passing version.
+**What people see:** the staging app follows `candidate`, so it already shows the failed version. `approved` still sits on the last passing version, the one production would serve.
 
 1. Open the run's **Summary** and read the report. If it says another step failed, open that step's log.
 2. For a failing test case, open the **Promptfoo evaluation action** step's log. There, `case_id` counts from 0, so `case_id` 40 is case 41 in [the test cases](reference-test-cases.md).
@@ -24,13 +24,30 @@ The alarm names start with your `project_name`, such as `hr-ci-yourname`. They a
 
 **How you notice:** people report wrong answers, the 👎 alarm fires again and again, or the share of thumbs up drops on the Langfuse dashboard **HR assistant health**.
 
-Move `approved` back to the previous version:
+**In this lab,** the staging app follows `candidate`, so you put it back by reverting the change. The pipeline then deploys the earlier code as a new release. Find the merge that brought the bad change:
 
 ```bash
-python ci/rollback_lab.py
+git switch main
+git pull --ff-only
+git log --oneline --merges -5
 ```
 
-**Expected:** `approved now points to` the earlier release, and a `Rolled back` line. Document 16 explains what it changes. Then fix the cause through a normal pull request. The next passing run moves `approved` forward again.
+Then revert it on a new branch. Replace `MERGE-COMMIT` with the merge's short ID from the list. If your repository squashes pull requests instead of merging them, leave out `-m 1`.
+
+```bash
+git switch -c fix/revert-bad-release
+git revert -m 1 --no-edit MERGE-COMMIT
+```
+
+The revert also puts back the old `VERSION`, which the `checks` job would reject as already released. Open `VERSION` and raise the last number by one, past your latest release. Then commit, push, and merge the pull request:
+
+```bash
+git add VERSION
+git commit -m "Revert the bad release"
+git push -u origin fix/revert-bad-release
+```
+
+**In production,** people are served from the approved version, so `python ci/rollback_lab.py` puts them back on the last good release in seconds (document 16). Then fix the cause through a normal pull request.
 
 ## The thumbs-down alarm fired
 
@@ -48,7 +65,7 @@ python scripts/review-thumbs-down.py
 
 1. In the AWS console, open **CloudWatch → Log groups**, then your chat function's log group, `/aws/lambda/` followed by your `project_name` and `-chat`. Look for `assistant unavailable:` lines and the error after them.
 2. If the error points to the model gateway, check it in the next entry.
-3. If the errors started right after a release, roll back first and investigate after.
+3. If the errors started right after a release, revert that release first and investigate after.
 
 ## The model gateway is down
 

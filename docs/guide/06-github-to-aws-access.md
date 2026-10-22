@@ -41,7 +41,7 @@ This works, and many older pipelines still do it. It has these problems:
 
 This removes each problem above:
 
-- **No secret is stored**, so there is nothing to leak, copy or rotate.
+- **No AWS key is stored**, so there is no AWS key to leak, copy or rotate. The Langfuse keys are still GitHub secrets: Langfuse's API signs in with a key pair.
 - **The credentials expire within an hour**, even if one leaks from a running job.
 - **Only your repository's `hr-staging` environment can use the role.** A fork or another repository has a token that names a different repository. In document 10, you allow only `main` to use that environment.
 - **CloudTrail records who asked.** Each sign-in shows the repository and environment named in the token, not just a user name.

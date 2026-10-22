@@ -20,10 +20,10 @@ A case passes only if **both** of its answers pass. One failed answer stops the 
 
 - **The live test** fails with `slow`: one answer took longer than 20 seconds. Open that question in Langfuse and look for the step that took the longest, such as the policy search.
 - **Retrieval** fails: the search did not find the policy a case expects. Open that question in Langfuse, click its **Policy search** step, and compare the passages it found with the policy.
-- **Consistency** fails: the same question, asked twice, got two answers that mean different things. Read both answers in the Langfuse experiment, then open each one step by step.
+- **Consistency** fails: the same question, asked twice, got two answers about different things. Read both answers in the Langfuse experiment, then open each one step by step. If the report lists a case under **Check by hand**, its two answers mention different numbers: compare them yourself.
 - **Promptfoo** fails: at least one answer broke a rule of its case. Its log shows which rule.
 - **Langfuse** fails: at least one case got a `reference_checks` score of 0, because one of its answers failed. Compare this run with your `v1.0.0` run to see which cases changed.
-- **DeepEval** fails: the log names the case and the check that failed. For faithfulness, find the sentence the policy passages do not back up. For relevancy, check whether the answer wandered away from the question. The grading model can be wrong, so read the answer yourself before you decide.
+- **DeepEval** fails: the log names the case and the check that failed. For faithfulness, find the sentence that contradicts the policy passages. For relevancy, check whether the answer wandered away from the question. The grading model can be wrong, so read the answer yourself before you decide.
 - **Evidently** shows a change: answers got longer or slower than in an earlier run. Find out why. A change does not prove an answer is wrong.
 
 ## Where to find each result
@@ -73,7 +73,7 @@ Open **Traces** and set the time range to when your run happened. Each test ques
 - **Promptfoo at 100%** means every question in this fixed list passed, every time. It does not mean the chatbot answers every possible question correctly.
 - **20 seconds per answer** fails a slow release before people hit the API's 30-second limit, where they would get an error. The inline judge has to fit its check inside that same time. On the passing staging run, the slowest answer took 4.9 seconds.
 - **Retrieval hit rate of 100%** means the search found the expected policy for every question in this list. The mean reciprocal rank shows how near the top of the results it was: 1 means always first.
-- **Consistency of 0.75** is a chosen value between two staging measurements. The same answer in other words scored about 0.87, and a different answer about 0.07. It applies to policy answers only.
+- **Consistency of 0.75** is a chosen value between two staging measurements. The same answer in other words scored about 0.87, and a different answer about 0.07. It applies to policy answers only. It checks that two answers are about the same thing, not that their facts match: two answers with different numbers can still score high. The fact checks and the number comparison cover that.
 - **DeepEval at 0.7** applies to every check, and higher is better. It is a starting value for this lab. Before a real company uses it, an HR expert must review the grading rules.
 - **Evidently** compares the overall pattern of lengths and times between runs. Its stored reference comes from a made-up failing run, so expect differences.
 

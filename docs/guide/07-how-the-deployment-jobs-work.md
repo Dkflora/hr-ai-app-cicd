@@ -31,7 +31,9 @@ The chat function has two aliases:
 - **`candidate`** points to the newest version, the one being tested. The pipeline moves it on every merge. The staging app you sign in to uses it.
 - **`approved`** points to the last version that passed every test. The pipeline moves it only when the release gate passes.
 
-So when a merge breaks something, `candidate` points to the broken version, and `approved` still points to the last good one. The staging app shows the broken answers, because it follows `candidate`. Documents 12 to 14 use this to show a failure safely.
+So when a merge breaks something, `candidate` points to the broken version, and `approved` still points to the last good one. The staging app shows the broken answers, because it follows `candidate`. Documents 12 to 14 use this to show a failure.
+
+In this lab, nothing serves `approved` yet. It is the pointer a production deployment would use, so you can see the gate keep a broken version away from it. The staging app keeps showing the latest merged version until you merge a fix or revert the change.
 
 Right now the chat function has only `candidate`. The first passing run, in document 10, creates `approved`.
 
@@ -50,7 +52,7 @@ Each item below is one step in the workflow file, with the script or action it r
 
 **Test**
 - **Ask the real app**, also called the **API test** (`ci/evaluate_api.py`): signs in as the test accounts and asks one warm-up question that is not timed. Then it asks every question in [the test cases](reference-test-cases.md) twice. A wrong answer, or an answer slower than the time limit, fails the step. Document 08 explains the two tries and the 20-second limit.
-- **Check retrieval and consistency** (`ci/quality_checks.py`): checks that the search finds each case's expected policy, and that both answers to each question say the same thing.
+- **Check retrieval and consistency** (`ci/quality_checks.py`): checks that the search finds each case's expected policy, and that both answers to each question are about the same thing.
 
 **Evaluate the answers**
 - **Langfuse, Promptfoo, DeepEval and Evidently** each score the saved answers in their own way. The next section explains each one.

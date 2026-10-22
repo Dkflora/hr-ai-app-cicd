@@ -10,7 +10,7 @@ This lab gives you a full view of an AI application in production, not only its 
 - **Security in layers** (documents 03 and 06): sign-in with Cognito, and each employee sees only their own records. A guardrail blocks or hides personal data. The pipeline holds no AWS keys.
 - **A model gateway** (document 03): every AI model call goes through LiteLLM, with spending limits, request limits and a fallback model.
 - **Observability** (documents 03 and 15): every question is traced step by step in Langfuse, with 👍 and 👎 votes on the answers. Email alarms report errors, slow answers and thumbs down.
-- **Evaluation** (documents 07, 08 and 11): a fixed set of test questions with known answers. Code and Promptfoo check the facts, DeepEval uses an AI judge, and Evidently watches for drift.
+- **Evaluation** (documents 07, 08 and 11): a fixed set of test questions with known answers. Code and Promptfoo check the facts, and DeepEval uses an AI judge. Evidently watches two numbers for drift: answer length and response time.
 - **CI/CD** (documents 04, 09 and 10): a GitHub Actions workflow, `hr-quality.yml`. It has four jobs.
   - **checks**: checks the release number, runs the unit tests and builds the code on every branch and pull request. It has no access to AWS.
   - **candidate**: runs on every merge to `main`. It puts the new version on staging and asks every test question twice, through the real app.
