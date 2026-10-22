@@ -49,6 +49,18 @@ In week 6 you followed one request through 10 stops. Each stop has its own risks
 9. **Evals + CI/CD** (LLM09): the golden set is [the test cases](reference-test-cases.md): questions with known correct answers. The pipeline asks each one through the real app. Promptfoo, DeepEval and Langfuse score the answers. One failure stops the release. Documents 04 to 07 build this gate and read its results.
 10. **Drift + the loop:** Evidently, an open-source monitoring tool, compares answer length and response time with a reference run saved in the repository. People's 👎 ratings are stored with each answer, so a reviewer can find the answers to fix. Each use case follows the same loop: read the trace, fix the cause, merge, and let the pipeline prove the fix.
 
+## The whole system on one page
+
+![The whole system: the app in AWS, Langfuse, and the GitHub pipeline](images/architecture.png)
+
+Read it in three bands:
+
+- **Top: the app.** An employee signs in with Cognito and opens the app through CloudFront. Each question goes through API Gateway to the chat Lambda, inside a private network. The chat Lambda reads records from Aurora, searches the policies in OpenSearch, and calls AI models through the LiteLLM gateway, which sends them on to Amazon Bedrock.
+- **Middle: watching it.** The app writes its traces and 👍/👎 votes to CloudWatch Logs. The trace exporter sends them to Langfuse. CloudWatch alarms email the team about errors, slow answers and thumbs down.
+- **Bottom: changing it.** Engineers push to GitHub. The `checks` job tests every change without AWS access. After a merge, the `candidate` job signs in to AWS with OIDC, deploys to staging, tests the real app, and approves the version only if every check passes. It also saves the prompt and an experiment in Langfuse.
+
+The next two diagrams zoom in on one question and on one change.
+
 ## How a request flows through the application
 
 ![How one question flows through the application](images/request-flow.png)
