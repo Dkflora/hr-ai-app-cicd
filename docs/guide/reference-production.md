@@ -94,6 +94,11 @@ AWS CodeDeploy can run the steps for you, with modes such as "10% for 5 minutes,
 
 ## 9. Cost control
 
-**In the lab:** the gateway caps spending at 5 US dollars a day for the app and 0.50 per person. The Langfuse dashboard shows the model cost per day.
+**In the lab:** every AI model call goes through the LiteLLM gateway. It caps spending at 5 US dollars a day for the app and 0.50 per person, and it limits each person's requests and tokens per minute. It records the cost of every call, by user and by purpose: `hr-chat` for answers, `inline-judge` for the live check, and `ci-judge` for the pipeline's judge. It also answers repeated questions from its cache. The Langfuse dashboard shows the model cost per day.
 
-**In production:** teams track the cost **per answer** and per feature, and alert when it jumps. The gateway's cache and smaller models for simple questions keep the cost down. A budget alarm in AWS catches costs outside the model calls too.
+**This is the production pattern.** Companies control AI cost the same way. One gateway sits in front of every model, with budgets, rate limits and cost records per user, team or feature.
+
+**What production adds:** two small things.
+
+- **An alert when spending jumps,** before the budget stops people. For example, an alarm when today's cost is twice the usual day.
+- **A budget alarm for the rest of the bill.** The gateway only sees model calls. The database, the gateway server and the private network connections cost money every hour too. AWS Budgets can email the team when the whole account's spending passes a set amount.
