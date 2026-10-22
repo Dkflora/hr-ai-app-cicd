@@ -85,8 +85,8 @@ Every check below reads the answers the live test saved. None of them asks the a
 - **Robustness:** cases 49 to 51 ask the same questions with typos or in other words.
 - **Toxicity:** case 52 asks for an insult. The assistant must refuse.
 - **Speed:** every answer must arrive within 20 seconds, after one warm-up question. The limit is set in `ci/evaluate_api.py`.
-- **Retrieval quality** and **consistency:** `ci/quality_checks.py` checks these on the 14 cases that name an expected policy.
-- **Faithfulness, relevance, bias and toxicity of the wording:** DeepEval checks these on 5 of those 14 cases.
+- **Retrieval quality** and **consistency:** `ci/quality_checks.py` checks these on every case that names an expected policy.
+- **Faithfulness, relevance, bias and toxicity of the wording:** DeepEval checks these on a small sample of those cases.
 - **Drift:** Evidently writes a report.
 - **History across releases:** the Langfuse experiment.
 
@@ -96,7 +96,7 @@ The checks that follow fixed rules decide the release. They cost little, give th
 
 **What it tests here:** two things. No model grades anything.
 
-- **Retrieval quality:** retrieval is the search that finds policy passages for a question. For each of the 14 cases with an expected policy, the search runs again as that case's test account. The expected policy must be among the passages it returns. The report shows the **hit rate**: the share of cases whose policy was found. It also shows the **mean reciprocal rank**: how high the policy came in the results. It is 1 when the policy always comes first, and 0.5 when it always comes second.
+- **Retrieval quality:** retrieval is the search that finds policy passages for a question. For each case with an expected policy, the search runs again as that case's test account. The expected policy must be among the passages it returns. The report shows the **hit rate**: the share of cases whose policy was found. It also shows the **mean reciprocal rank**: how high the policy came in the results. It is 1 when the policy always comes first, and 0.5 when it always comes second.
 - **Consistency:** both answers to each policy question are turned into lists of numbers that capture their meaning, called **embeddings**, using the app's own embedding model. Then the two are compared. Their similarity must be at least 0.75, set as `MIN_CONSISTENCY` in `ci/quality_checks.py`. Refusals are left out: two correct refusals in different words score low, and the fact checks already make sure both runs refuse. In a test, a reworded answer scored 0.87 and an unrelated answer scored 0.07.
 
 **Where the result appears:** the log of the **Check retrieval quality and answer consistency** step, and the run's report.
@@ -119,14 +119,15 @@ Upper and lower case do not matter, and neither do commas, `$` or `*`. The thres
 
 **What it is:** an open-source framework for **LLM-as-a-judge**. A second AI model reads an answer and scores it against written rules, called a rubric.
 
-**What it tests here:** 5 of the 52 test cases. `ci/deepeval_check.py` picks them from the saved answers, with a fixed rule:
+**What it tests here:** a small sample of the test cases. `ci/deepeval_check.py` picks it with a fixed rule:
 
-1. Keep only the 14 cases that name an expected policy. Faithfulness needs the policy text the answer was built from. Refusals, small talk and attacks have none.
-2. Walk those cases in file order, and take the first case of each group. The 14 cases belong to 5 groups, so this gives exactly 5.
+1. Keep only the cases that name an expected policy. Faithfulness needs the policy text the answer was built from. Refusals, small talk and attacks have none.
+2. Go through those cases in file order, and take the first case of each group.
+3. If that gives fewer cases than the sample size, add the next cases in order. Stop at the sample size.
 
-So every run grades the same five cases, as numbered in [the test cases](reference-test-cases.md): 6 (everyday), 11 (access), 18 (version), 46 (fairness) and 49 (robustness). DeepEval grades the first answer of each. Because the five never change, a score that drops between releases means the release changed, not the sample. If one of the five gets no answer, the next case of its group takes its place.
+For example, with the current test cases this picks cases 6 (everyday), 11 (access), 18 (version), 46 (fairness) and 49 (robustness), as numbered in [the test cases](reference-test-cases.md). Cases 46 and 49 re-ask case 6, as a manager and with typos. It grades the first answer of each. The rule has no randomness, so the same test cases always give the same sample. So a score that drops between releases means the release changed.
 
-Why only 5: each case gets five scores, and each score takes several calls to the grading model. That adds minutes and cost to every run. The other cases are still fully checked by the live test and Promptfoo. The number is `SAMPLE_SIZE` in `ci/deepeval_check.py`. Set the `DEEPEVAL_DEMO_CASES` variable to grade more.
+Why a small sample: each case gets five scores, and each score takes several calls to the grading model. That adds time and cost. The live test and Promptfoo still check every case. The sample size is `SAMPLE_SIZE` in `ci/deepeval_check.py`, 5 by default. Raise it with the `DEEPEVAL_DEMO_CASES` variable.
 
 **How to read a score:** each check gives the answer a number from 0 to 1. 1 means the answer fully meets the rule, and 0 means not at all. For example, a faithfulness score of 0.8 means 8 out of 10 claims in the answer agree with the policy text the search returned. The **pass mark** is the lowest score that still passes. Here it is 0.7 for every check, set as `PASS_MARK` in `ci/deepeval_check.py`.
 
