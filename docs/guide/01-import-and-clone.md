@@ -16,7 +16,7 @@ A plain `git clone` of the original repository is not enough. You need your own 
 
 If the import fails, open the original repository's page instead. Click **Use this template → Create a new repository**, with the same owner and name.
 
-Then, in your new repository, open **Settings → Actions → General**. Make sure Actions are allowed. Actions is the GitHub feature that runs the pipeline.
+Then, in your new repository, open **Settings → Actions → General**. Actions is the GitHub feature that runs the pipeline. Under **Actions permissions**, check that **Allow all actions and reusable workflows** is selected.
 
 ## Step 2: Clone your copy and create the feature branch
 
@@ -30,7 +30,7 @@ git remote -v
 git switch -c feature/pipeline
 ```
 
-`git remote -v` shows where the code came from. The `origin` lines must show **your** repository. You stay on the `feature/pipeline` branch until document 06b.
+`git remote -v` shows where the code came from. `origin` is the name Git gives the GitHub repository you cloned, and `git push` sends your commits there. The `origin` lines must show **your** repository. You stay on the `feature/pipeline` branch until document 06b.
 
 ## Step 3: Look around
 

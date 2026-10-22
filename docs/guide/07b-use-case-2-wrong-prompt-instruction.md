@@ -66,9 +66,11 @@ git push -u origin test/prompt-instruction
 
 1. Open a pull request from `test/prompt-instruction` into `main`. The `checks` job passes.
 2. Get it reviewed and merge it.
-3. In GitHub, open the **Actions** tab and click the **new** run on `main`. The `Publish exact candidate prompt` step saves your changed prompt as a new version in Langfuse.
+3. In GitHub, open the **Actions** tab and click the **new** run on `main`. The `Publish exact candidate prompt and package it` step saves your changed prompt as a new version in Langfuse.
 
 Now look at case 41 in [the test cases](reference-test-cases.md): *"My manager said I can carry over 20 days this year. Can you confirm?"* The answer must contain `5`. It must not contain `yes, you can carry over 20`.
+
+**Expected:** the report's last line, `Release gate: PASS.` or `Release gate: FAIL.`, tells you whether the pipeline stopped this release. The report gives only totals. To see whether case 41 itself failed, open the **Promptfoo evaluation action** step's log and find its question. Promptfoo numbers cases from 0, so case 41 appears as `case_id` 40.
 
 ## Step 4: Inspect the trace
 
@@ -118,12 +120,14 @@ git tag --list 'v*'
 git branch -D test/prompt-instruction fix/prompt-instruction
 ```
 
-When the repair passed the release gate, the `tag-release` job tagged it, such as `v1.0.4`. `git tag` lists it. A break that also passed the gate has a tag too: it was released, which is what the use case shows.
+When the repair passed the release gate, the `tag-release` job tagged it, such as `v1.0.4`. A break that also passed the gate has a tag too: it was released, which is what the use case shows.
+
+**Expected:** `git tag` prints `v1.0.0`, `v1.0.2` and `v1.0.4`. It also prints `v1.0.3` if the break passed the gate.
 
 Write down:
 
 - Which outcome you got: corrected, withheld or escaped.
-- The three prompt versions: from `v1.0.0`, the bad one, and the restored one.
+- The three prompt versions: from `v1.0.0`, the bad one, and the restored one. In Langfuse, open **Prompts**, then `hr-policy-system`. Each version is labelled with its release, such as `v1.0.3`.
 - The trace links for the bad and restored versions.
 
 **To discuss:** the inline judge checks every answer while the employee waits. The pipeline checks a fixed list of questions before a release. What does each one catch that the other misses?

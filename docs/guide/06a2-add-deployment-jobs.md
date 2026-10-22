@@ -1,12 +1,12 @@
 # 06a2 Add the deployment jobs
 
-**Goal:** add the deployment and evaluation jobs to the workflow file.
+**Goal:** add the `candidate` job to the workflow file. It deploys each merge to staging and evaluates it. Document 06a explains each of its steps.
 
 Here you only change a file on your computer. You commit it in document 06b, after adding the GitHub settings the new jobs read. Without those settings, the first run would fail.
 
-## Step 1: Append the two deployment jobs
+## Step 1: Append the candidate job
 
-This command **adds** two jobs to the end of the workflow file from document 04. The `>>` means "add to the end", so the lines already there stay as they are. Run it once only. Running it twice adds the jobs twice.
+This command **adds** the `candidate` job to the end of the workflow file from document 04. The `>>` means "add to the end", so the lines already there stay as they are. Run it once only. Running it twice adds the jobs twice.
 
 ```bash
 cd ~/hr-rag-lab
@@ -183,6 +183,18 @@ grep -nE '^  (checks|candidate):' .github/workflows/hr-quality.yml
 ```
 
 **Expected:** the last command prints two jobs: `checks` on line 15 and `candidate` on line 41.
+
+## How to read the new job
+
+The steps match the list in document 06a. A few parts of the YAML are new:
+
+- `${{ vars.NAME }}` reads a GitHub **variable**, and `${{ secrets.NAME }}` reads a GitHub **secret**. You add both to the `hr-staging` environment in document 06b.
+- `EVAL_REPEATS`, `EVAL_MAX_LATENCY_SECONDS` and `EVAL_MIN_CONSISTENCY` set how many times each question is asked, the time limit per answer, and the consistency pass mark. Change them here to change the gate.
+- `id: live` names the API test step, so later steps can ask how it ended.
+- `if: always() && steps.live.outcome != 'skipped'` means: run this step even if an earlier step failed, as long as the API test ran. Without `always()`, GitHub skips every step after a failure, and you would see no results.
+- `if: success()` on the approval step means: run only if every earlier step passed.
+- `if: vars.ENABLE_DEEPEVAL == 'true'` turns DeepEval on or off with a GitHub variable. Evidently has the same switch, `ENABLE_EVIDENTLY`.
+- `actions/upload-artifact` keeps the listed files for 3 days, under **Artifacts** on the run page. The production and release jobs in document 06a3 read them from there.
 
 If a job name appears twice, you ran the block twice. Create the file again with document 04, step 2, then run this block once.
 

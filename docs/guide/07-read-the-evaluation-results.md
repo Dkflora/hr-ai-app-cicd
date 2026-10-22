@@ -21,18 +21,27 @@ A case passes only if **both** of its answers pass. One failed answer stops the 
 - **The live test** fails with `slow`: one answer took longer than 20 seconds. Open that question in Langfuse and look for the step that took the longest, such as the policy search.
 - **Retrieval** fails: the search did not find the policy a case expects. Open that question in Langfuse, click its **Policy search** step, and compare the passages it found with the policy.
 - **Consistency** fails: the same question, asked twice, got two answers that mean different things. Read both answers in the Langfuse experiment, then open each one step by step.
-- **Promptfoo** fails: an answer that used to be right is now wrong. Its log shows which rule the answer broke.
-- **Langfuse** fails: some cases scored lower than in your `v1.0.0` run. Compare the two runs' results to see which cases changed.
+- **Promptfoo** fails: at least one answer broke a rule of its case. Its log shows which rule.
+- **Langfuse** fails: at least one case got a `reference_checks` score of 0, because one of its answers failed. Compare this run with your `v1.0.0` run to see which cases changed.
 - **DeepEval** fails: the log names the case and the check that failed. For faithfulness, find the sentence the policy passages do not back up. For relevancy, check whether the answer wandered away from the question. The grading model can be wrong, so read the answer yourself before you decide.
 - **Evidently** shows a change: answers got longer or slower than in an earlier run. Find out why. A change does not prove an answer is wrong.
 
 ## Where to find each result
 
 - **The overall result, case counts, speed, retrieval, consistency and DeepEval scores**: open the run in the **Actions** tab, click **Summary**, and read the report.
+
+The report, written by `ci/report.py`, shows totals only. Its lines, from the top:
+
+- **Cases passing every repetition:** such as `52/52`. A case counts only if both of its answers passed.
+- **Illustrative 95% Wilson interval:** a statistics range, such as `93.1%–100.0%`. It says what pass rate the app might have on similar questions, given how many cases you tested. With 52 cases the range is wide, so treat it as a reminder that 52 questions are a small sample, not as a measured error rate.
+- **Application requests recorded:** the number of answers, 104 on a full run.
+- The speed, retrieval, consistency and DeepEval sections, then the last line, **Release gate: PASS** or **FAIL**.
+
+To see which case failed, open the step's own log, such as the Promptfoo step. There, `case_id` counts from 0, so `case_id` 40 is case 41 in the test case list.
 - **Which retrievals missed, and which answers disagreed**: in the run, click the `candidate` job, then the **Check retrieval quality and answer consistency** step.
 - **Promptfoo results**: in the run, click the `candidate` job, then the **Promptfoo evaluation action** step.
 - **DeepEval scores**: in the run, click the `candidate` job, then the **Evaluate answer quality with DeepEval** step. The step's log shows each case's scores. For every score and the judge's reasons, scroll to **Artifacts** on the run page, download `hr-candidate-evidence` and open `deepeval.json`. `quality.json` in the same download holds the retrieval and consistency results.
-- **Evidently report**: on the run page, scroll to **Artifacts** and download the Evidently report.
+- **Evidently report**: on the run page, scroll to **Artifacts** and download `evidently-results`. Open the HTML file inside.
 - **Langfuse**: follow the steps below.
 
 ## Walk through your run in Langfuse
@@ -49,7 +58,7 @@ Open **Datasets**, then the dataset whose name starts with `hr-regression-`. Eac
 
 ### 3. The experiment for your run
 
-In that dataset, open the list of runs. Each pipeline run adds one, named after its commit and its run number. Open yours:
+In that dataset, open the list of runs. Each pipeline run adds one, named after its commit and its GitHub run ID. The run ID is the long number in the address of the run's page on GitHub. Open yours:
 
 - Every question shows its two answers and a `reference_checks` score: 1 if both answers passed, 0 if not.
 - On a passing run, every score is 1.

@@ -14,11 +14,13 @@ The tool versions are fixed in `ci/requirements-scan.txt` and `frontend/package.
 
 ## Why the scans only report here
 
-In this lab, the scans never fail a run. `ci/code_scan.py` runs each tool, writes what it found on the run's summary page, and always ends green. This lab is about the release gate, which tests the app's answers. Code scans are a separate concern.
+In this lab, the scans never fail a run. `ci/code_scan.py` runs each tool, writes what it found on the run's summary page, and always ends green. This lab is about the **release gate**: the step, explained in document 06a, that approves a new version only when the app answers every test question correctly. Code scans are a separate concern.
 
 A company usually goes further. It blocks a merge on high findings, and the team reviews the rest.
 
 ## Step 1: Add the workflow
+
+The scan script and the tool lists are already in the repository: `ci/code_scan.py`, `ci/requirements-scan.txt` and `frontend/eslint.config.js`. You only add the workflow that runs them.
 
 ```bash
 cd ~/hr-rag-lab
@@ -102,7 +104,9 @@ git commit -m "Add code scans"
 git push
 ```
 
-On GitHub, open the **Actions** tab and click the newest **Code scan** run. The run's summary page shows one section per tool. Click **Details** under a section to see each finding.
+On GitHub, open the **Actions** tab and click the newest **Code scan** run. The run opens on its **Summary** page, which shows one section per tool. Click **Details** under a section to see each finding.
+
+Your pull request now shows 8 checks: the `checks` job and the three scan jobs, each once for the push and once for the pull request.
 
 **Expected:** all three jobs finish green, and the summary shows:
 
@@ -116,19 +120,21 @@ The counts can change when the tools' vulnerability lists are updated.
 
 ## Step 3: Read the findings like a reviewer
 
-A finding is a question for a person, not always a bug. Look at Bandit's five medium findings:
+A finding is a question for a person, not always a bug. On the run's Summary page, click **Details** under **Bandit**. It lists the five medium findings:
 
 - `ingest_handler.py` writes to `/tmp`. In a Lambda, `/tmp` is the only folder the code may write to, and no other user shares it. This one is safe.
 - `trace_exporter.py`, `check-setup.py` and `prepare-oidc.py` open a web address. Each address is one the lab sets itself, such as your Langfuse or GitHub address. An employee never types it. These are safe too.
 
 The low findings are mostly the scripts calling `git`, `terraform` and `aws`. A team records each reviewed finding, for example with a `# nosec` comment in the code. The next scan then shows only new findings.
 
-You can run the same scans on your computer:
+You can run the same scans on your computer, with the virtual environment turned on:
 
 ```bash
 python -m pip install -r ci/requirements-scan.txt
 python ci/code_scan.py python-security
 ```
+
+**Expected:** the same Bandit and pip-audit sections as on the Summary page, printed in the terminal. pip-audit can take a few minutes, because it installs each requirements file in a temporary environment first.
 
 ## Step 4: Turn on secret scanning
 
@@ -138,6 +144,6 @@ python ci/code_scan.py python-security
 2. Under **Secret Protection**, click **Enable**, if it is not on already.
 3. Under **Push protection**, click **Enable**.
 
-**Expected:** both show as enabled. Your secrets, such as the Langfuse keys, live in GitHub settings and in `terraform.tfvars`, which Git ignores. Push protection is the safety net if one ever ends up in a commit.
+**Expected:** both show as enabled. Your Langfuse keys live in `.env.langfuse` on your computer, which Git ignores, and in GitHub settings from document 06b. Push protection is the safety net if one ever ends up in a commit.
 
 **Next:** [05 GitHub-to-AWS access](05-github-to-aws-access.md)

@@ -22,7 +22,7 @@ Two tools share the work:
 
 ## Step 1: Turn on the email alert
 
-Setup created an alarm in Amazon CloudWatch, `hr-ci-ai-chatbot-thumbs-down`. It works like this:
+Setup created an alarm in Amazon CloudWatch. Its name is your `project_name` from `terraform.tfvars` followed by `-thumbs-down`, such as `hr-ci-yourname-thumbs-down`. It works like this:
 
 - When someone votes, the chat function writes the score to its log.
 - A **metric filter** counts every log line that holds a thumbs down.
@@ -50,9 +50,9 @@ The same topic also receives the project's other alarms: chat errors, server err
 
 ## Step 3: Get the alert
 
-Within about 5 minutes, you get an email titled **ALARM: "hr-ci-ai-chatbot-thumbs-down"**. It names the alarm and its description: *Someone marked an answer as not helpful.*
+Within about 5 minutes, you get an email titled **ALARM:** followed by the alarm name, such as **ALARM: "hr-ci-yourname-thumbs-down"**. It names the alarm and its description: *Someone marked an answer as not helpful.*
 
-You can also see the alarm in the AWS console. Open **CloudWatch**, then **Alarms**. `hr-ci-ai-chatbot-thumbs-down` shows **In alarm**. After 5 minutes with no new thumbs down, it goes back to **OK** on its own.
+You can also see the alarm in the AWS console. Open **CloudWatch**, then **Alarms**. Your `-thumbs-down` alarm shows **In alarm**. After 5 minutes with no new thumbs down, it goes back to **OK** on its own.
 
 An alarm emails only when it changes to **In alarm**. More thumbs down while it is already in alarm send no new email.
 

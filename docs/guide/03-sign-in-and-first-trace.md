@@ -19,9 +19,13 @@ Type this question and send it:
 
 > How many PTO days do employees receive each year?
 
+PTO means paid time off: vacation days.
+
 Then, in the same conversation, ask a follow-up question:
 
 > How many of those can I carry over?
+
+**Expected:** the first answer says 25 days a year, rising to 28 after five years of service. The second says you can carry over up to 5 days. Both name the **Time Off Policy** as their source. The wording changes from one try to the next, but the numbers should not.
 
 Every answer has a 👍 and a 👎 button under it. Under the second answer, click 👎. Type a short reason, such as `I wanted my own balance`, then click **Send**. Your rating is saved next to that answer in Langfuse. A reviewer can then find every answer people did not like.
 
@@ -31,6 +35,7 @@ Langfuse uses four words:
 
 - **Trace:** the record of one question, from the moment it arrives to the answer.
 - **Span:** one step inside a trace, such as a search or a question to the AI model, with how long it took.
+- **Tokens:** the small pieces of text a model reads and writes. Model providers charge per token, so token counts show the cost of each call.
 - **Session:** all the traces of one conversation.
 - **Prompt version:** the number of the system prompt version that produced the answer. The system prompt is the set of instructions the AI model gets before every question.
 
@@ -53,7 +58,7 @@ Open one trace. Its steps form a tree, in the order they ran:
     - **Bedrock model call**: everything the app sent to the AI model, its reply, its settings, the tokens and the cost. Here the reply is a request to search the policies, with the search words the model chose.
     - **Authorized HR tool**: the search request from the model, and the text the tool sent back.
       - **Policy search**: which documents this person's role may read, the filters, which searches ran, and each passage with a score for how closely it matches.
-        - **Titan embedding** and **OpenSearch vector query**: the search itself, each with how long it took.
+        - **Titan embedding** and **OpenSearch vector query**: the search itself, each with how long it took. Titan is an Amazon model that turns the question into a list of numbers that captures its meaning. OpenSearch then finds the passages whose numbers are closest.
   - **Agent round 2**: the AI model writes the answer from the passages.
     - **Bedrock model call**: the draft answer.
     - **Inline judge**: how the check ended, such as `passed first time`. Under it, **Inline grounding assessment** shows the judge's decision and its reason.
@@ -67,7 +72,7 @@ Now open the trace of the second answer. Under **Scores**, you see `user_feedbac
 
 ## Step 3: See the same questions in the model gateway
 
-Every question the app sends to an AI model goes through the LiteLLM gateway. The gateway has an admin page that lists each of those questions with its model, cost and cache result. Langfuse shows the whole request from the app's side. The gateway shows each separate question to the AI model.
+Every question the app sends to an AI model goes through the LiteLLM gateway. The gateway has an admin page that lists each of those questions with its model and its cost. It also shows whether the reply came from the gateway's cache: a store of recent replies it can reuse for an identical question. Langfuse shows the whole request from the app's side. The gateway shows each separate question to the AI model.
 
 The gateway accepts connections only from the app itself, not from the internet. So you open its admin page through a tunnel: a private connection that AWS Systems Manager (SSM) creates from your computer to the gateway's port 4000. Your AWS permissions decide who can open it.
 

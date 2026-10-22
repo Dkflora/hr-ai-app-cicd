@@ -37,9 +37,9 @@ grep -n '^MAX_TOOL_ROUNDS' lambda/app/assistant.py
 
 Before you break anything, write down three things from your last passing run:
 
-- the commit,
-- the prompt version,
-- the Lambda version that the `approved` alias points to.
+- The commit: run `git log --oneline -1`.
+- The prompt version: in Langfuse, open **Prompts**, then `hr-policy-system`. Note the version labelled with your last release, such as `v1.0.0`.
+- The Lambda version that the `approved` alias points to: the command below prints it.
 
 An **alias** is a name that points to one version of the Lambda function. This command prints the version behind `approved`:
 
@@ -106,6 +106,7 @@ In GitHub, open the **Actions** tab. Click the **new** run on `main`.
 - `Approve the exact tested staging version` is **skipped**.
 - The report says `Release gate: FAIL.`.
 - `Production handoff (dry run)` is **skipped**.
+- `Tag the approved release` is **skipped**, so release `v1.0.1` gets no tag.
 
 The pull request is already merged. What the gate blocked is the **release**: the broken version is never approved.
 

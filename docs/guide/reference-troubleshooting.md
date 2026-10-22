@@ -101,7 +101,7 @@ After document 06b, your next merge to `main` also fixes it, because every pipel
 
 ## A test case fails and you do not know why
 
-1. Find the case number in the report, then look it up in [the test cases](reference-test-cases.md).
+1. Find the failing case in the **Promptfoo evaluation action** step's log. The report gives only totals. Look the question up in [the test cases](reference-test-cases.md). Promptfoo numbers cases from 0, so `case_id` 40 is case 41 there.
 2. In Langfuse, find the trace for that question. Use the time of the run and the test account to find it.
 3. Open **Policy search**: did the right passage come back, and which searches ran?
 4. Open **Inline judge**: what was its outcome? The **Inline grounding assessment** step under it shows the verdict and the reason.

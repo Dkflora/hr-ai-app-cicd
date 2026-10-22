@@ -33,7 +33,7 @@ An **alias** is a name that points to one version of the Lambda function. The pi
 - `candidate`: the version being tested. `ci/deploy_candidate.py` moves it on every merge. The staging app and API use it.
 - `approved`: the last version that passed every check. `ci/promote_lab.py` moves it only after every required check passes. Production would deploy this one.
 
-When `promote_lab.py` moves `approved`, it also notes the release and the version it replaced, in the alias description. For example: `release v1.0.2; previous approved version: 7`. The rollback reads that note, and prints which release `approved` moved from and to.
+When `promote_lab.py` moves `approved`, it also notes the release and the version it replaced, in the alias description. For example: `Lab approved release pointer; release v1.0.2; previous approved version: 7`. The rollback reads that note, and prints which release `approved` moved from and to.
 
 ## Rollback: restore the previous approved version
 
@@ -48,7 +48,7 @@ cd ~/hr-rag-lab
 python ci/rollback_lab.py
 ```
 
-**Expected:** `Rolled back`, the function name, and the two version numbers, such as `approved moved from version 9 to version 7`.
+**Expected:** two lines. The first names the releases, such as `approved now points to v1.0.0; it pointed to v1.0.2.` The second starts with `Rolled back`, then the function name and the two version numbers, such as `approved moved from version 9 to version 7`.
 
 If you run it again, it swaps back, because each rollback notes the version it left. The next passing run on `main` also moves `approved` forward again.
 

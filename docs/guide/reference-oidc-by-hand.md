@@ -16,7 +16,7 @@ source .venv/Scripts/activate 2>/dev/null || source .venv/bin/activate
 python scripts/prepare-oidc.py --dry-run
 ```
 
-It prints the name of the role it would create, such as `hr-ci-ai-chatbot-github-ci`. That is your `project_name` followed by `-github-ci`. Write the name down for step 3.
+It prints `Creating the role` followed by the role's name, such as `hr-ci-ai-chatbot-github-ci`, and ends with `Dry run: nothing was changed in AWS.` The name is your `project_name`, from `infra/terraform/terraform.tfvars`, followed by `-github-ci`. Write the name down for step 3.
 
 The two files are in `build/`:
 
@@ -63,7 +63,7 @@ python scripts/github-settings.py
 
 Replace `PASTE-THE-ROLE-ARN-HERE` with the ARN before you run it.
 
-**Expected:** `GitHub settings: wrote build/github-settings.txt`, with no `still missing` line.
+**Expected:** `GitHub settings: wrote build/github-settings.txt (15 variables, 2 secrets).`, with no `still missing` line.
 
 ## Check your work
 
@@ -73,4 +73,4 @@ Run the script with `--dry-run` again. It finds your role by its name, so it pla
 python scripts/prepare-oidc.py --dry-run
 ```
 
-**Expected:** the plan says `Role` followed by your role name and `already exists`.
+**Expected:** the output includes `Role hr-ci-ai-chatbot-github-ci already exists: updating it`, with your role name, and ends with `Dry run: nothing was changed in AWS.`

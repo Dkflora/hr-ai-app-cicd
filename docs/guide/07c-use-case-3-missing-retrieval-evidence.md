@@ -72,7 +72,8 @@ git push -u origin test/retrieval-evidence
 
 1. Open a pull request from `test/retrieval-evidence` into `main`. The `checks` job passes.
 2. Get it reviewed and merge it.
-3. In GitHub, open the **Actions** tab and click the **new** run on `main`. In the report, look at the PTO cases, such as cases 7, 20, 24, 25 and 41. Check both runs of each case.
+3. In GitHub, open the **Actions** tab and click the **new** run on `main`. The report's last line says whether the release gate passed. The report gives only totals.
+4. To see each case, open the **Promptfoo evaluation action** step's log. Look at the PTO cases, such as cases 7, 20, 24, 25 and 41 in [the test cases](reference-test-cases.md). Promptfoo numbers cases from 0, so case 7 appears as `case_id` 6.
 
 ## Step 4: Inspect the trace
 
@@ -124,7 +125,9 @@ git tag --list 'v*'
 git branch -D test/retrieval-evidence fix/retrieval-evidence
 ```
 
-When the repair passed the release gate, the `tag-release` job tagged it, such as `v1.0.6`. `git tag` lists it. A break that also passed the gate has a tag too: it was released, which is what the use case shows.
+When the repair passed the release gate, the `tag-release` job tagged it, such as `v1.0.6`. A break that also passed the gate has a tag too: it was released, which is what the use case shows.
+
+**Expected:** `git tag` lists `v1.0.6` after your earlier releases. It also lists `v1.0.5` if the break passed the gate.
 
 Write down:
 

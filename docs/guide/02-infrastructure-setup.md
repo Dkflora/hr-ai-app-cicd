@@ -52,7 +52,11 @@ trace_synthetic_content = true
 - `project_name`: the start of every AWS resource name. If two students choose the same name, their resources clash.
 - `cognito_domain_prefix`: part of the sign-in page address. It must be unique across all of AWS.
 - `langfuse_base_url`: the same Langfuse address as in `.env.langfuse`. The setup stops if the two are different.
+- `domain_name`: leave it empty. The app then uses its CloudFront address, which starts with `https://` and ends in `cloudfront.net`. A company would put its own web address here.
+- `aurora_instance_count`: the number of database servers. `1` costs half as much as `2`. With `2`, a second server takes over if the first one fails.
 - `trace_synthetic_content`: `true` lets Langfuse store the made-up questions and answers, so you can read them.
+
+Leave the other lines in the file as they are. `alarm_email` stays empty: document 07d connects your email to the alarms another way.
 
 ## What the setup builds
 
@@ -76,7 +80,13 @@ This step creates AWS resources that cost money while they run.
 bash scripts/setup-lab.sh
 ```
 
-First the script checks your tools, both settings files and your AWS account. If anything is missing, it lists every problem at once. It stops before it installs or creates anything. Fix each problem and run the same command again.
+First the script checks your computer and your AWS account (`scripts/check-setup.py`):
+
+- **Tools:** Python 3.10 or later, AWS CLI version 2, Terraform 1.9 or later, and Node.js with `npm` from document 00.
+- **Settings:** both files from steps 3 and 4, and your Langfuse keys.
+- **AWS:** you are signed in to AWS in this terminal, the AI models are enabled for your account in Amazon Bedrock, and your `cognito_domain_prefix` is still free.
+
+If anything is missing, it lists every problem at once. It stops before it installs or creates anything. Fix each problem and run the same command again.
 
 Then each step prints one line with a green check mark and how long it took, such as `✓ Python environment (.venv) (2s)`. The full output of every step goes to the file `build/setup.log`.
 
@@ -96,7 +106,7 @@ Creating the AWS resources takes the longest. A timer shows how long it has been
 
 1. Creates the database tables, the demo employees and the pipeline's test accounts.
 2. Starts the LiteLLM model gateway and waits until it is ready.
-3. Uploads the policy documents. Uploading `manifest.json` starts the indexing.
+3. Uploads the policy documents. Uploading `manifest.json` last starts the indexing. This file lists every document with its title, its version, whether it is current or replaced, and who may read it.
 4. Builds the web page and uploads it to S3, behind CloudFront.
 5. Creates the sign-in accounts and stores their passwords in Secrets Manager.
 6. Stores your Langfuse keys in Secrets Manager.
@@ -131,7 +141,7 @@ cat demo-sign-in.txt
 
 Open the app address in your browser. You should see the Northwind HR sign-in page.
 
-The lab's Python scripts run in a virtual environment: a folder with the exact Python packages the lab needs. Turn it on in every new terminal before you run them:
+The lab's Python scripts run in a virtual environment: a folder, `.venv`, with the exact Python packages the lab needs. The setup created it. Turn it on in every new terminal before you run the scripts:
 
 ```bash
 source .venv/Scripts/activate 2>/dev/null || source .venv/bin/activate

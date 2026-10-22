@@ -2,6 +2,8 @@
 
 On every run, the pipeline asks the app these 52 questions, twice each. That makes 104 signed-in requests per run. The list lives in `lambda/data/evaluation_questions.json`.
 
+This page numbers the cases from 1. Promptfoo and the Langfuse experiment show a `case_id` that counts from 0, so case 41 here is `case_id` 40 there.
+
 Each question is asked by one of the pipeline's test accounts, `NAME@northwind.example`. A case passes only if both answers pass. The test accounts are separate from the demo employees people sign in as. Their records are in `lambda/db/04_test_accounts.sql`.
 
 Each case can have three kinds of check:
@@ -78,16 +80,18 @@ Jordan Test and Quinn Test never sign in. They are the people whose records the 
 
 ## Case groups
 
-- **1 to 5, 10 to 13**: Who is allowed to see salaries, salary bands and severance rules.
-- **15 to 17, 40**: Attempts to trick the assistant into revealing data or talking about something else.
-- **18 to 20, 24, 25**: Old versions of a policy compared with the current version.
-- **26 to 31, 39**: Questions the policies do not cover. The assistant must say so, and must not answer from general knowledge.
-- **28, 30, 42, 43**: Greetings and small talk.
-- **6 to 9, 14, 21 to 23, 35 to 38**: Everyday policy questions with one known answer.
-- **22, 32 to 34**: Policies that differ by country: the US, the UK and Germany.
-- **33, 37**: Follow-up questions that only make sense after an earlier question. The test sends that earlier part of the chat first.
-- **44, 45**: Personal data typed into a question. The guardrail, an AWS safety filter, blocks a Social Security number. It hides a phone number, and the question still gets an answer.
-- **46 to 48**: Fairness. Cases 6, 9 and 7 asked by a manager, HR and an executive. The policy answer must be the same whatever the person's role.
-- **49 to 51**: Robustness. Cases 6, 9 and 7 with typos or in different words. The answer must still be right.
-- **52**: Toxicity. A request to insult someone. The assistant must refuse.
-- **41**: The person states something false. The answer must correct it.
+Each case has a `group` in the JSON file. The pipeline uses the group names, for example to pick DeepEval's sample.
+
+- `access`, **1 to 5, 10 to 13**: Who is allowed to see salaries, salary bands and severance rules.
+- `attack`, **15 to 17, 40**: Attempts to trick the assistant into revealing data or talking about something else.
+- `version`, **18 to 20, 24, 25**: Old versions of a policy compared with the current version.
+- `out_of_scope`, **26, 27, 29, 31, 39**: Questions the policies do not cover. The assistant must say so, and must not answer from general knowledge.
+- `small_talk`, **28, 30, 42, 43**: Greetings and small talk.
+- `everyday`, **6 to 9, 14, 21, 23, 35, 36, 38**: Everyday policy questions with one known answer.
+- `country`, **22, 32, 34**: Policies that differ by country: the US, the UK and Germany.
+- `follow_up`, **33, 37**: Follow-up questions that only make sense after an earlier question. The test sends that earlier part of the chat first.
+- `pii`, **44, 45**: Personal data typed into a question. The guardrail, an AWS safety filter, blocks a Social Security number. It hides a phone number, and the question still gets an answer.
+- `fairness`, **46 to 48**: Cases 6, 9 and 7 asked by a manager, HR and an executive. The policy answer must be the same whatever the person's role.
+- `robustness`, **49 to 51**: Cases 6, 9 and 7 with typos or in different words. The answer must still be right.
+- `toxicity`, **52**: A request to insult someone. The assistant must refuse.
+- `false_claim`, **41**: The person states something false. The answer must correct it.

@@ -45,7 +45,7 @@ Each item below is one step in the workflow file, with the script or action it r
 **Sign in and deploy**
 - **Sign in to AWS** (`configure-aws-credentials`): uses the role from document 05. AWS gives the job temporary credentials that expire within the hour.
 - **Deploy the website** (`ci/deploy_frontend.py`): builds the React website from this commit and uploads it.
-- **Publish the prompt** (`ci/release.py --publish`): saves the system prompt in Langfuse as a numbered version, linked to this commit.
+- **Publish the prompt** (`ci/release.py --publish`): saves the system prompt in Langfuse as a numbered version, linked to this commit, and packages the backend code.
 - **Deploy the backend** (`ci/deploy_candidate.py`): uploads the code as a new Lambda version, and moves `candidate` to it.
 
 **Test**
@@ -59,7 +59,9 @@ Each item below is one step in the workflow file, with the script or action it r
 - **Approve** (`ci/promote_lab.py`): moves `approved` to this version, but only if every step above passed.
 - **Report** (`ci/report.py`): writes a summary on the run page and on the pull request. It never includes employees' answers.
 
-If the API test (**Ask the real app**) fails, Langfuse, Promptfoo, Evidently and the report still run, so you can see what broke. **Approve** is skipped, and so is DeepEval.
+If the API test (**Ask the real app**) fails, the retrieval and consistency check, Langfuse, Promptfoo, Evidently and the report still run, so you can see what broke. **Approve** is skipped, and so is DeepEval.
+
+DeepEval and Evidently run only when the GitHub variables `ENABLE_DEEPEVAL` and `ENABLE_EVIDENTLY` are `true`. You set them in document 06b.
 
 ## The answers file: build/evaluation.json
 
@@ -143,7 +145,7 @@ A grading model can be wrong, so DeepEval only adds a second opinion. It never r
 
 **What it is:** an open-source tool that compares new data with older reference data, and reports what changed. A change like this is called **drift**.
 
-**What it tests here:** two numbers for each answer, its length and its response time. It compares them with a reference run saved in the repository, `ci/data/drift-reference.json`. It only reports; it never fails the run. A change is a reason to look at the answers, not proof that one is wrong.
+**What it tests here:** two numbers for each answer, its length and its response time. It compares them with a reference run saved in the repository, `ci/data/drift-reference.csv`. It only reports; it never fails the run. A change is a reason to look at the answers, not proof that one is wrong.
 
 **Where the result appears:** in the run's **Artifacts**, as an HTML report.
 
@@ -151,7 +153,7 @@ A grading model can be wrong, so DeepEval only adds a second opinion. It never r
 
 You met Langfuse traces in document 03. The pipeline uses three more Langfuse features:
 
-- **Prompts:** each run saves the system prompt as a new numbered version of `hr-policy-system`. The version is labelled `candidate` and tagged with the commit. Every trace links to the prompt version that produced it.
+- **Prompts:** each run saves the system prompt as a new numbered version of `hr-policy-system`. The version is labelled `candidate` and with its release, such as `v1.0.0`. Its config records the commit. Every trace links to the prompt version that produced it.
 - **Datasets:** the test cases are saved as a dataset. Its name is `hr-regression-` followed by the first 16 characters of a fingerprint of the test cases. When the test cases change, the name changes, so old and new cases never mix. Each item holds one question, with its required facts, forbidden facts and source.
 - **Experiments:** each run records one experiment on that dataset, named after the commit and the run number. Every case gets a score called `reference_checks`: 1 if both runs passed, 0 if not. Put two experiments side by side to see which cases changed between releases.
 
@@ -172,16 +174,16 @@ The `VERSION` file holds the release number, such as `1.0.3`. Each change raises
 
 ## What these checks still do not cover
 
-Every gate has blind spots. Knowing them is part of running it:
+These gaps remain:
 
 - **Real users:** the test cases are a fixed list. Real people can ask things no case covers. Their thumbs up and down reach Langfuse as scores, but those scores only point to answers to review. They do not stop a release.
 - **Full reference answers:** each case lists required facts, not a complete ideal answer. So nothing compares a whole answer with an ideal one.
 - **Human review:** the grading model's scores have not yet been compared with an HR expert's grades on the same answers.
-- **Wider attacks:** there are five attack cases, but no systematic attack testing, called red-teaming.
+- **Wider attacks:** there are four attack cases, but no systematic attack testing, called red-teaming.
 - **Load:** the tests ask one question at a time, never many people at once.
 
 ## The production handoff job
 
-This job starts only after the `candidate` job succeeds. It checks two things: the tested commit is the one you merged, and the report says the gate passed. Then it prints what production would receive. It changes nothing.
+This job starts only after the `candidate` job succeeds. It runs in the `hr-production-approval` environment, so a person can be required to approve it first (document 06b). It checks two things: the tested commit is the one you merged, and the report says the gate passed. Then it prints what production would receive. It changes nothing.
 
 **Next:** [06a2 Add the deployment jobs](06a2-add-deployment-jobs.md)

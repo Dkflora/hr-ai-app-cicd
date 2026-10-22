@@ -16,7 +16,7 @@ In GitHub Actions, a **workflow** is a YAML file in the `.github/workflows/` fol
 
 If you know Jenkins or Azure DevOps: jobs are like stages, runners are like agents, and actions are like plugins or tasks. In step 2, the comment at the end of each line says what that line does.
 
-The job also stamps the backend package with a **release identity**. This is a `release.json` file inside the package. It records which commit the code came from and a fingerprint of the prompt. Later, you can trace every test result back to the exact code and prompt that were tested.
+The job also stamps the backend package with a **release identity**. This is a `release.json` file inside the package. It records the release number, the commit the code came from, and a fingerprint of the prompt. The fingerprint is a SHA-256 hash: a 64-character code computed from the prompt text, which changes if any character changes. Later, you can trace every test result back to the exact code and prompt that were tested.
 
 ## Step 1: Run the unit tests locally
 
@@ -28,9 +28,9 @@ source .venv/Scripts/activate 2>/dev/null || source .venv/bin/activate
 python -m unittest discover -s ci/tests -v
 ```
 
-**Expected:** every test ends with `ok`, and the last line is `OK`.
+**Expected:** every test ends with `ok`. Near the end, the output says `Ran 51 tests`, and the last line is `OK`.
 
-The tests check the prompt's structure, how the release package is built, the inline judge, the connection to the model gateway, and the tracing code. To see an example, open `ci/tests/test_release.py`.
+The tests are the six files in `ci/tests/`. They check the prompt's structure, the release package, the inline judge and the connection to the model gateway. They also check the tracing code, user feedback, the rollback script and the release number. They use fakes instead of AWS and the AI model, so they need no access and run in seconds. To see an example, open `ci/tests/test_release.py`.
 
 ## Step 2: Create the workflow file
 
@@ -85,11 +85,16 @@ What each part does:
 
 - `on:`: The workflow starts on pull requests, on pushes to `main`, `feature/**`, `fix/**` and `test/**`, and when you click **Run workflow** in GitHub.
 - `permissions: contents: read`: The job can read the code and nothing else.
-- `concurrency: hr-staging`: Only one run at a time. Two deployments never overlap, because there is only one staging environment.
+- `concurrency: hr-staging`: Only one run at a time. Two deployments never overlap, because there is only one staging environment: the test copy of the app that setup created in document 02.
+- `runs-on: ubuntu-24.04`: The job runs on a GitHub runner with Ubuntu Linux 24.04. Naming the exact version keeps the runner the same until you change it.
 - `persist-credentials: false`: The Git token is removed from the runner after the code is downloaded.
-- `fetch-depth: 0`: Downloads the full history, including the release tags, so the next step can compare versions.
-- `Release version is new`: The `VERSION` file at the top of the repository holds the release number, such as `1.0.0`. `ci/check_version.py` checks that it is newer than every release tag, so a number is never used twice.
-- `ci/release.py`: Checks the prompt and builds the backend package. It adds a `release.json` that records the commit and the prompt.
+- `actions/checkout`: Downloads your repository's code onto the runner.
+- `fetch-depth: 0`: Downloads the full history, including the release tags, so the next step can compare versions. A release tag, such as `v1.0.0`, marks the commit of a release. The pipeline creates them, starting in document 06b.
+- `actions/setup-python` and `pip install -r ci/requirements.txt`: Installs Python 3.12 and the packages the pipeline scripts need.
+- `Release version is new`: The `VERSION` file at the top of the repository holds the release number, such as `1.0.0`. `ci/check_version.py` checks that it is newer than every release tag, so a number is never used twice. Before the first release there are no tags. Then it prints `Release version v1.0.0: the first release.`
+- `unittest discover -s ci/tests`: Runs the same unit tests as step 1.
+- `ci/release.py`: Checks the prompt and builds the backend package, `build/function.zip`. It adds a `release.json` that records the release number, the commit and the prompt.
+- `actions/setup-node`, `npm ci` and `npm run build`: Installs Node.js 22 and the website's packages, exactly as listed in `frontend/package-lock.json`, then builds the React website. A build error fails the job.
 
 ## Step 3: Commit and push
 
@@ -105,9 +110,9 @@ Open your repository on GitHub. Right after a push, a yellow banner appears abov
 
 If the banner is gone, open the **Pull requests** tab and click **New pull request**. Set **base** to `main` and **compare** to `feature/pipeline`. Then click **Create pull request**.
 
-Near the bottom of the pull request page, you see the `checks` job. Click **Details** to watch its log.
+Near the bottom of the pull request page, you see the `checks` job twice: `checks (push)` for your push, and `checks (pull_request)` for the pull request. Click **Details** next to one to watch its log.
 
-**Expected:** the `checks` job finishes green.
+**Expected:** both finish green, and the page shows **All checks have passed**.
 
 Leave the pull request open for now. In documents 06a, 06a2 and 06a3 you add the deployment and release jobs to it.
 

@@ -74,6 +74,18 @@ grep -nE '^  (checks|candidate|production-handoff-dry-run|tag-release):' .github
 
 **Expected:** the last command prints four jobs: `checks` on line 15, `candidate` on line 41, `production-handoff-dry-run` on line 208 and `tag-release` on line 239.
 
+## How to read the new jobs
+
+- `needs: candidate`: both jobs wait for the `candidate` job. If it fails, GitHub skips them. They then run at the same time.
+- `environment: hr-production-approval`: the handoff job uses its own environment. In document 06b you can make a person approve it before it runs.
+- `actions/download-artifact`: both jobs read the files the `candidate` job saved under **Artifacts**: `release.json` and `report.md`.
+- `EXPECTED_COMMIT: ${{ github.sha }}`: the commit this run was started for. Both jobs stop if the saved release came from another commit. They also stop unless the report says `Release gate: PASS.` in full.
+- `fetch-depth: 0`: downloads the existing tags, so `ci/tag_release.py` can refuse a release number that is already tagged.
+
+When the handoff job runs, its log ends with three lines. The first starts with `DEMONSTRATION ONLY: production would receive`. The last is `No production resources or traffic are changed by this dry-run job.`
+
+Pushing a tag does not start the workflow again: the workflow runs on pushes to branches only.
+
 If a job name appears twice, you ran a block twice. Create the file again with document 04, step 2, then run the 06a2 block and this block once each.
 
 **Next:** [06b Environments, merge and first run](06b-environments-merge-and-first-run.md)

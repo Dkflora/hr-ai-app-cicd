@@ -46,6 +46,8 @@ In GitHub, open **Settings → Environments → hr-staging**. Under **Environmen
 - `VITE_COGNITO_AUTHORITY`, `VITE_COGNITO_DOMAIN`, `LANGFUSE_BASE_URL`
 - `ENABLE_DEEPEVAL`, `ENABLE_EVIDENTLY`
 
+`ENABLE_DEEPEVAL` and `ENABLE_EVIDENTLY` are on and off switches. With the value `true`, the DeepEval and Evidently steps run.
+
 The two `VITE_COGNITO` values are not secret. The web app needs them to show the sign-in page, and its build stops if one is missing.
 
 ## Step 4: Add the two secrets
@@ -79,9 +81,9 @@ git push
 2. If the run asks for approval to deploy to `hr-staging`, approve it.
 3. Click the `candidate` job and watch its steps run in order. It publishes the prompt, deploys the new version, and asks 104 test questions. Then it runs the retrieval and consistency check and the evaluation tools. Last, it approves the version and writes the report.
 4. Click **Summary** on the run page to read the report.
-5. If the run asks for approval for `hr-production-approval`, approve it. Then read the output of the production dry run.
+5. If the run asks for approval for `hr-production-approval`, approve it. Then open the **Production handoff (dry run)** job. Its log ends with three lines, starting with `DEMONSTRATION ONLY: production would receive`.
 
-**Expected:** every job has a green tick, and the report says `Release gate: PASS.`
+**Expected:** all four jobs have a green tick: `checks`, `candidate`, the production handoff and `tag-release`. The report says `Release gate: PASS.`
 
 After it passes, open the app in your browser and click **Sign in**. Check that the sign-in page opens. The pipeline tests do not check this page, so you check it by hand.
 
@@ -91,7 +93,7 @@ Next, check that both aliases now point to the version this run published. In th
 2. Open **Lambda → Functions**. Click the chat function: its name is your `project_name` followed by `-chat`.
 3. Open the **Aliases** tab.
 
-**Expected:** two rows, `candidate` and `approved`, with the same version number. Click `approved` to see its description: it names the version it replaced. The **Versions** tab lists every version the pipeline has published.
+**Expected:** two rows, `candidate` and `approved`, with the same version number. Click `approved` to see its description: `Lab approved release pointer; release v1.0.0; previous approved version: none`. On later runs, `none` becomes the version it replaced. The **Versions** tab lists every version the pipeline has published.
 
 The same check from the terminal:
 
@@ -99,6 +101,8 @@ The same check from the terminal:
 FN="$(terraform -chdir=infra/terraform output -raw candidate_function)"
 aws lambda list-aliases --function-name "$FN" --query 'Aliases[].[Name,FunctionVersion]' --output table
 ```
+
+**Expected:** a table with two rows, `approved` and `candidate`, and the same version number in both.
 
 To see every question the pipeline sent to the AI model, open the LiteLLM page as in document 03, step 3, and click **Logs**. The pipeline's questions come from the test accounts, whose email addresses start with `qa.`.
 

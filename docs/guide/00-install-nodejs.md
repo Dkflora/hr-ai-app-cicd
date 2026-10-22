@@ -1,14 +1,16 @@
 # 00 Install Node.js
 
-The setup builds the chatbot's web page with a tool called `npm`. `npm` comes with Node.js, so you need Node.js version 20 or later. The current LTS (long-term support) release works.
+The setup builds the chatbot's web page with a tool called `npm`, which installs JavaScript packages. `npm` comes with Node.js, so you need Node.js version 20, or 22 and later. The current LTS (long-term support) release works. The setup in document 02 checks the version for you.
 
 ## Windows (Chocolatey)
 
-Open PowerShell as an administrator: right-click **PowerShell** and choose **Run as administrator**. Then run:
+Chocolatey is a package manager for Windows: it installs programs with one command. Open PowerShell as an administrator: right-click **PowerShell** and choose **Run as administrator**. Then run:
 
 ```powershell
 choco install nodejs-lts -y
 ```
+
+If you do not have Chocolatey, download the LTS installer from [nodejs.org](https://nodejs.org/en/download) and run it.
 
 ## Mac (Homebrew)
 
@@ -27,6 +29,6 @@ node --version
 npm --version
 ```
 
-`node --version` should print `v20` or higher. `npm --version` prints a version number too.
+**Expected:** `node --version` prints `v20`, `v22` or higher, such as `v24.22.0`. `npm --version` prints a version number, such as `11.19.1`. Node.js 21 is not supported by the web page's build tool.
 
 **Next:** [01 Import and clone](01-import-and-clone.md)
