@@ -125,11 +125,6 @@ The lab's alarm emails on every single thumbs down, so you can see it work. With
 - **Send it where the team works.** A Slack or Teams channel, or the on-call tool, instead of one person's inbox.
 - **Compare releases.** Each trace carries its release, such as `v1.0.4`. A thumbs-down rate that jumps after a release, for example doubles, is a reason to roll back, as in document 16, even when every golden test passed.
 
-Two more practices build on the review queue:
-
-- **Check the AI judge against people.** The HR expert's `failure_cause` grades are the human answers. A team compares them with what DeepEval's judge said about the same answers. If they disagree often, the judge's rules or its pass mark need work before anyone trusts its scores. This is called calibrating the judge.
-- **Grade live answers automatically.** Langfuse can run an AI judge on a sample of real traces, such as 5% of them. It saves its scores next to the 👍 and 👎, so it finds bad answers even when nobody votes.
-
 Another option: Langfuse has its own **Alerts**, which can watch the `user_feedback` score and post to Slack. This lab uses CloudWatch, because it sends email and already holds the project's other alarms.
 
 **Next:** [16 Production handoff and rollback](16-production-handoff-and-rollback.md)

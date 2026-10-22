@@ -108,6 +108,7 @@ Use case 1 always fails in the same way, so it is the one to run in class. Use c
 - [OIDC by hand](reference-oidc-by-hand.md): the AWS console steps that `scripts/prepare-oidc.py` does for you, one at a time.
 - [Troubleshooting](reference-troubleshooting.md): AWS sign-in errors and other common problems.
 - [Runbook](reference-runbook.md): what to do when the release gate fails, a bad release is live, an alarm fires, or the gateway is down.
+- [From this lab to production](reference-production.md): what a company adds that this lab leaves out. It covers canary releases, rollback rules, SLOs, on-call and postmortems, and more.
 
 ## Rules for the whole lab
 
