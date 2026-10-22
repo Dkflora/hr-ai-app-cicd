@@ -76,9 +76,33 @@ Every question the app sends to an AI model goes through the LiteLLM gateway. Th
 
 The gateway accepts connections only from the app itself, not from the internet. So you open its admin page through a tunnel: a private connection that AWS Systems Manager (SSM) creates from your computer to the gateway's port 4000. 4000 is the port LiteLLM listens on, set in `infra/terraform/gateway-bootstrap.sh.tftpl`. Your AWS permissions decide who can open it.
 
-1. Install the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html). You only do this once.
-2. Open a **second** terminal. The tunnel keeps this terminal busy until you close it.
-3. In that terminal, go to the project folder and turn on the virtual environment from document 02. Every new terminal needs this before you run the lab's Python scripts.
+First, install the **Session Manager plugin**, the small AWS program that runs the tunnel. You only do this once.
+
+On Windows, these commands download the installer and start it. Windows asks for permission to install: click **Yes**, then follow the installer.
+
+```bash
+curl -o ~/SessionManagerPluginSetup.exe https://s3.amazonaws.com/session-manager-downloads/plugin/latest/windows/SessionManagerPluginSetup.exe
+~/SessionManagerPluginSetup.exe
+```
+
+On a Mac, with Homebrew:
+
+```bash
+brew install --cask session-manager-plugin
+```
+
+Close the terminal, open a new one, and check the install:
+
+```bash
+session-manager-plugin
+```
+
+**Expected:** `The Session Manager plugin was installed successfully. Use the AWS CLI to start a session.` Other installs, such as Linux, are in [the AWS guide](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html).
+
+Then open the tunnel:
+
+1. Open a **second** terminal. The tunnel keeps this terminal busy until you close it.
+2. In that terminal, go to the project folder and turn on the virtual environment from document 02. Every new terminal needs this before you run the lab's Python scripts.
 
 ```bash
 cd ~/hr-rag-lab

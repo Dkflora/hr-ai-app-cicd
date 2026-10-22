@@ -72,7 +72,7 @@ EOF
 grep -nE '^  (checks|candidate|production-handoff-dry-run|tag-release):' .github/workflows/hr-quality.yml
 ```
 
-**Expected:** the last command prints four jobs: `checks` on line 15, `candidate` on line 41, `production-handoff-dry-run` on line 210 and `tag-release` on line 241.
+**Expected:** the last command prints four jobs: `checks` on line 15, `candidate` on line 41, `production-handoff-dry-run` on line 217 and `tag-release` on line 248.
 
 ## How to read the new jobs
 

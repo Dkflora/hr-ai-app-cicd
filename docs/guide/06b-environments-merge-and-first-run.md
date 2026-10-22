@@ -46,6 +46,8 @@ In GitHub, open **Settings → Environments → hr-staging**. Under **Environmen
 - `VITE_COGNITO_AUTHORITY`, `VITE_COGNITO_DOMAIN`, `LANGFUSE_BASE_URL`
 - `ENABLE_DEEPEVAL`, `ENABLE_EVIDENTLY`
 
+Paste only the value, with nothing before or after it. A copied value can bring a hidden space or line break, and GitHub keeps it without showing it. If that happens, the first step of the `candidate` job, **Check the GitHub settings**, fails and names the setting to fix.
+
 `ENABLE_DEEPEVAL` and `ENABLE_EVIDENTLY` are on and off switches. With the value `true`, the DeepEval and Evidently steps run.
 
 The two `VITE_COGNITO` values are not secret. The web app needs them to show the sign-in page, and its build stops if one is missing.
@@ -71,13 +73,13 @@ git commit -m "Connect staging deployment and AI evaluation gate"
 git push
 ```
 
-1. Open your pull request from document 04. The push starts the `checks` job again, and it must pass.
+1. Open your pull request from document 04. The push starts the `checks` job again, and it must pass. A run for a pull request only runs `checks`: no deployment and no AI evaluation.
 2. The deployment jobs show as **skipped** on the pull request. This is expected. Pull requests run without AWS access, and the deployment jobs start after the merge.
 3. If someone reviews your work, ask them to approve. Otherwise review the changes yourself, then click **Merge pull request**.
 
 ## Step 7: Watch the first release run
 
-1. Open the **Actions** tab. Click the **newest** run on `main`: the one your merge started.
+1. Open the **Actions** tab. Click the **newest** run on `main`: the one your merge started. Only a run on `main` deploys and tests the release. The runs for your branch and your pull request only ran `checks`, so they are the wrong place to look.
 2. If the run asks for approval to deploy to `hr-staging`, approve it.
 3. Click the `candidate` job and watch its steps run in order. It publishes the prompt, deploys the new version, and asks every test question twice: 104 answers with the current test cases. Then it runs the retrieval and consistency check and the evaluation tools. Last, it approves the version and writes the report.
 4. Click **Summary** on the run page to read the report.

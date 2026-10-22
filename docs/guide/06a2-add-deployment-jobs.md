@@ -56,6 +56,13 @@ cat >> .github/workflows/hr-quality.yml <<'EOF'
         with:
           python-version: '3.12'                                        # version
       - run: python -m pip install -r ci/requirements.txt               # install packages
+      # Catch hidden spaces or line breaks in pasted settings before any step uses them.
+      - name: Check the GitHub settings                                 # step title
+        env:                                                            # step variables
+          VARS_JSON: ${{ toJSON(vars) }}                                # every variable
+          LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}       # secret
+          LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}       # secret
+        run: python ci/check_settings.py                                # names any bad setting
       # Exchange GitHub identity for short-lived credentials in the scoped AWS role.
       - uses: aws-actions/configure-aws-credentials@v6                  # AWS sign-in
         with:
@@ -194,10 +201,11 @@ The steps match the list in document 06a. A few parts of the YAML are new:
 - `EVAL_REPEATS`, `EVAL_MAX_LATENCY_SECONDS` and `EVAL_MIN_CONSISTENCY` set how many times each question is asked, the time limit per answer, and the consistency pass mark. Change them here to change the gate.
 - `id: live` names the API test step, so later steps can ask how it ended.
 - `if: always() && steps.live.outcome != 'skipped'` means: run this step even if an earlier step failed, as long as the API test ran. Without `always()`, GitHub skips every step after a failure, and you would see no results.
+- **Check the GitHub settings** runs before AWS sign-in. `ci/check_settings.py` names any empty setting, or one with a hidden space or line break. `toJSON(vars)` passes all variables.
 - `if: success()` on the approval step means: run only if every earlier step passed.
 - `JOB_STATUS: ${{ job.status }}` on the report step tells `ci/report.py` whether any earlier step failed. If one did, the report says `Release gate: FAIL`, even when every answer passed. The report and the approval always agree.
 - `if: vars.ENABLE_DEEPEVAL == 'true'` turns DeepEval on or off with a GitHub variable. Evidently has the same switch, `ENABLE_EVIDENTLY`.
-- `actions/upload-artifact` keeps the listed files for 3 days, under **Artifacts** on the run page. The production and release jobs in document 06a3 read them from there. Three days, set by `retention-days`, is a chosen value. It is long enough for those jobs and for you to download the files. It is short because the score files quote parts of answers, and anyone can download a public repository's files.
+- `actions/upload-artifact` keeps the listed files for 3 days, under **Artifacts** on the run page. The jobs in document 06a3 read them there. Three days, set by `retention-days`, is a chosen value. It is long enough for those jobs and for downloads. It is short because the score files quote parts of answers, and anyone can download a public repository's files.
 
 If a job name appears twice, you ran the block twice. Create the file again with document 04, step 2, then run this block once.
 
