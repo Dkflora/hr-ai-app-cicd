@@ -82,9 +82,9 @@ Every check below reads the answers the live test saved. None of them asks the a
 - **Fairness:** cases 46 to 48 ask the same policy questions as a manager, an HR person and an executive. The policy answer should be the same for every role.
 - **Robustness:** cases 49 to 51 ask the same questions with typos or in other words.
 - **Toxicity:** case 52 asks for an insult. The assistant must refuse.
-- **Speed:** every answer must arrive within 20 seconds, after one warm-up question.
-- **Retrieval quality** and **consistency:** `ci/quality_checks.py` checks these on every case.
-- **Faithfulness, relevance, bias and toxicity of the wording:** DeepEval checks these on a sample.
+- **Speed:** every answer must arrive within 20 seconds, after one warm-up question. The limit is set in `ci/evaluate_api.py`.
+- **Retrieval quality** and **consistency:** `ci/quality_checks.py` checks these on the 14 cases that name an expected policy.
+- **Faithfulness, relevance, bias and toxicity of the wording:** DeepEval checks these on 5 of those 14 cases.
 - **Drift:** Evidently writes a report.
 - **History across releases:** the Langfuse experiment.
 
@@ -94,8 +94,8 @@ The checks that follow fixed rules decide the release. They cost little, give th
 
 **What it tests here:** two things. No model grades anything.
 
-- **Retrieval quality:** retrieval is the search that finds policy passages for a question. For every case with an expected policy, the search runs again as that case's test account. The expected policy must be among the passages it returns. The report shows the **hit rate**: the share of cases whose policy was found. It also shows the **mean reciprocal rank**: how high the policy came in the results. It is 1 when the policy always comes first, and 0.5 when it always comes second.
-- **Consistency:** both answers to each policy question are turned into lists of numbers that capture their meaning, called **embeddings**, using the app's own embedding model. Then the two are compared. Their similarity must be at least 0.75. Refusals are left out: two correct refusals in different words score low, and the fact checks already make sure both runs refuse. In a test, a reworded answer scored 0.87 and an unrelated answer scored 0.07.
+- **Retrieval quality:** retrieval is the search that finds policy passages for a question. For each of the 14 cases with an expected policy, the search runs again as that case's test account. The expected policy must be among the passages it returns. The report shows the **hit rate**: the share of cases whose policy was found. It also shows the **mean reciprocal rank**: how high the policy came in the results. It is 1 when the policy always comes first, and 0.5 when it always comes second.
+- **Consistency:** both answers to each policy question are turned into lists of numbers that capture their meaning, called **embeddings**, using the app's own embedding model. Then the two are compared. Their similarity must be at least 0.75, set as `MIN_CONSISTENCY` in `ci/quality_checks.py`. Refusals are left out: two correct refusals in different words score low, and the fact checks already make sure both runs refuse. In a test, a reworded answer scored 0.87 and an unrelated answer scored 0.07.
 
 **Where the result appears:** the log of the **Check retrieval quality and answer consistency** step, and the run's report.
 
@@ -117,9 +117,16 @@ Upper and lower case do not matter, and neither do commas, `$` or `*`. The thres
 
 **What it is:** an open-source framework for **LLM-as-a-judge**. A second AI model reads an answer and scores it against written rules, called a rubric.
 
-**What it tests here:** a sample of 5 answered policy cases, one from each group first.
+**What it tests here:** 5 of the 52 test cases. `ci/deepeval_check.py` picks them from the saved answers, with a fixed rule:
 
-**How to read a score:** each check gives the answer a number from 0 to 1. 1 means the answer fully meets the rule, and 0 means not at all. For example, a faithfulness score of 0.8 means 8 out of 10 claims in the answer agree with the policy text the search returned. The **pass mark** is the lowest score that still passes. Here it is 0.7 for every check.
+1. Keep only the 14 cases that name an expected policy. Faithfulness needs the policy text the answer was built from. Refusals, small talk and attacks have none.
+2. Walk those cases in file order, and take the first case of each group. The 14 cases belong to 5 groups, so this gives exactly 5.
+
+So every run grades the same five cases, as numbered in [the test cases](reference-test-cases.md): 6 (everyday), 11 (access), 18 (version), 46 (fairness) and 49 (robustness). DeepEval grades the first answer of each. Because the five never change, a score that drops between releases means the release changed, not the sample. If one of the five gets no answer, the next case of its group takes its place.
+
+Why only 5: each case gets five scores, and each score takes several calls to the grading model. That adds minutes and cost to every run. The other cases are still fully checked by the live test and Promptfoo. The number is `SAMPLE_SIZE` in `ci/deepeval_check.py`. Set the `DEEPEVAL_DEMO_CASES` variable to grade more.
+
+**How to read a score:** each check gives the answer a number from 0 to 1. 1 means the answer fully meets the rule, and 0 means not at all. For example, a faithfulness score of 0.8 means 8 out of 10 claims in the answer agree with the policy text the search returned. The **pass mark** is the lowest score that still passes. Here it is 0.7 for every check, set as `PASS_MARK` in `ci/deepeval_check.py`.
 
 Each answer gets five scores:
 
@@ -136,7 +143,7 @@ A grading model can be wrong, so DeepEval only adds a second opinion. It never r
 
 **What it is:** an open-source tool that compares new data with older reference data, and reports what changed. A change like this is called **drift**.
 
-**What it tests here:** two numbers for each answer, its length and its response time. It compares them with a stored reference run. It only reports; it never fails the run. A change is a reason to look at the answers, not proof that one is wrong.
+**What it tests here:** two numbers for each answer, its length and its response time. It compares them with a reference run saved in the repository, `ci/data/drift-reference.json`. It only reports; it never fails the run. A change is a reason to look at the answers, not proof that one is wrong.
 
 **Where the result appears:** in the run's **Artifacts**, as an HTML report.
 
@@ -145,7 +152,7 @@ A grading model can be wrong, so DeepEval only adds a second opinion. It never r
 You met Langfuse traces in document 03. The pipeline uses three more Langfuse features:
 
 - **Prompts:** each run saves the system prompt as a new numbered version of `hr-policy-system`. The version is labelled `candidate` and tagged with the commit. Every trace links to the prompt version that produced it.
-- **Datasets:** the test cases are saved as a dataset. Its name is `hr-regression-` followed by a code. Each item holds one question, with its required facts, forbidden facts and source.
+- **Datasets:** the test cases are saved as a dataset. Its name is `hr-regression-` followed by the first 16 characters of a fingerprint of the test cases. When the test cases change, the name changes, so old and new cases never mix. Each item holds one question, with its required facts, forbidden facts and source.
 - **Experiments:** each run records one experiment on that dataset, named after the commit and the run number. Every case gets a score called `reference_checks`: 1 if both runs passed, 0 if not. Put two experiments side by side to see which cases changed between releases.
 
 The test questions also appear as normal traces from the test accounts. So you can open any failing answer and follow it step by step.
