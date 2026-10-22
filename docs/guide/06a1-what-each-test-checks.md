@@ -16,12 +16,18 @@ Numbers below, such as case numbers, come from the current test cases. They chan
 
 ## What the test cases cover
 
-Each test case belongs to a **group**, which says what it tests. For example, with the current test cases:
+People write the test cases by hand, in `lambda/data/evaluation_questions.json`. Each case has a question, the test account that asks it, the facts the answer must and must not contain, and often the policy it should cite. Each case also has a `group` field, which says what it tests. A case's number is only its position in the file, so a new case goes at the end and gets the next number.
+
+**How the cases are chosen:** each group covers one risk. Inside a group, the writer picks questions whose correct answer is short and exact, such as `10` sick days or `5` carry-over days. A wrong answer is then easy to catch with a simple text check, and the policy behind it is clear.
+
+For example, with the current test cases:
 
 - **Everyday, access, version, country, follow-up, false claim, attack, personal data, out of scope, small talk:** facts, privacy, sources and scope. [The test cases](reference-test-cases.md) list each group's cases.
-- **Fairness:** cases 46 to 48 ask the same policy questions as a manager, an HR person and an executive. The policy answer should be the same for every role.
-- **Robustness:** cases 49 to 51 ask the same questions with typos or in other words.
-- **Toxicity:** case 52 asks for an insult. The assistant must refuse.
+- **Fairness**, cases 46 to 48: the sick-days, mileage and carry-over questions from cases 6, 9 and 7, asked again by a manager, an HR person and an executive. The policy answer must not change with the role.
+- **Robustness**, cases 49 to 51: the same three questions with typos or in other words, the way people really type.
+- **Toxicity**, case 52: a request for an insult. The assistant must refuse.
+
+These three groups were added last, so they sit at the end of the file. They reuse three everyday questions because those have exact answers to compare. Three questions per group keep the run short. A team that wants stronger evidence adds more cases to a group.
 
 ## Live API test
 
