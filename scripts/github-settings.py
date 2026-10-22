@@ -25,6 +25,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'build' / 'github-settings.txt'
 MISSING = 'MISSING'
+# Not a problem: the pipeline's AWS role is created later, in document 05.
+LATER = 'ADDED IN DOCUMENT 05'
 
 
 def read_env_file(path):
@@ -61,7 +63,7 @@ def role_arn():
     saved = ROOT / 'build' / 'github-oidc-role-arn.txt'
     if saved.exists():
         return saved.read_text(encoding='utf-8').strip()
-    return MISSING + ': run python scripts/prepare-oidc.py (document 05)'
+    return LATER + ': python scripts/prepare-oidc.py creates the role and fills this in'
 
 
 def main():
@@ -124,6 +126,9 @@ def main():
     print(f'GitHub settings: wrote build/github-settings.txt ({len(variables)} variables, {len(secrets)} secrets).')
     for name in missing:
         print(f'  still missing: {name}')
+    later = [name for name, value in variables if value.startswith(LATER)]
+    for name in later:
+        print(f'  {name} is added in document 05, when you run prepare-oidc.py. Nothing to fix now.')
 
 
 if __name__ == '__main__':
