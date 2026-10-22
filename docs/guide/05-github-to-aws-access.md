@@ -37,7 +37,7 @@ This works, and many older pipelines still do it. It has these problems:
 1. When a job starts, GitHub gives it a signed token. The token says which repository and which environment the job belongs to.
 2. The job sends the token to AWS.
 3. AWS checks GitHub's signature. Then it compares the token with the trust policy of an IAM **role**. A role is an AWS identity with a set of permissions, which someone can borrow for a short time instead of holding a password. Its **trust policy** says who may borrow it. Here that is your repository, the `hr-staging` environment, and the audience `sts.amazonaws.com`. The audience says the token was made for STS, the AWS service that hands out temporary credentials.
-4. If everything matches, AWS gives the job temporary credentials that expire within an hour.
+4. If everything matches, AWS gives the job temporary credentials that expire within an hour. One hour is the default for both the role and the sign-in action. This lab does not change it, because every job finishes well within an hour.
 
 This removes each problem above:
 
@@ -47,8 +47,6 @@ This removes each problem above:
 - **CloudTrail records who asked.** Each sign-in shows the repository and environment named in the token, not just a user name.
 
 This lab uses OIDC. It is what AWS and GitHub recommend for pipelines. Azure DevOps calls the same idea workload identity federation.
-
-t. Azure DevOps calls the same idea workload identity federation.
 
 ## What the script does
 
@@ -73,9 +71,9 @@ python scripts/prepare-oidc.py
 
 - `Repository (from git remote origin):` names your repository, such as `YOUR-USERNAME/hr-rag-lab`.
 - `OIDC subject starts with:` shows the token **subject**: the part of GitHub's token that names the repository, such as `repo:YOUR-USERNAME@12345678/hr-rag-lab@987654321`. The trust policy only accepts tokens with this subject.
-- `Checked:` says only that subject's `hr-staging` environment can use the role, and that its 6 permissions are limited to your project's resources in your account.
-- `Done. Role ARN` is followed by the role ARN, such as `arn:aws:iam::123456789012:role/hr-ci-ai-chatbot-github-ci`.
-- The last line is `GitHub settings: wrote build/github-settings.txt (15 variables, 2 secrets).`
+- `Checked:` says only that subject's `hr-staging` environment can use the role, and that its permissions are limited to your project's resources in your account. Currently there are 6 permissions, one for each AWS service listed at the top of this document.
+- `Done. Role ARN` is followed by the role ARN, such as `arn:aws:iam::123456789012:role/hr-ci-yourname-github-ci`. The role is named after your project: your `project_name` from document 02, followed by `-github-ci`.
+- The last line is `GitHub settings: wrote build/github-settings.txt (15 variables, 2 secrets).` With the current pipeline, it needs 15 settings and 2 secrets, the Langfuse keys. The counts grow if the pipeline needs more settings.
 
 The numbers after `@` are fixed IDs of your GitHub account and repository. So if someone later creates a repository with the same name, it cannot pass as yours.
 

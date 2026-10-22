@@ -25,7 +25,7 @@ Then, in the same conversation, ask a follow-up question:
 
 > How many of those can I carry over?
 
-**Expected:** the first answer says 25 days a year, rising to 28 after five years of service. The second says you can carry over up to 5 days. Both name the **Time Off Policy** as their source. The wording changes from one try to the next, but the numbers should not.
+**Expected:** with the current policy documents, the first answer says 25 days a year, rising to 28 after five years of service. The second says you can carry over up to 5 days. Both name the **Time Off Policy** as their source. The wording changes from one try to the next, but the numbers should not.
 
 Every answer has a 👍 and a 👎 button under it. Under the second answer, click 👎. Type a short reason, such as `I wanted my own balance`, then click **Send**. Your rating is saved next to that answer in Langfuse. A reviewer can then find every answer people did not like.
 
@@ -74,7 +74,7 @@ Now open the trace of the second answer. Under **Scores**, you see `user_feedbac
 
 Every question the app sends to an AI model goes through the LiteLLM gateway. The gateway has an admin page that lists each of those questions with its model and its cost. It also shows whether the reply came from the gateway's cache: a store of recent replies it can reuse for an identical question. Langfuse shows the whole request from the app's side. The gateway shows each separate question to the AI model.
 
-The gateway accepts connections only from the app itself, not from the internet. So you open its admin page through a tunnel: a private connection that AWS Systems Manager (SSM) creates from your computer to the gateway's port 4000. Your AWS permissions decide who can open it.
+The gateway accepts connections only from the app itself, not from the internet. So you open its admin page through a tunnel: a private connection that AWS Systems Manager (SSM) creates from your computer to the gateway's port 4000. 4000 is the port LiteLLM listens on, set in `infra/terraform/gateway-bootstrap.sh.tftpl`. Your AWS permissions decide who can open it.
 
 1. Install the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html). You only do this once.
 2. Open a **second** terminal. The tunnel keeps this terminal busy until you close it.

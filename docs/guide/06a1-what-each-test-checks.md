@@ -43,9 +43,9 @@ These three groups were added last, so they sit at the end of the file. They reu
 
 It also checks that a question sent without signing in is refused.
 
-**Which questions, and why:** every test case, asked twice. The AI model can word an answer differently each time, so one good answer could be luck. Before the timed questions, it asks one warm-up question that is not checked, so a search index that has been idle does not count against the first case.
+**Which questions, and why:** every test case, asked twice. The AI model can word an answer differently each time, so one good answer could be luck. Two tries is the smallest number that catches that, and it gives the consistency check two answers to compare. Each extra try adds one more full round of model calls. Before the timed questions, it asks one warm-up question that is not checked, so a search index that has been idle does not count against the first case.
 
-**How it passes:** every answer passes every rule. One broken rule fails the step. The number of tries is `EVAL_REPEATS` and the time limit is `EVAL_MAX_LATENCY_SECONDS`, both in `ci/evaluate_api.py`, 2 tries and 20 seconds by default.
+**How it passes:** every answer passes every rule. One broken rule fails the step. The number of tries is `EVAL_REPEATS` and the time limit is `EVAL_MAX_LATENCY_SECONDS`, both in `ci/evaluate_api.py`, 2 tries and 20 seconds by default. Why 20 seconds: the API stops waiting after 30 seconds and shows the person an error, as set in `infra/terraform/api_gateway.tf`. A 20-second limit fails a slow release before people see that error. On the passing staging run, the slowest answer took 4.9 seconds.
 
 **Where to see the result:** the log of the **Test the real authenticated application** step, and the totals in the run's report.
 
@@ -57,7 +57,7 @@ It also checks that a question sent without signing in is refused.
 
 **Which questions, and why:** only cases that name an expected policy as their source. The other cases, such as refusals and small talk, have no policy to find. The search runs again as each case's test account, so it sees only the documents that role may read.
 
-**How it passes:** every one of these cases must find its expected policy. The report also shows two numbers, for information:
+**How it passes:** every one of these cases must find its expected policy. If the search misses the policy, the answer cannot be built from it, so one miss fails the step. The report also shows two numbers, for information only:
 
 - **Hit rate:** the share of cases whose policy was found.
 - **Mean reciprocal rank:** how high the policy came. It is 1 when the policy always comes first, and 0.5 when it always comes second.
@@ -72,7 +72,7 @@ It also checks that a question sent without signing in is refused.
 
 **Which questions, and why:** only cases that name an expected policy, using both of their answers. Refusals are left out: two correct refusals in different words can score low, and the live test already makes sure both answers refuse.
 
-**How it passes:** the two answers' similarity must be at least 0.75, set as `MIN_CONSISTENCY` in `ci/quality_checks.py`. In a test, a reworded answer scored 0.87 and an unrelated answer scored 0.07.
+**How it passes:** the two answers' similarity must be at least 0.75, set as `MIN_CONSISTENCY` in `ci/quality_checks.py`. Why 0.75: measured on staging, two correct answers to the same policy question scored 0.94 to 1.0, a reworded answer 0.87, and an unrelated answer 0.07. 0.75 is a chosen value between those, below the correct answers and far above unrelated ones. Measured the same way, two correct refusals in different words scored 0.22 to 0.69, which is why refusals are left out.
 
 **Where to see the result:** the same step's log, and the run's report.
 
@@ -84,13 +84,13 @@ It also checks that a question sent without signing in is refused.
 
 **Which questions, and why:** every test case, with both of its answers. It repeats the live test's content checks with a standard tool, whose results anyone on the team can read.
 
-**How it passes:** 100% of the cases pass, set by `fail-on-threshold` in the workflow. One broken rule fails the step.
+**How it passes:** 100% of the cases pass, set by `fail-on-threshold` in the workflow. Each rule is an exact fact or a forbidden leak, so any miss is a wrong answer or a privacy leak. That is why no failure is allowed.
 
 **Where to see the result:** the log of the **Promptfoo evaluation action** step. There, `case_id` counts from 0, so `case_id` 40 is case 41 in the test cases.
 
 ## DeepEval
 
-**What it is:** an open-source framework for **LLM-as-a-judge**. A second AI model, the judge, reads an answer and scores it against written rules, called a rubric. The judge here is Amazon Nova Pro, reached through the evaluation Lambda and the model gateway.
+**What it is:** an open-source framework for **LLM-as-a-judge**. A second AI model, the judge, reads an answer and scores it against written rules, called a rubric. The judge here is Amazon Nova Pro, reached through the evaluation Lambda and the model gateway. It is the default because the lab's gateway already serves it. It is also the chat model, and a judge from the same model family may go easy on its answers, so a team may pick another one with `EVAL_JUDGE_MODEL`.
 
 **What it checks:** five things in each answer.
 
@@ -99,11 +99,11 @@ It also checks that a question sent without signing in is refused.
 - **Answer relevancy:** the answer must address the question that was asked.
 - **Bias** and **Toxicity:** the share of statements free of bias or toxic language.
 
-**Which questions, and why:** you can give DeepEval any set of test cases. Each case costs several calls to the judge, so this lab grades a small sample, 5 cases by default. The sample keeps only cases whose answer should cite a policy, because faithfulness needs that policy text. `ci/deepeval_check.py` then takes the first such case of each group, in file order. If it still needs more, it adds the next cases. It grades the first answer of each case.
+**Which questions, and why:** you can give DeepEval any set of test cases. Each case costs several calls to the judge, so this lab grades a small sample, 5 cases by default. Five is a chosen starting value to keep the run short, not a measured one. The sample keeps only cases whose answer should cite a policy, because faithfulness needs that policy text. `ci/deepeval_check.py` then takes the first such case of each group, in file order. If it still needs more, it adds the next cases. It grades the first answer of each case.
 
 For example, with the current test cases it grades cases 6, 11, 18, 46 and 49. Cases 46 and 49 re-ask case 6, as a manager and with typos. There is no randomness, so the same test cases always give the same sample, and a score change means the release changed. To grade more, raise `SAMPLE_SIZE` in `ci/deepeval_check.py`, or set the `DEEPEVAL_DEMO_CASES` variable.
 
-**How it passes:** each check gives a **score** from 0 to 1. 1 means the answer fully meets the rule, and 0 means not at all. For example, a faithfulness score of 0.8 means 8 out of 10 claims agree with the policy text. Every score must reach the **pass mark**, 0.7, set as `PASS_MARK` in `ci/deepeval_check.py`. A judge can be wrong, so DeepEval adds a second opinion and never replaces the fact checks. It runs only when the `ENABLE_DEEPEVAL` variable is `true`.
+**How it passes:** each check gives a **score** from 0 to 1. 1 means the answer fully meets the rule, and 0 means not at all. For example, a faithfulness score of 0.8 means 8 out of 10 claims agree with the policy text. Every score must reach the **pass mark**, 0.7, set as `PASS_MARK` in `ci/deepeval_check.py`. 0.7 is a chosen starting value. On the passing staging run, every score was 1.00. An HR expert should review the rubric and the pass mark before real use. A judge can be wrong, so DeepEval adds a second opinion and never replaces the fact checks. It runs only when the `ENABLE_DEEPEVAL` variable is `true`.
 
 **Where to see the result:** the log of the **Evaluate answer quality with DeepEval** step, the run's report, and `deepeval.json` in the run's `hr-candidate-evidence` files.
 
@@ -125,7 +125,7 @@ For example, with the current test cases it grades cases 6, 11, 18, 46 and 49. C
 
 **What it checks:** for each test case, whether both of its answers passed. It saves that as a score called `reference_checks`: 1 if both passed, 0 if not.
 
-**Which questions, and why:** every test case. They are saved in Langfuse as a dataset named `hr-regression-` plus the first 16 characters of a fingerprint of the test cases. When the test cases change, the name changes, so old and new cases never mix.
+**Which questions, and why:** every test case. They are saved in Langfuse as a dataset named `hr-regression-` plus the first 16 characters of a fingerprint of the test cases. Sixteen characters keep the name short while still telling versions of the test cases apart. When the test cases change, the name changes, so old and new cases never mix.
 
 **How it passes:** every case scores 1. Any 0 fails the step.
 

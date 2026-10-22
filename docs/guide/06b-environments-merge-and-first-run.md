@@ -79,7 +79,7 @@ git push
 
 1. Open the **Actions** tab. Click the **newest** run on `main`: the one your merge started.
 2. If the run asks for approval to deploy to `hr-staging`, approve it.
-3. Click the `candidate` job and watch its steps run in order. It publishes the prompt, deploys the new version, and asks 104 test questions. Then it runs the retrieval and consistency check and the evaluation tools. Last, it approves the version and writes the report.
+3. Click the `candidate` job and watch its steps run in order. It publishes the prompt, deploys the new version, and asks every test question twice: 104 answers with the current test cases. Then it runs the retrieval and consistency check and the evaluation tools. Last, it approves the version and writes the report.
 4. Click **Summary** on the run page to read the report.
 5. If the run asks for approval for `hr-production-approval`, approve it. Then open the **Production handoff (dry run)** job. Its log ends with three lines, starting with `DEMONSTRATION ONLY: production would receive`.
 

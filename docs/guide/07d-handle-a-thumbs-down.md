@@ -4,7 +4,7 @@
 
 ## Tests before a release, signals after
 
-The 52 test cases are the **golden set**: fixed questions with known correct answers. The pipeline runs them before every release. They catch the mistakes you already know about.
+The test cases, 52 today, are the **golden set**: fixed questions with known correct answers. The pipeline runs them before every release. They catch the mistakes you already know about.
 
 Real people then ask questions nobody wrote a test for. Their **thumbs down** is how you find the new mistakes. Under each answer, the app shows 👍 and 👎. A vote is saved in Langfuse as a score named `user_feedback` on that answer's trace: `true` for 👍, `false` for 👎. An optional comment is saved with it, with personal data masked.
 
@@ -26,7 +26,7 @@ Setup created an alarm in Amazon CloudWatch. Its name is your `project_name` fro
 
 - When someone votes, the chat function writes the score to its log.
 - A **metric filter** counts every log line that holds a thumbs down.
-- The **alarm** goes off when that count is above 0 in a 5-minute window. It sends a message to the project's alarm topic in Amazon SNS (Simple Notification Service), which emails everyone subscribed.
+- The **alarm** goes off when that count is above 0 in a 5-minute window. Both values are in `infra/terraform/monitoring.tf`, as `threshold` and `period`. Above 0 means a single vote is enough, so you can see the alarm work in the lab. The 5 minutes match the project's other alarms in the same file. It sends a message to the project's alarm topic in Amazon SNS (Simple Notification Service), which emails everyone subscribed.
 
 Subscribe your email address to the topic. Replace `you@example.com` with your own address:
 
@@ -42,7 +42,7 @@ The same topic also receives the project's other alarms: chat errors, server err
 ## Step 2: Give a thumbs down
 
 1. Open the staging app and sign in as Amara.
-2. Ask: `Can I bring my dog to the office?`
+2. Ask: `Can I bring my dog to the office?` It is chosen because no policy covers it, which step 5 uses.
 3. Under the answer, click 👎.
 4. In the box that appears, type `Practice: testing the review process`, and click **Send**.
 
@@ -62,7 +62,7 @@ An alarm emails only when it changes to **In alarm**. More thumbs down while it 
 python scripts/review-thumbs-down.py
 ```
 
-The script finds every thumbs down from the last 7 days and adds each answer's trace to a Langfuse **annotation queue**: a list of answers waiting for a reviewer. On its first run it also creates:
+The script finds every thumbs down from the last 7 days, and adds each answer's trace to a Langfuse **annotation queue**: a list of answers waiting for a reviewer. Seven days is the script's default, a judgement call that covers a week of feedback. Change it with `--days`, such as `--days 30`. On its first run it also creates:
 
 - The queue, **Thumbs-down review**.
 - A score called `failure_cause`, with the five causes a reviewer can pick from (see step 5).
@@ -115,15 +115,15 @@ The same pull request adds the question to the golden set, in `lambda/data/evalu
 
 From then on, every release must answer that question correctly. The same mistake cannot come back unnoticed.
 
-You do not add a case in this lab. The rest of the guide counts on the 52 cases.
+You do not add a case in this lab. Other documents give expected results, such as 104 answers per run, that assume today's 52 cases.
 
 ## How companies alert on feedback
 
 The lab's alarm emails on every single thumbs down, so you can see it work. With real traffic, that would be too noisy. Companies usually change three things:
 
-- **Alert on a rate, not a vote.** For example: more than 10% thumbs down in the last hour, with at least 20 votes. One unhappy person does not wake anyone up.
+- **Alert on a rate, not a vote.** For example: more than 10% thumbs down in the last hour, with at least 20 votes. These numbers only illustrate the idea. A team sets them from its own traffic. One unhappy person then does not wake anyone up.
 - **Send it where the team works.** A Slack or Teams channel, or the on-call tool, instead of one person's inbox.
-- **Compare releases.** Each trace carries its release, such as `v1.0.4`. A thumbs-down rate that doubles after a release is a reason to roll back, as in document 08, even when every golden test passed.
+- **Compare releases.** Each trace carries its release, such as `v1.0.4`. A thumbs-down rate that jumps after a release, for example doubles, is a reason to roll back, as in document 08, even when every golden test passed.
 
 Another option: Langfuse has its own **Alerts**, which can watch the `user_feedback` score and post to Slack. This lab uses CloudWatch, because it sends email and already holds the project's other alarms.
 

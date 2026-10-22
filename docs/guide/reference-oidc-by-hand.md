@@ -16,12 +16,12 @@ source .venv/Scripts/activate 2>/dev/null || source .venv/bin/activate
 python scripts/prepare-oidc.py --dry-run
 ```
 
-It prints `Creating the role` followed by the role's name, such as `hr-ci-ai-chatbot-github-ci`, and ends with `Dry run: nothing was changed in AWS.` The name is your `project_name`, from `infra/terraform/terraform.tfvars`, followed by `-github-ci`. Write the name down for step 3.
+It prints `Creating the role` followed by the role's name, such as `hr-ci-yourname-github-ci`, and ends with `Dry run: nothing was changed in AWS.` The name is your `project_name`, from `infra/terraform/terraform.tfvars`, followed by `-github-ci`. Write the name down for step 3.
 
 The two files are in `build/`:
 
 - `github-oidc-trust.json`: who may use the role. This is the **trust policy**. It allows only jobs in your repository's `hr-staging` environment, with the audience `sts.amazonaws.com`.
-- `github-oidc-permissions.json`: what the role may do. It has six permissions, one for each service listed at the top of document 05.
+- `github-oidc-permissions.json`: what the role may do. It currently has six permissions, one for each service listed at the top of document 05.
 
 ## Step 2: Register GitHub as an identity provider
 
@@ -43,13 +43,13 @@ Other projects in your AWS account may use the same provider, so it stays in pla
 2. Under **Trusted entity type**, choose **Custom trust policy**.
 3. Delete the example policy in the editor, paste the whole contents of `build/github-oidc-trust.json`, and click **Next**.
 4. On **Add permissions**, select nothing and click **Next**. The permissions come from the second file in step 4.
-5. Name the role exactly as the dry run printed, such as `hr-ci-ai-chatbot-github-ci`, and click **Create role**.
+5. Name the role exactly as the dry run printed, such as `hr-ci-yourname-github-ci`, and click **Create role**.
 
 ## Step 4: Add the permissions as an inline policy
 
 1. Open the new role. On its **Permissions** tab, click **Add permissions → Create inline policy**.
 2. Switch the editor to **JSON**, delete the example, paste the whole contents of `build/github-oidc-permissions.json`, and click **Next**.
-3. Name the policy `HRLabOnly` and click **Create policy**.
+3. Name the policy `HRLabOnly` and click **Create policy**. Use exactly this name: it is `POLICY_NAME` in `scripts/prepare-oidc.py`, so a later run of the script updates this same policy instead of adding a second one.
 
 ## Step 5: Save the role ARN
 
@@ -63,7 +63,7 @@ python scripts/github-settings.py
 
 Replace `PASTE-THE-ROLE-ARN-HERE` with the ARN before you run it.
 
-**Expected:** `GitHub settings: wrote build/github-settings.txt (15 variables, 2 secrets).`, with no `still missing` line.
+**Expected:** `GitHub settings: wrote build/github-settings.txt (15 variables, 2 secrets).`, with no `still missing` line. The counts are what the current pipeline needs.
 
 ## Check your work
 
@@ -73,4 +73,4 @@ Run the script with `--dry-run` again. It finds your role by its name, so it pla
 python scripts/prepare-oidc.py --dry-run
 ```
 
-**Expected:** the output includes `Role hr-ci-ai-chatbot-github-ci already exists: updating it`, with your role name, and ends with `Dry run: nothing was changed in AWS.`
+**Expected:** the output includes `Role hr-ci-yourname-github-ci already exists: updating it`, with your role name, and ends with `Dry run: nothing was changed in AWS.`

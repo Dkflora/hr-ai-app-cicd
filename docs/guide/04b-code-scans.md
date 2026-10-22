@@ -10,7 +10,9 @@ The `checks` job from document 04 tests what the code does. The scans in this do
 - **Bandit** (Python): risky patterns, such as running a shell command, opening a web address or writing to a shared folder. It rates each finding high, medium or low.
 - **pip-audit** (Python packages) and **npm audit** (React app packages): compare each package version with a public list of known vulnerabilities.
 
-The tool versions are fixed in `ci/requirements-scan.txt` and `frontend/package.json`. A new tool release then cannot change the results without anyone noticing.
+**Why these tools:** each one is free and open source. Together they cover three concerns: style and likely bugs, risky code, and vulnerable packages. Choosing them was a judgement call for this lab. Other tools, such as Semgrep or Snyk, do similar work.
+
+The tool versions are fixed, so a new tool release cannot change the results without anyone noticing. Ruff 0.17.1, Bandit 1.9.4 and pip-audit 2.10.1 are pinned in `ci/requirements-scan.txt`. ESLint and its plugins are pinned by `frontend/package-lock.json`. ESLint stays on version 9, because its React plugin does not support version 10 yet.
 
 ## Why the scans only report here
 
@@ -91,7 +93,7 @@ grep -nE '^  (lint|python-security|frontend-security):' .github/workflows/code-s
 What the file does:
 
 - `on:` and `permissions:`: The same triggers as the delivery workflow, and a read-only token. The scans need no AWS or Langfuse keys.
-- `jobs:`: Three jobs with no `needs:`, so GitHub runs them at the same time.
+- `jobs:`: Three jobs with no `needs:`, so GitHub runs them at the same time. The scans are split by concern, lint, Python security and React security, so a slow scan does not hold up the others. That split is a judgement call; one job running all five tools would also work.
 - `pip install -r ci/requirements-scan.txt`: Installs Ruff, Bandit and pip-audit at fixed versions.
 - `npm --prefix frontend ci`: Installs ESLint and its React plugins from the lockfile.
 - `python ci/code_scan.py ...`: Runs the tools for that job and writes the summary.
@@ -108,15 +110,15 @@ On GitHub, open the **Actions** tab and click the newest **Code scan** run. The 
 
 Your pull request now shows 8 checks: the `checks` job and the three scan jobs, each once for the push and once for the pull request.
 
-**Expected:** all three jobs finish green, and the summary shows:
+**Expected:** all three jobs finish green. With the current code, measured when this guide was written, the summary shows:
 
-- **Ruff:** about 60 findings, most of them about the order of imports.
-- **ESLint:** 2 errors and 1 warning, in `Chat.jsx` and `SignIn.jsx`.
-- **Bandit:** 0 high, 5 medium, about 47 low.
+- **Ruff:** 60 findings, most of them about the order of imports.
+- **ESLint:** 2 errors and 1 warning, in `Chat.jsx` and `SignIn.jsx`. They are left in the code on purpose, so you have real findings to read.
+- **Bandit:** 0 high, 5 medium, 47 low.
 - **pip-audit:** 0 packages with known vulnerabilities, for both requirements files.
 - **npm audit:** 0 critical, 0 high, 0 moderate, 0 low.
 
-The counts can change when the tools' vulnerability lists are updated.
+The counts change when the code changes, or when the tools' vulnerability lists are updated.
 
 ## Step 3: Read the findings like a reviewer
 
@@ -134,7 +136,7 @@ python -m pip install -r ci/requirements-scan.txt
 python ci/code_scan.py python-security
 ```
 
-**Expected:** the same Bandit and pip-audit sections as on the Summary page, printed in the terminal. pip-audit can take a few minutes, because it installs each requirements file in a temporary environment first.
+**Expected:** the same Bandit and pip-audit sections as on the Summary page, printed in the terminal. pip-audit is the slowest scan, because it installs each requirements file in a temporary environment first. On GitHub, the whole Python security job took 34 seconds in one measured run.
 
 ## Step 4: Turn on secret scanning
 

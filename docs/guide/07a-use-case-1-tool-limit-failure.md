@@ -4,17 +4,17 @@
 
 **OWASP LLM risk:** LLM06 Excessive agency and LLM10 Unbounded consumption. A limit on tool rounds stops the assistant from looping forever.
 
-In this use case you break the assistant on purpose. A **tool round** is one turn where the model asks for a tool, such as the policy search, and reads the result. The assistant normally gets 5 rounds. You cut it to 1.
+In this use case you break the assistant on purpose. A **tool round** is one turn where the model asks for a tool, such as the policy search, and reads the result. The limit is `MAX_TOOL_ROUNDS` in `lambda/app/assistant.py`, 5 in the working app. Nothing measured sets 5: it was chosen as enough rounds for a question that needs several lookups, and few enough to stop a loop quickly. You cut it to 1, for the reason in the next section.
 
 The code still runs and the unit tests still pass, so the pull request looks fine. After you merge it, the test that asks the real app questions fails. The `approved` pointer stays on the last good version. Then you repair the change with a second pull request.
 
-This use case fails the same way every time, so run it first.
+This use case fails the same way every time, so run it first. The three use cases each break a different layer: 07a the code, 07b the prompt, 07c the search. Each one maps to a different OWASP risk.
 
 ## How the tool loop works
 
-`lambda/app/assistant.py` gives the model up to `MAX_TOOL_ROUNDS` turns. On the first turn, the model must call a tool, such as the policy search. On the next turn, it writes the answer from what the tool returned.
+`lambda/app/assistant.py` gives the model up to `MAX_TOOL_ROUNDS` turns. On the first turn, the code forces the model to call a tool, such as the policy search, so it never answers a policy question from memory. On the next turn, it writes the answer from what the tool returned.
 
-With only one round, the policy search uses up that one turn. No turn is left to write the answer. So the employee gets this message: `Sorry, I couldn't finish that answer. Please try again.`
+With only one round, the policy search uses up that one turn. No turn is left to write the answer. That is why the break uses 1: it fails every time, not only sometimes. So the employee gets this message: `Sorry, I couldn't finish that answer. Please try again.`
 
 ## Branches in this use case
 
@@ -33,7 +33,7 @@ git status --short
 grep -n '^MAX_TOOL_ROUNDS' lambda/app/assistant.py
 ```
 
-**Expected:** `git status --short` prints nothing, and the last line is `54:MAX_TOOL_ROUNDS = 5`.
+**Expected:** `git status --short` prints nothing, and the last line is `54:MAX_TOOL_ROUNDS = 5`. The line number is where the setting sits in the current code. If yours differs, use the number `grep` printed.
 
 Before you break anything, write down three things from your last passing run:
 
@@ -69,7 +69,7 @@ MAX_TOOL_ROUNDS = 1
 
 This gives the assistant one round only. The policy search uses it up, so no turn is left to write the answer. The code still runs and the unit tests still pass, so only the pipeline's live questions can catch it.
 
-Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.0` to `1.0.1`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. Save both files.
+Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.0` to `1.0.1`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. You raise the last number because this change adds no feature: in semantic versioning (document 06a), that is a patch. Save both files.
 
 Check the change before you commit:
 

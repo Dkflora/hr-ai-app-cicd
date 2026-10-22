@@ -31,7 +31,7 @@ The script does the rest, in this order:
 
 Two options you can add to the command:
 
-- `--release-names`: use it if you will set up the lab again with the same `project_name`. Without it, AWS keeps two secret names blocked for 30 days.
+- `--release-names`: use it if you will set up the lab again with the same `project_name`. Two secrets hold the test accounts' passwords and the Langfuse keys. They use AWS's default recovery window: a deleted secret can be restored for 30 days, and its name stays taken. This option deletes them for good at once.
 - `--dry-run`: shows what the script would delete, without deleting anything.
 
 **Expected:** `Deleted the role`, then `Nothing tagged Project=` followed by your project name and `is left in AWS.`

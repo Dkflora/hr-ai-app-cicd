@@ -49,7 +49,7 @@ Each item below is one step in the workflow file, with the script or action it r
 - **Deploy the backend** (`ci/deploy_candidate.py`): uploads the code as a new Lambda version, and moves `candidate` to it.
 
 **Test**
-- **Ask the real app**, also called the **API test** (`ci/evaluate_api.py`): signs in as the test accounts and asks one warm-up question that is not timed. Then it asks every question in [the test cases](reference-test-cases.md) twice. A wrong answer, or an answer slower than 20 seconds, fails the step.
+- **Ask the real app**, also called the **API test** (`ci/evaluate_api.py`): signs in as the test accounts and asks one warm-up question that is not timed. Then it asks every question in [the test cases](reference-test-cases.md) twice. A wrong answer, or an answer slower than the time limit, fails the step. Document 06a1 explains the two tries and the 20-second limit.
 - **Check retrieval and consistency** (`ci/quality_checks.py`): checks that the search finds each case's expected policy, and that both answers to each question say the same thing.
 
 **Evaluate the answers**
@@ -65,7 +65,7 @@ DeepEval and Evidently run only when the GitHub variables `ENABLE_DEEPEVAL` and 
 
 ## The answers file: build/evaluation.json
 
-The API test saves every answer it gets in one file, `build/evaluation.json`, on GitHub's machine. For each of the 104 answers it records:
+The API test saves every answer it gets in one file, `build/evaluation.json`, on GitHub's machine. With the current test cases, that is 52 questions asked twice, so 104 answers. For each answer it records:
 
 - Which test case it was, and whether this was the first or second try.
 - The full answer and the policy sources it cited.

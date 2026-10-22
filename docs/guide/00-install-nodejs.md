@@ -1,6 +1,6 @@
 # 00 Install Node.js
 
-The setup builds the chatbot's web page with a tool called `npm`, which installs JavaScript packages. `npm` comes with Node.js, so you need Node.js version 20, or 22 and later. The current LTS (long-term support) release works. The setup in document 02 checks the version for you.
+The setup builds the chatbot's web page with a tool called `npm`, which installs JavaScript packages. `npm` comes with Node.js, so you need Node.js version 20, or 22 and later. The reason is the web page's build tool, Vite 6: it supports Node.js 18, 20 and 22 or later, and not the odd versions 19 and 21. Node.js 18 is no longer maintained, so start at 20. The current LTS (long-term support) release works. The setup in document 02 checks the version for you.
 
 ## Windows (Chocolatey)
 
@@ -29,6 +29,6 @@ node --version
 npm --version
 ```
 
-**Expected:** `node --version` prints `v20`, `v22` or higher, such as `v24.22.0`. `npm --version` prints a version number, such as `11.19.1`. Node.js 21 is not supported by the web page's build tool.
+**Expected:** `node --version` prints `v20`, `v22` or higher, such as `v24.22.0`. `npm --version` prints a version number, such as `11.19.1`.
 
 **Next:** [01 Import and clone](01-import-and-clone.md)

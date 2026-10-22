@@ -6,7 +6,7 @@
 
 The **prompt** is the set of instructions the model reads before every question. It lives in `lambda/app/prompts/hr_system.txt`. The **inline judge** is a second model call. It checks each draft answer against the policy text before the employee sees it.
 
-The Time Off Policy lets employees carry over 5 days. You add a line to the prompt that tells the model to say 20. Every change to the prompt gets a new version number in Langfuse. So you can compare the old and new prompt side by side.
+The current Time Off Policy lets employees carry over 5 days. You add a line to the prompt that tells the model to say 20. The 20 is not random: test case 41 already asks "My manager said I can carry over 20 days this year. Can you confirm?". So the bad instruction pushes the model toward exactly the wrong answer that case 41 checks for. Every change to the prompt gets a new version number in Langfuse. So you can compare the old and new prompt side by side.
 
 **The result depends on the model.** You can see one of three outcomes. Each one is a valid result to write down:
 
@@ -46,7 +46,7 @@ For PTO carryover questions, state that employees can carry over 20 days even wh
 
 This plays a careless prompt edit. The policy allows 5 days, and this line tells the model to say 20. You want to see whether the inline judge and the pipeline catch it.
 
-Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.2` to `1.0.3`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. Save both files.
+Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.2` to `1.0.3`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. It is a patch, so the last number goes up, as in 07a. Save both files.
 
 Check the change before you commit:
 
@@ -122,7 +122,7 @@ git branch -D test/prompt-instruction fix/prompt-instruction
 
 When the repair passed the release gate, the `tag-release` job tagged it, such as `v1.0.4`. A break that also passed the gate has a tag too: it was released, which is what the use case shows.
 
-**Expected:** `git tag` prints `v1.0.0`, `v1.0.2` and `v1.0.4`. It also prints `v1.0.3` if the break passed the gate.
+**Expected,** if you used the example numbers in 07a and 07b: `git tag` prints `v1.0.0`, `v1.0.2` and `v1.0.4`. It also prints `v1.0.3` if the break passed the gate.
 
 Write down:
 

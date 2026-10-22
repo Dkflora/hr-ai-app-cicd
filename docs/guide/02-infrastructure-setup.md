@@ -49,11 +49,12 @@ langfuse_base_url = "https://us.cloud.langfuse.com"
 trace_synthetic_content = true
 ```
 
+- `aws_region`: where everything runs. `us-east-1` is chosen because Amazon Bedrock offers the lab's AI models there: Amazon Nova Pro, Nova Lite and Titan Embeddings V2. The model gateway also sends some Nova Lite calls to `us-west-2`, set as `gateway_secondary_region` in `infra/terraform/variables.tf`.
 - `project_name`: the start of every AWS resource name. If two students choose the same name, their resources clash.
 - `cognito_domain_prefix`: part of the sign-in page address. It must be unique across all of AWS.
 - `langfuse_base_url`: the same Langfuse address as in `.env.langfuse`. The setup stops if the two are different.
 - `domain_name`: leave it empty. The app then uses its CloudFront address, which starts with `https://` and ends in `cloudfront.net`. A company would put its own web address here.
-- `aurora_instance_count`: the number of database servers. `1` costs half as much as `2`. With `2`, a second server takes over if the first one fails.
+- `aurora_instance_count`: the number of database servers. `1` costs half as much as `2`. With `2`, a second server takes over if the first one fails. The lab uses `1` to save money. A company running real HR data would use `2`.
 - `trace_synthetic_content`: `true` lets Langfuse store the made-up questions and answers, so you can read them.
 
 Leave the other lines in the file as they are. `alarm_email` stays empty: document 07d connects your email to the alarms another way.
@@ -82,7 +83,7 @@ bash scripts/setup-lab.sh
 
 First the script checks your computer and your AWS account (`scripts/check-setup.py`):
 
-- **Tools:** Python 3.10 or later, AWS CLI version 2, Terraform 1.9 or later, and Node.js with `npm` from document 00.
+- **Tools:** Python 3.10 or later, AWS CLI version 2, Terraform 1.9 or later, and Node.js with `npm` from document 00. These are the lowest versions the script accepts. Terraform's comes from `required_version` in `infra/terraform/versions.tf`.
 - **Settings:** both files from steps 3 and 4, and your Langfuse keys.
 - **AWS:** you are signed in to AWS in this terminal, the AI models are enabled for your account in Amazon Bedrock, and your `cognito_domain_prefix` is still free.
 

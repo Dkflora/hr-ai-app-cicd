@@ -197,7 +197,7 @@ The steps match the list in document 06a. A few parts of the YAML are new:
 - `if: success()` on the approval step means: run only if every earlier step passed.
 - `JOB_STATUS: ${{ job.status }}` on the report step tells `ci/report.py` whether any earlier step failed. If one did, the report says `Release gate: FAIL`, even when every answer passed. The report and the approval always agree.
 - `if: vars.ENABLE_DEEPEVAL == 'true'` turns DeepEval on or off with a GitHub variable. Evidently has the same switch, `ENABLE_EVIDENTLY`.
-- `actions/upload-artifact` keeps the listed files for 3 days, under **Artifacts** on the run page. The production and release jobs in document 06a3 read them from there.
+- `actions/upload-artifact` keeps the listed files for 3 days, under **Artifacts** on the run page. The production and release jobs in document 06a3 read them from there. Three days, set by `retention-days`, is a chosen value. It is long enough for those jobs and for you to download the files. It is short because the score files quote parts of answers, and anyone can download a public repository's files.
 
 If a job name appears twice, you ran the block twice. Create the file again with document 04, step 2, then run this block once.
 

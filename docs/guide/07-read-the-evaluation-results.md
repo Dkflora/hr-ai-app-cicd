@@ -33,8 +33,8 @@ A case passes only if **both** of its answers pass. One failed answer stops the 
 The report, written by `ci/report.py`, shows totals only. Its lines, from the top:
 
 - **Cases passing every repetition:** such as `52/52`. A case counts only if both of its answers passed.
-- **Illustrative 95% Wilson interval:** a statistics range, such as `93.1%–100.0%`. It says what pass rate the app might have on similar questions, given how many cases you tested. With 52 cases the range is wide, so treat it as a reminder that 52 questions are a small sample, not as a measured error rate.
-- **Application requests recorded:** the number of answers, 104 on a full run.
+- **Illustrative 95% Wilson interval:** a statistics range, such as `93.1%–100.0%`. It says what pass rate the app might have on similar questions, given how many cases you tested. The 95% is the usual level in statistics. With the current 52 cases the range is wide. Treat it as a reminder that a fixed list of questions is a small sample, not as a measured error rate.
+- **Application requests recorded:** the number of answers. With the current test cases, 52 questions asked twice give 104.
 - The speed, retrieval, consistency and DeepEval sections, then the last line, **Release gate: PASS** or **FAIL**.
 
 To see which case failed, open the step's own log, such as the Promptfoo step. There, `case_id` counts from 0, so `case_id` 40 is case 41 in the test case list.
@@ -71,9 +71,9 @@ Open **Traces** and set the time range to when your run happened. Each test ques
 ## What the thresholds mean
 
 - **Promptfoo at 100%** means every question in this fixed list passed, every time. It does not mean the chatbot answers every possible question correctly.
-- **20 seconds per answer** is the longest an employee should wait. The inline judge has to fit its check inside that same time.
+- **20 seconds per answer** fails a slow release before people hit the API's 30-second limit, where they would get an error. The inline judge has to fit its check inside that same time. On the passing staging run, the slowest answer took 4.9 seconds.
 - **Retrieval hit rate of 100%** means the search found the expected policy for every question in this list. The mean reciprocal rank shows how near the top of the results it was: 1 means always first.
-- **Consistency of 0.75** tells "the same answer in other words" (about 0.87 in testing) from "a different answer" (about 0.07). It applies to policy answers only.
+- **Consistency of 0.75** is a chosen value between two staging measurements. The same answer in other words scored about 0.87, and a different answer about 0.07. It applies to policy answers only.
 - **DeepEval at 0.7** applies to every check, and higher is better. It is a starting value for this lab. Before a real company uses it, an HR expert must review the grading rules.
 - **Evidently** compares the overall pattern of lengths and times between runs. Its stored reference comes from a made-up failing run, so expect differences.
 
@@ -85,6 +85,6 @@ Open the report from your passing run and answer these:
 
 1. How many cases passed both of their answers, and how many questions did the pipeline send in total?
 2. Pick case 2 from [the test cases](reference-test-cases.md). Which fact must the answer **not** contain, and why?
-3. DeepEval uses a model to grade only 5 cases. What could it catch that the fact checks miss, and what could it get wrong?
+3. DeepEval uses a model to grade only a small sample of cases, 5 by default. What could it catch that the fact checks miss, and what could it get wrong?
 
 **Next:** [07a Use case 1: tool-limit failure](07a-use-case-1-tool-limit-failure.md)

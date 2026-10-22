@@ -28,9 +28,9 @@ source .venv/Scripts/activate 2>/dev/null || source .venv/bin/activate
 python -m unittest discover -s ci/tests -v
 ```
 
-**Expected:** every test ends with `ok`. Near the end, the output says `Ran 54 tests`, and the last line is `OK`.
+**Expected:** every test ends with `ok`, and the last line is `OK`. Near the end, the output says how many tests ran. With the current tests that is `Ran 54 tests`. The number grows when someone adds a test.
 
-The tests are the seven files in `ci/tests/`. They check the prompt's structure, the release package, the inline judge and the connection to the model gateway. They also check the tracing code, user feedback, the rollback script, the release number, and that the Evidently drift reference matches the test cases. They use fakes instead of AWS and the AI model, so they need no access and run in seconds. To see an example, open `ci/tests/test_release.py`.
+The tests are the files in `ci/tests/`, currently seven. They check the prompt's structure, the release package, the inline judge and the connection to the model gateway. They also check the tracing code, user feedback, the rollback script, the release number, and that the Evidently drift reference matches the test cases. They use fakes instead of AWS and the AI model, so they need no access and run in seconds. To see an example, open `ci/tests/test_release.py`.
 
 ## Step 2: Create the workflow file
 
@@ -83,18 +83,19 @@ EOF
 
 What each part does:
 
-- `on:`: The workflow starts on pull requests, on pushes to `main`, `feature/**`, `fix/**` and `test/**`, and when you click **Run workflow** in GitHub.
+- `on:`: The workflow starts on pull requests, on pushes to `main`, `feature/**`, `fix/**` and `test/**`, and when you click **Run workflow** in GitHub. Those branch patterns match the branch names this lab uses: `feature/pipeline` here, and `test/...` and `fix/...` branches in the use cases of document 07. A push to a branch with any other name starts nothing.
 - `permissions: contents: read`: The job can read the code and nothing else.
-- `concurrency: hr-staging`: Only one run at a time. Two deployments never overlap, because there is only one staging environment: the test copy of the app that setup created in document 02.
-- `runs-on: ubuntu-24.04`: The job runs on a GitHub runner with Ubuntu Linux 24.04. Naming the exact version keeps the runner the same until you change it.
+- `concurrency: hr-staging`: Only one run at a time. Two deployments never overlap, because there is only one staging environment: the test copy of the app that setup created in document 02. `cancel-in-progress: false` makes a new run wait instead of stopping the one already running, so a deployment is never cut off halfway.
+- `runs-on: ubuntu-24.04`: The job runs on a GitHub runner with Ubuntu Linux 24.04. The name `ubuntu-latest` would move to a newer Ubuntu whenever GitHub decides. Naming the exact version keeps the runner the same until you change it.
 - `persist-credentials: false`: The Git token is removed from the runner after the code is downloaded.
 - `actions/checkout`: Downloads your repository's code onto the runner.
+- `@v7` after an action's name: the major version of that action. The lab uses the newest major versions, which run on Node.js 24, because GitHub is retiring actions that run on Node.js 20.
 - `fetch-depth: 0`: Downloads the full history, including the release tags, so the next step can compare versions. A release tag, such as `v1.0.0`, marks the commit of a release. The pipeline creates them, starting in document 06b.
-- `actions/setup-python` and `pip install -r ci/requirements.txt`: Installs Python 3.12 and the packages the pipeline scripts need.
+- `actions/setup-python` and `pip install -r ci/requirements.txt`: Installs Python 3.12 and the packages the pipeline scripts need. Python 3.12 matches the Lambda runtime, `python_runtime` in `infra/terraform/lambda.tf`, so the code is tested on the same Python it runs on in AWS.
 - `Release version is new`: The `VERSION` file at the top of the repository holds the release number, such as `1.0.0`. `ci/check_version.py` checks that it is newer than every release tag, so a number is never used twice. Before the first release there are no tags. Then it prints `Release version v1.0.0: the first release.`
 - `unittest discover -s ci/tests`: Runs the same unit tests as step 1.
 - `ci/release.py`: Checks the prompt and builds the backend package, `build/function.zip`. It adds a `release.json` that records the release number, the commit and the prompt.
-- `actions/setup-node`, `npm ci` and `npm run build`: Installs Node.js 22 and the website's packages, exactly as listed in `frontend/package-lock.json`, then builds the React website. A build error fails the job.
+- `actions/setup-node`, `npm ci` and `npm run build`: Installs Node.js 22 and the website's packages, exactly as listed in `frontend/package-lock.json`, then builds the React website. A build error fails the job. Node.js 22 is a long-term support release; any version the setup accepts, 20 or 22 and later, would build the site. `npm ci` installs the exact versions in the lockfile, so every run builds the same website.
 
 ## Step 3: Commit and push
 

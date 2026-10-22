@@ -10,7 +10,7 @@ A plain `git clone` of the original repository is not enough. You need your own 
 
 1. Open [GitHub Import](https://github.com/new/import).
 2. Source URL: `https://github.com/kserge2001/hr-rag-cicd-student-starter.git`
-3. Owner: **your own account**. Repository name: `hr-rag-lab`.
+3. Owner: **your own account**. Repository name: `hr-rag-lab`. Use exactly this name: every command in the guide works in the folder `~/hr-rag-lab`.
 4. Visibility: **Public**. All the data is made up. Also, private repositories need a paid GitHub plan for the secrets you add later.
 5. Click to begin the import. When it finishes, the new repository's address must start with `https://github.com/YOUR-USERNAME/`.
 

@@ -7,7 +7,7 @@ variable "project_name" {
 }
 
 variable "aws_region" {
-  description = "Region for everything except the CloudFront WAF. Bedrock must offer Claude Haiku 4.5 and Titan Embeddings V2 here."
+  description = "Region for everything except the CloudFront WAF. Bedrock must offer the chat models (Amazon Nova Pro and Nova Lite by default) and Titan Embeddings V2 here."
   type        = string
   default     = "us-east-1"
 }

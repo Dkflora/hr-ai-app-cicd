@@ -40,7 +40,7 @@ grep -n -A1 'A PTO question can retrieve carryover alone' lambda/app/retrieval.p
 grep -nF 'if re.search(r"\b(pto' lambda/app/retrieval.py
 ```
 
-**Expected:** the first command prints the comment line, such as `97:`. The second prints two `if re.search(...)` lines, such as `101:` and `114:`.
+**Expected:** the first command prints the comment line, such as `97:`. The second prints two `if re.search(...)` lines, such as `101:` and `114:`. These line numbers are from the current code. Use the ones your `grep` prints.
 
 Change the first one only. It is the line just below the comment, indented by 4 spaces. The other one belongs to the search for old policy versions. Leave it as it is.
 
@@ -52,7 +52,7 @@ In VS Code, open `lambda/app/retrieval.py` and go to the first line number from 
 
 Leave the indented lines below it unchanged. A block under `if False:` never runs, so this switches off both supplemental searches. A PTO question may now reach the model without the carry-over rule or the yearly allowance. You want to see whether the pipeline notices the missing evidence.
 
-Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.4` to `1.0.5`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. Save both files.
+Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.4` to `1.0.5`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. It is a patch, so the last number goes up, as in 07a. Save both files.
 
 Check the change before you commit:
 
@@ -73,11 +73,11 @@ git push -u origin test/retrieval-evidence
 1. Open a pull request from `test/retrieval-evidence` into `main`. The `checks` job passes.
 2. Get it reviewed and merge it.
 3. In GitHub, open the **Actions** tab and click the **new** run on `main`. The report's last line says whether the release gate passed. The report gives only totals.
-4. To see each case, open the **Promptfoo evaluation action** step's log. Look at the PTO cases, such as cases 7, 20, 24, 25 and 41 in [the test cases](reference-test-cases.md). Promptfoo numbers cases from 0, so case 7 appears as `case_id` 6.
+4. To see each case, open the **Promptfoo evaluation action** step's log. Look at the cases that ask about PTO allowance or carry-over, because those are the questions the supplemental searches serve. With the current [test cases](reference-test-cases.md), that is cases 7, 20, 24, 25 and 41. Promptfoo numbers cases from 0, so case 7 appears as `case_id` 6.
 
 ## Step 4: Inspect the trace
 
-Sign in to the chatbot as Amara. Ask these three questions in one conversation:
+Sign in to the chatbot as Amara. Ask these three questions in one conversation. The first needs the yearly allowance, the second the carry-over rule, and the third both, so together they depend on both supplemental searches:
 
 > How many PTO days do employees receive each year?
 
