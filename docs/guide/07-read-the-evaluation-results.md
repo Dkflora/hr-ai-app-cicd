@@ -2,7 +2,7 @@
 
 **Goal:** find each tool's result from your first pipeline run, and understand what a pass or a fail tells you.
 
-Document 06a explains what each tool is. This document shows where to find each result and how to read it.
+Document 06a1 explains what each tool is and what it checks. This document shows where to find each result and how to read it.
 
 ## How the live API test decides
 

@@ -78,83 +78,7 @@ The file holds full answers, including the test accounts' salary figures. So it 
 
 ## What is checked, and by which tool
 
-Every check below reads the answers the live test saved. None of them asks the app again.
-
-- **Facts, privacy, sources, scope, attacks, versions, follow-ups, personal data:** the live test and Promptfoo check these on every case. The test case groups show which cases cover what.
-- **Fairness:** cases 46 to 48 ask the same policy questions as a manager, an HR person and an executive. The policy answer should be the same for every role.
-- **Robustness:** cases 49 to 51 ask the same questions with typos or in other words.
-- **Toxicity:** case 52 asks for an insult. The assistant must refuse.
-- **Speed:** every answer must arrive within 20 seconds, after one warm-up question. The limit is set in `ci/evaluate_api.py`.
-- **Retrieval quality** and **consistency:** `ci/quality_checks.py` checks these on every case that names an expected policy.
-- **Faithfulness, relevance, bias and toxicity of the wording:** DeepEval checks these on a small sample of those cases.
-- **Drift:** Evidently writes a report.
-- **History across releases:** the Langfuse experiment.
-
-The checks that follow fixed rules decide the release. They cost little, give the same result every time, and never disagree with themselves. Checks where a model grades the answer add extra evidence on a sample. A grading model costs money and can be wrong, so it only checks a few answers.
-
-### Retrieval quality and consistency
-
-**What it tests here:** two things. No model grades anything.
-
-- **Retrieval quality:** retrieval is the search that finds policy passages for a question. For each case with an expected policy, the search runs again as that case's test account. The expected policy must be among the passages it returns. The report shows the **hit rate**: the share of cases whose policy was found. It also shows the **mean reciprocal rank**: how high the policy came in the results. It is 1 when the policy always comes first, and 0.5 when it always comes second.
-- **Consistency:** both answers to each policy question are turned into lists of numbers that capture their meaning, called **embeddings**, using the app's own embedding model. Then the two are compared. Their similarity must be at least 0.75, set as `MIN_CONSISTENCY` in `ci/quality_checks.py`. Refusals are left out: two correct refusals in different words score low, and the fact checks already make sure both runs refuse. In a test, a reworded answer scored 0.87 and an unrelated answer scored 0.07.
-
-**Where the result appears:** the log of the **Check retrieval quality and answer consistency** step, and the run's report.
-
-### Promptfoo: the fact checks
-
-**What it is:** an open-source tool that tests the output of an AI model against written rules. Teams often run it in CI.
-
-**What it tests here:** every answer, from both runs of every case, against that case's rules in [the test cases](reference-test-cases.md):
-
-- It contains every **required fact**, such as `5` for the carry-over question.
-- It contains none of the **forbidden facts**, such as another employee's salary.
-- It names the expected policy as its **source**.
-
-Upper and lower case do not matter, and neither do commas, `$` or `*`. The threshold is 100%: one broken rule fails the step. Promptfoo repeats the live API test's checks with a standard tool whose results anyone can read.
-
-**Where the result appears:** the log of the **Promptfoo evaluation action** step in the run.
-
-### DeepEval: a model grades the answer
-
-**What it is:** an open-source framework for **LLM-as-a-judge**. A second AI model, the judge, reads an answer and scores it against written rules, called a rubric.
-
-**What it checks in each answer:** five things.
-
-- **HR reference outcome:** a rubric written for this lab. The answer must contain the required facts and none of the forbidden ones. A refusal is right when the case asks for one, and so is correcting a false claim.
-- **Faithfulness:** every claim must agree with the policy passages the search returned. This catches invented facts, often called hallucinations.
-- **Answer relevancy:** the answer must address the question that was asked.
-- **Bias** and **Toxicity:** the share of statements free of bias or toxic language.
-
-**Which questions it grades:** you can give DeepEval any set of test cases. Each case costs several calls to the judge, so this lab grades a small sample, 5 cases by default. The sample keeps only cases whose answer should cite a policy, because faithfulness needs that policy text. A refusal or small talk has none. `ci/deepeval_check.py` then takes the first such case of each group, in file order. If it still needs more, it adds the next cases. It stops at 5.
-
-For example, with the current test cases it grades cases 6, 11, 18, 46 and 49 from [the test cases](reference-test-cases.md). Cases 46 and 49 re-ask case 6, as a manager and with typos. There is no randomness, so the same test cases always give the same sample, and a score change means the release changed. The live test and Promptfoo still check every case. To grade more, raise the sample size: `SAMPLE_SIZE` in `ci/deepeval_check.py`, or the `DEEPEVAL_DEMO_CASES` variable.
-
-**How to read a score:** each check gives a number from 0 to 1. 1 means the answer fully meets the rule, and 0 means not at all. For example, a faithfulness score of 0.8 means 8 out of 10 claims agree with the policy text. The **pass mark** is the lowest score that still passes: 0.7 for every check here, set as `PASS_MARK` in `ci/deepeval_check.py`.
-
-A judge model can be wrong, so DeepEval only adds a second opinion. It never replaces the fact checks.
-
-**Where the result appears:** the log of the **Evaluate answer quality with DeepEval** step.
-
-### Evidently: drift
-
-**What it is:** an open-source tool that compares new data with older reference data, and reports what changed. A change like this is called **drift**.
-
-**What it tests here:** two numbers for each answer, its length and its response time. It compares them with a reference run saved in the repository, `ci/data/drift-reference.csv`. It only reports; it never fails the run. A change is a reason to look at the answers, not proof that one is wrong.
-
-**Where the result appears:** in the run's **Artifacts**, as an HTML report.
-
-### Langfuse: traces, prompts and experiments
-
-You met Langfuse traces in document 03. The pipeline uses three more Langfuse features:
-
-- **Prompts:** each run saves the system prompt as a new numbered version of `hr-policy-system`. The version is labelled `candidate` and with its release, such as `v1.0.0`. Its config records the commit. Every trace links to the prompt version that produced it.
-- **Datasets:** the test cases are saved as a dataset. Its name is `hr-regression-` followed by the first 16 characters of a fingerprint of the test cases. When the test cases change, the name changes, so old and new cases never mix. Each item holds one question, with its required facts, forbidden facts and source.
-- **Experiments:** each run records one experiment on that dataset, named after the commit and the run number. Every case gets a score called `reference_checks`: 1 if both runs passed, 0 if not. Put two experiments side by side to see which cases changed between releases.
-
-The test questions also appear as normal traces from the test accounts. So you can open any failing answer and follow it step by step.
-
-**Where the result appears:** in Langfuse. Document 07 walks you through each page.
+The checks after the API test each look at the answers in a different way: retrieval quality, answer consistency, Promptfoo, DeepEval, Evidently and the Langfuse experiment. The next document, [06a1 What each test checks](06a1-what-each-test-checks.md), explains each one: what it is, what it checks, which questions it uses and why, and how it passes.
 
 ## One release number everywhere
 
@@ -181,4 +105,4 @@ These gaps remain:
 
 This job starts only after the `candidate` job succeeds. It runs in the `hr-production-approval` environment, so a person can be required to approve it first (document 06b). It checks two things: the tested commit is the one you merged, and the report says the gate passed. Then it prints what production would receive. It changes nothing.
 
-**Next:** [06a2 Add the deployment jobs](06a2-add-deployment-jobs.md)
+**Next:** [06a1 What each test checks](06a1-what-each-test-checks.md)

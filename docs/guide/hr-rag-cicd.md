@@ -72,7 +72,8 @@ Work through them in this order. Each one ends with a link to the next.
 - [04 Branch and pull-request checks](04-branch-and-pr-checks.md): Create the first workflow job and open a pull request.
 - [04b Code scans](04b-code-scans.md): Add a second workflow that lints and scans the code, and turn on secret scanning.
 - [05 GitHub-to-AWS access](05-github-to-aws-access.md): Let GitHub sign in to AWS with a limited role, without storing AWS keys.
-- [06a How the deployment jobs work](06a-how-the-deployment-jobs-work.md): What happens after a merge, Lambda versions and aliases, and what Promptfoo, Langfuse, DeepEval and Evidently check.
+- [06a How the deployment jobs work](06a-how-the-deployment-jobs-work.md): What happens after a merge, Lambda versions and aliases, and the order of the steps.
+- [06a1 What each test checks](06a1-what-each-test-checks.md): Each check in the pipeline: what it is, what it checks, which questions it uses and why, and how it passes.
 - [06a2 Add the deployment jobs](06a2-add-deployment-jobs.md): Add the deployment and test jobs to the workflow.
 - [06a3 Add the release jobs](06a3-add-release-jobs.md): Add the production handoff and the job that tags each approved release.
 - [06b Environments, merge and first run](06b-environments-merge-and-first-run.md): Add the GitHub settings, merge, and watch the first full run.
