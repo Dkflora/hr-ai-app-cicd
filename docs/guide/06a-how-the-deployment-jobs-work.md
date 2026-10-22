@@ -117,28 +117,22 @@ Upper and lower case do not matter, and neither do commas, `$` or `*`. The thres
 
 ### DeepEval: a model grades the answer
 
-**What it is:** an open-source framework for **LLM-as-a-judge**. A second AI model reads an answer and scores it against written rules, called a rubric.
+**What it is:** an open-source framework for **LLM-as-a-judge**. A second AI model, the judge, reads an answer and scores it against written rules, called a rubric.
 
-**What it tests here:** a small sample of the test cases. `ci/deepeval_check.py` picks it with a fixed rule:
+**What it checks in each answer:** five things.
 
-1. Keep only the cases that name an expected policy. Faithfulness needs the policy text the answer was built from. Refusals, small talk and attacks have none.
-2. Go through those cases in file order, and take the first case of each group.
-3. If that gives fewer cases than the sample size, add the next cases in order. Stop at the sample size.
+- **HR reference outcome:** a rubric written for this lab. The answer must contain the required facts and none of the forbidden ones. A refusal is right when the case asks for one, and so is correcting a false claim.
+- **Faithfulness:** every claim must agree with the policy passages the search returned. This catches invented facts, often called hallucinations.
+- **Answer relevancy:** the answer must address the question that was asked.
+- **Bias** and **Toxicity:** the share of statements free of bias or toxic language.
 
-For example, with the current test cases this picks cases 6 (everyday), 11 (access), 18 (version), 46 (fairness) and 49 (robustness), as numbered in [the test cases](reference-test-cases.md). Cases 46 and 49 re-ask case 6, as a manager and with typos. It grades the first answer of each. The rule has no randomness, so the same test cases always give the same sample. So a score that drops between releases means the release changed.
+**Which questions it grades:** you can give DeepEval any set of test cases. Each case costs several calls to the judge, so this lab grades a small sample, 5 cases by default. The sample keeps only cases whose answer should cite a policy, because faithfulness needs that policy text. A refusal or small talk has none. `ci/deepeval_check.py` then takes the first such case of each group, in file order. If it still needs more, it adds the next cases. It stops at 5.
 
-Why a small sample: each case gets five scores, and each score takes several calls to the grading model. That adds time and cost. The live test and Promptfoo still check every case. The sample size is `SAMPLE_SIZE` in `ci/deepeval_check.py`, 5 by default. Raise it with the `DEEPEVAL_DEMO_CASES` variable.
+For example, with the current test cases it grades cases 6, 11, 18, 46 and 49 from [the test cases](reference-test-cases.md). Cases 46 and 49 re-ask case 6, as a manager and with typos. There is no randomness, so the same test cases always give the same sample, and a score change means the release changed. The live test and Promptfoo still check every case. To grade more, raise the sample size: `SAMPLE_SIZE` in `ci/deepeval_check.py`, or the `DEEPEVAL_DEMO_CASES` variable.
 
-**How to read a score:** each check gives the answer a number from 0 to 1. 1 means the answer fully meets the rule, and 0 means not at all. For example, a faithfulness score of 0.8 means 8 out of 10 claims in the answer agree with the policy text the search returned. The **pass mark** is the lowest score that still passes. Here it is 0.7 for every check, set as `PASS_MARK` in `ci/deepeval_check.py`.
+**How to read a score:** each check gives a number from 0 to 1. 1 means the answer fully meets the rule, and 0 means not at all. For example, a faithfulness score of 0.8 means 8 out of 10 claims agree with the policy text. The **pass mark** is the lowest score that still passes: 0.7 for every check here, set as `PASS_MARK` in `ci/deepeval_check.py`.
 
-Each answer gets five scores:
-
-- **HR reference outcome:** a rubric written for this lab. It lowers the score when a required fact is missing or a forbidden fact appears. It accepts a refusal when the case requires one. It also accepts an answer that corrects a false claim. Pass mark 0.7.
-- **Faithfulness:** every claim in the answer must be backed by the passages the search returned. This checks for invented facts, often called hallucinations. Pass mark 0.7.
-- **Answer relevancy:** the answer must address the question that was asked. Pass mark 0.7.
-- **Bias** and **Toxicity:** the share of statements free of bias or toxic language. 1.0 means none was found. Pass mark 0.7.
-
-A grading model can be wrong, so DeepEval only adds a second opinion. It never replaces the fact checks.
+A judge model can be wrong, so DeepEval only adds a second opinion. It never replaces the fact checks.
 
 **Where the result appears:** the log of the **Evaluate answer quality with DeepEval** step.
 
