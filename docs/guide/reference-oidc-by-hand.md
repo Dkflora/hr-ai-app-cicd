@@ -1,10 +1,10 @@
 # Reference: OIDC by hand
 
-In document 05, `scripts/prepare-oidc.py` does everything on this page with one command. Use this page if you want to see each step, or to build the same thing yourself in the AWS console.
+In document 06, `scripts/prepare-oidc.py` does everything on this page with one command. Use this page if you want to see each step, or to build the same thing yourself in the AWS console.
 
 **OIDC** is how the pipeline signs in to AWS without a stored password. GitHub gives each job a signed token. AWS checks the token and gives the job short-lived access, through an IAM **role**.
 
-You end up with the same role, with the same name, either way. So documents 06b and 09 work the same.
+You end up with the same role, with the same name, either way. So documents 10 and 17 work the same.
 
 ## Step 1: Write the two policy files
 
@@ -21,7 +21,7 @@ It prints `Creating the role` followed by the role's name, such as `hr-ci-yourna
 The two files are in `build/`:
 
 - `github-oidc-trust.json`: who may use the role. This is the **trust policy**. It allows only jobs in your repository's `hr-staging` environment, with the audience `sts.amazonaws.com`.
-- `github-oidc-permissions.json`: what the role may do. It currently has six permissions, one for each service listed at the top of document 05.
+- `github-oidc-permissions.json`: what the role may do. It currently has six permissions, one for each service listed at the top of document 06.
 
 ## Step 2: Register GitHub as an identity provider
 
@@ -53,7 +53,7 @@ Other projects in your AWS account may use the same provider, so it stays in pla
 
 ## Step 5: Save the role ARN
 
-The **ARN** is the role's full AWS name. On the role's summary page, copy it. Save it in the same file the script would use, then refresh the settings file for document 06b:
+The **ARN** is the role's full AWS name. On the role's summary page, copy it. Save it in the same file the script would use, then refresh the settings file for document 10:
 
 ```bash
 cd ~/hr-rag-lab

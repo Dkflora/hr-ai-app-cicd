@@ -1,4 +1,4 @@
-# 04b Code scans
+# 05 Code scans
 
 **Goal:** add a second workflow that checks the code itself: its style, risky patterns, and the packages it uses.
 
@@ -16,7 +16,7 @@ The tool versions are fixed, so a new tool release cannot change the results wit
 
 ## Why the scans only report here
 
-In this lab, the scans never fail a run. `ci/code_scan.py` runs each tool, writes what it found on the run's summary page, and always ends green. This lab is about the **release gate**: the step, explained in document 06a, that approves a new version only when the app answers every test question correctly. Code scans are a separate concern.
+In this lab, the scans never fail a run. `ci/code_scan.py` runs each tool, writes what it found on the run's summary page, and always ends green. This lab is about the **release gate**: the step, explained in document 07, that approves a new version only when the app answers every test question correctly. Code scans are a separate concern.
 
 A company usually goes further. It blocks a merge on high findings, and the team reviews the rest.
 
@@ -146,6 +146,6 @@ python ci/code_scan.py python-security
 2. Under **Secret Protection**, click **Enable**, if it is not on already.
 3. Under **Push protection**, click **Enable**.
 
-**Expected:** both show as enabled. Your Langfuse keys live in `.env.langfuse` on your computer, which Git ignores, and in GitHub settings from document 06b. Push protection is the safety net if one ever ends up in a commit.
+**Expected:** both show as enabled. Your Langfuse keys live in `.env.langfuse` on your computer, which Git ignores, and in GitHub settings from document 10. Push protection is the safety net if one ever ends up in a commit.
 
-**Next:** [05 GitHub-to-AWS access](05-github-to-aws-access.md)
+**Next:** [06 GitHub-to-AWS access](06-github-to-aws-access.md)

@@ -1,4 +1,4 @@
-# 07d Handle a thumbs down
+# 15 Handle a thumbs down
 
 **Goal:** follow one thumbs down from the moment someone clicks it to the moment the team decides what to fix. On the way, you set up an email alert for thumbs down.
 
@@ -99,7 +99,7 @@ No policy mentions dogs, so the app answers `I could not verify that answer. Ple
 
 ## Step 6: Fix and protect
 
-When the cause is `retrieval`, `prompt` or `model`, the fix goes through the pipeline. You know the steps from documents 07a to 07c: a branch, a pull request, a new `VERSION`, and a merge.
+When the cause is `retrieval`, `prompt` or `model`, the fix goes through the pipeline. You know the steps from documents 12 to 14: a branch, a pull request, a new `VERSION`, and a merge.
 
 The same pull request adds the question to the golden set, in `lambda/data/evaluation_questions.json`. A test case looks like this:
 
@@ -123,8 +123,8 @@ The lab's alarm emails on every single thumbs down, so you can see it work. With
 
 - **Alert on a rate, not a vote.** For example: more than 10% thumbs down in the last hour, with at least 20 votes. These numbers only illustrate the idea. A team sets them from its own traffic. One unhappy person then does not wake anyone up.
 - **Send it where the team works.** A Slack or Teams channel, or the on-call tool, instead of one person's inbox.
-- **Compare releases.** Each trace carries its release, such as `v1.0.4`. A thumbs-down rate that jumps after a release, for example doubles, is a reason to roll back, as in document 08, even when every golden test passed.
+- **Compare releases.** Each trace carries its release, such as `v1.0.4`. A thumbs-down rate that jumps after a release, for example doubles, is a reason to roll back, as in document 16, even when every golden test passed.
 
 Another option: Langfuse has its own **Alerts**, which can watch the `user_feedback` score and post to Slack. This lab uses CloudWatch, because it sends email and already holds the project's other alarms.
 
-**Next:** [08 Production handoff and rollback](08-production-handoff-and-rollback.md)
+**Next:** [16 Production handoff and rollback](16-production-handoff-and-rollback.md)

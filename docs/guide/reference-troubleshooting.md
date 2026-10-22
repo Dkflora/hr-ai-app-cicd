@@ -10,14 +10,14 @@ The pipeline signs in to AWS with **OIDC**: GitHub gives the job a signed token,
 
 Check that these four things match exactly:
 
-1. `AWS_STAGING_ROLE_ARN` in the `hr-staging` environment is the role you created in document 05.
+1. `AWS_STAGING_ROLE_ARN` in the `hr-staging` environment is the role you created in document 06.
 2. The `candidate` job has `id-token: write` and `environment: hr-staging`. The workflow you pasted already has both.
 3. The role's trust policy audience is `sts.amazonaws.com`.
 4. The trust policy subject contains your exact repository and ends with `:environment:hr-staging`.
 
 Check the subject first. A subject with names only, such as `repo:USERNAME/hr-rag-lab:environment:hr-staging`, does not match a token that also carries numeric IDs, such as `repo:USERNAME@OWNER-ID/hr-rag-lab@REPO-ID:environment:hr-staging`.
 
-To fix it, run the document 05 script again. It reads your repository's IDs from GitHub and updates the trust policy to match.
+To fix it, run the document 06 script again. It reads your repository's IDs from GitHub and updates the trust policy to match.
 
 ```bash
 cd ~/hr-rag-lab
@@ -49,7 +49,7 @@ terraform -chdir=infra/terraform output -raw cognito_client_id
 
 ## A job fails because a variable is empty
 
-The variables belong in the **hr-staging environment**, not under the repository's variables. Their names must match exactly, including capital letters. Compare your list with document 06b, step 3, or with `build/github-settings.txt`.
+The variables belong in the **hr-staging environment**, not under the repository's variables. Their names must match exactly, including capital letters. Compare your list with document 10, step 3, or with `build/github-settings.txt`.
 
 ## The setup script stops
 
@@ -97,7 +97,7 @@ aws lambda update-alias --function-name "$FN" --name candidate \
 bash scripts/setup-lab.sh
 ```
 
-After document 06b, your next merge to `main` also fixes it, because every pipeline run publishes a version and moves `candidate`. Moving `candidate` by hand is only for repairing setup. The `approved` alias is moved by the pipeline alone, once every check has passed.
+After document 10, your next merge to `main` also fixes it, because every pipeline run publishes a version and moves `candidate`. Moving `candidate` by hand is only for repairing setup. The `approved` alias is moved by the pipeline alone, once every check has passed.
 
 ## A test case fails and you do not know why
 

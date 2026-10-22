@@ -13,7 +13,7 @@ What it does, in order:
   4. In AWS IAM:
        - the GitHub identity provider: reused if it exists, created if it does not
        - the role <project>-github-ci: created, or updated to match the two files
-  5. Prints the role ARN, which document 06b saves in GitHub.
+  5. Prints the role ARN, which document 10 saves in GitHub.
 
 Running it again is safe. It never deletes anything, and never removes the provider's
 other audiences, because other projects in the account may share the provider.
@@ -262,11 +262,11 @@ def main():
         iam.update_assume_role_policy(RoleName=role_name, PolicyDocument=json.dumps(trust))
     iam.put_role_policy(RoleName=role_name, PolicyName=POLICY_NAME, PolicyDocument=json.dumps(permissions))
 
-    # Step 4: the ARN goes into GitHub in document 06b.
+    # Step 4: the ARN goes into GitHub in document 10.
     (build / 'github-oidc-role-arn.txt').write_text(role['Arn'] + '\n', encoding='utf-8')
     print(f'Done. Role ARN (also saved in build/github-oidc-role-arn.txt):\n  {role["Arn"]}', flush=True)
 
-    # Add the ARN to the file that collects every GitHub setting for document 06b.
+    # Add the ARN to the file that collects every GitHub setting for document 10.
     subprocess.run([sys.executable, str(ROOT / 'scripts' / 'github-settings.py')], cwd=ROOT)
 
 

@@ -1,4 +1,4 @@
-# 07c Use case 3: missing retrieval evidence
+# 14 Use case 3: missing retrieval evidence
 
 **Goal:** see how answers change when the search stops finding one piece of the policy.
 
@@ -52,7 +52,7 @@ In VS Code, open `lambda/app/retrieval.py` and go to the first line number from 
 
 Leave the indented lines below it unchanged. A block under `if False:` never runs, so this switches off both supplemental searches. A PTO question may now reach the model without the carry-over rule or the yearly allowance. You want to see whether the pipeline notices the missing evidence.
 
-Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.4` to `1.0.5`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. It is a patch, so the last number goes up, as in 07a. Save both files.
+Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.4` to `1.0.5`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. It is a patch, so the last number goes up, as in document 12. Save both files.
 
 Check the change before you commit:
 
@@ -135,4 +135,4 @@ Write down:
 - The search passages before and after, from the traces.
 - Whether the repair brought the missing passage back.
 
-**Next:** [07d Handle a thumbs down](07d-handle-a-thumbs-down.md)
+**Next:** [15 Handle a thumbs down](15-handle-a-thumbs-down.md)

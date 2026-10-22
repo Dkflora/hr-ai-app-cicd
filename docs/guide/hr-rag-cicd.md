@@ -41,12 +41,12 @@ In week 6 you followed one request through 10 stops. Each stop has its own risks
 4. **Agent loop** (LLM06, LLM10): the AI model gets at most 5 rounds of tool use per question, set as `MAX_TOOL_ROUNDS` in `lambda/app/assistant.py`. 5 is a chosen limit, not a measured one: it leaves room for a few lookups per question, and it stops a model that keeps calling tools. Its two tools are policy search and employee records. Both only read HR data, the code checks permissions, and every record lookup is logged. Use case 1 breaks this limit.
 5. **Gateway** (LLM03): every question to an AI model goes through LiteLLM. It allows only approved models, and it limits each person to 15 requests and 20,000 tokens per minute.
 6. **Output guardrails** (LLM02, LLM05, LLM09): the guardrail checks every answer. The inline judge checks it against the policy passages before the employee sees it. Use case 2 tests the judge.
-7. **Cloud + cost** (LLM10): Bedrock and Lambda run in the AWS account you use for this lab. Terraform, a tool that creates cloud resources from files, builds them. The gateway caps model spending at 5 US dollars a day for the app and 0.50 per person. These limits, and the per-minute ones in stop 5, are set in `infra/terraform/gateway-bootstrap.sh.tftpl`. They are judgement calls for a lab account, chosen to keep a mistake cheap, not measured from real traffic. Document 09 deletes it all.
+7. **Cloud + cost** (LLM10): Bedrock and Lambda run in the AWS account you use for this lab. Terraform, a tool that creates cloud resources from files, builds them. The gateway caps model spending at 5 US dollars a day for the app and 0.50 per person. These limits, and the per-minute ones in stop 5, are set in `infra/terraform/gateway-bootstrap.sh.tftpl`. They are judgement calls for a lab account, chosen to keep a mistake cheap, not measured from real traffic. Document 17 deletes it all.
 
 **Stops 8 to 10: keep it healthy**
 
 8. **Tracing:** Langfuse records every request as a trace. A trace has one step for each tool use, each question to the model, and each judge check. You read your first trace in document 03.
-9. **Evals + CI/CD** (LLM09): the golden set is [the test cases](reference-test-cases.md): questions with known correct answers. The pipeline asks each one through the real app. Promptfoo, DeepEval and Langfuse score the answers. One failure stops the release. Documents 04 to 07 build this gate and read its results.
+9. **Evals + CI/CD** (LLM09): the golden set is [the test cases](reference-test-cases.md): questions with known correct answers. The pipeline asks each one through the real app. Promptfoo, DeepEval and Langfuse score the answers. One failure stops the release. Documents 04 to 11 build this gate and read its results.
 10. **Drift + the loop:** Evidently, an open-source monitoring tool, compares answer length and response time with a reference run saved in the repository. People's 👎 ratings are stored with each answer, so a reviewer can find the answers to fix. Each use case follows the same loop: read the trace, fix the cause, merge, and let the pipeline prove the fix.
 
 ## The whole system on one page
@@ -71,7 +71,7 @@ The numbers show the order of the steps. Every question to an AI model goes thro
 
 ![How a change flows through the pipeline](images/pipeline-flow.png)
 
-If a test fails after a merge, the new version is not approved. The `approved` pointer stays on the last version that passed. Document 06a explains these pointers, called aliases.
+If a test fails after a merge, the new version is not approved. The `approved` pointer stays on the last version that passed. Document 07 explains these pointers, called aliases.
 
 ## Documents, in order
 
@@ -82,20 +82,19 @@ Work through them in this order. Each one ends with a link to the next.
 - [02 Infrastructure setup](02-infrastructure-setup.md): Connect Langfuse, set your names, and run the one-command setup.
 - [03 Sign in and read your first trace](03-sign-in-and-first-trace.md): Use the chatbot, then follow one request in Langfuse.
 - [04 Branch and pull-request checks](04-branch-and-pr-checks.md): Create the first workflow job and open a pull request.
-- [04b Code scans](04b-code-scans.md): Add a second workflow that lints and scans the code, and turn on secret scanning.
-- [05 GitHub-to-AWS access](05-github-to-aws-access.md): Let GitHub sign in to AWS with a limited role, without storing AWS keys.
-- [06a How the deployment jobs work](06a-how-the-deployment-jobs-work.md): What happens after a merge, Lambda versions and aliases, and the order of the steps.
-- [06a1 What each test checks](06a1-what-each-test-checks.md): Each check in the pipeline: what it is, what it checks, which questions it uses and why, and how it passes.
-- [06a2 Add the deployment jobs](06a2-add-deployment-jobs.md): Add the deployment and test jobs to the workflow.
-- [06a3 Add the release jobs](06a3-add-release-jobs.md): Add the production handoff and the job that tags each approved release.
-- [06b Environments, merge and first run](06b-environments-merge-and-first-run.md): Add the GitHub settings, merge, and watch the first full run.
-- [07 Read the evaluation results](07-read-the-evaluation-results.md): Find each tool's result from your first run, and learn what it tells you.
-- [07a Use case 1: tool-limit failure](07a-use-case-1-tool-limit-failure.md): Break the chatbot on purpose, watch the release gate stop it, and repair it.
-- [07b Use case 2: wrong prompt instruction](07b-use-case-2-wrong-prompt-instruction.md): Add a bad instruction and see whether the inline judge catches it.
-- [07c Use case 3: missing retrieval evidence](07c-use-case-3-missing-retrieval-evidence.md): Turn off one search and see how answers change.
-- [07d Handle a thumbs down](07d-handle-a-thumbs-down.md): Get an email alert for a thumbs down, queue it in Langfuse, and review why the answer went wrong.
-- [08 Production handoff and rollback](08-production-handoff-and-rollback.md): Review the handoff job, and go back to an earlier approved version.
-- [09 Tear down](09-tear-down.md): Delete everything so billing stops.
+- [05 Code scans](05-code-scans.md): Add a second workflow that lints and scans the code, and turn on secret scanning.
+- [06 GitHub-to-AWS access](06-github-to-aws-access.md): Let GitHub sign in to AWS with a limited role, without storing AWS keys.
+- [07 How the deployment jobs work](07-how-the-deployment-jobs-work.md): What happens after a merge, Lambda versions and aliases, and the order of the steps.
+- [08 What each test checks](08-what-each-test-checks.md): Each check in the pipeline: what it is, what it checks, which questions it uses and why, and how it passes.
+- [09 Add the deployment and release jobs](09-add-deployment-and-release-jobs.md): Add the deployment and test job, then the production handoff and the job that tags each approved release.
+- [10 Environments, merge and first run](10-environments-merge-and-first-run.md): Add the GitHub settings, merge, and watch the first full run.
+- [11 Read the evaluation results](11-read-the-evaluation-results.md): Find each tool's result from your first run, and learn what it tells you.
+- [12 Use case 1: tool-limit failure](12-use-case-1-tool-limit-failure.md): Break the chatbot on purpose, watch the release gate stop it, and repair it.
+- [13 Use case 2: wrong prompt instruction](13-use-case-2-wrong-prompt-instruction.md): Add a bad instruction and see whether the inline judge catches it.
+- [14 Use case 3: missing retrieval evidence](14-use-case-3-missing-retrieval-evidence.md): Turn off one search and see how answers change.
+- [15 Handle a thumbs down](15-handle-a-thumbs-down.md): Get an email alert for a thumbs down, queue it in Langfuse, and review why the answer went wrong.
+- [16 Production handoff and rollback](16-production-handoff-and-rollback.md): Review the handoff job, and go back to an earlier approved version.
+- [17 Tear down](17-tear-down.md): Delete everything so billing stops.
 
 Use case 1 always fails in the same way, so it is the one to run in class. Use cases 2 and 3 depend on how the AI model behaves, so they may or may not fail.
 

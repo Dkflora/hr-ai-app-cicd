@@ -1,4 +1,4 @@
-# 07a Use case 1: tool-limit failure
+# 12 Use case 1: tool-limit failure
 
 **Goal:** prove that the pipeline stops a broken change from being approved, even when every code check passes.
 
@@ -8,7 +8,7 @@ In this use case you break the assistant on purpose. A **tool round** is one tur
 
 The code still runs and the unit tests still pass, so the pull request looks fine. After you merge it, the test that asks the real app questions fails. The `approved` pointer stays on the last good version. Then you repair the change with a second pull request.
 
-This use case fails the same way every time, so run it first. The three use cases each break a different layer: 07a the code, 07b the prompt, 07c the search. Each one maps to a different OWASP risk.
+This use case fails the same way every time, so run it first. The three use cases each break a different layer: 12 the code, 13 the prompt, 14 the search. Each one maps to a different OWASP risk.
 
 ## How the tool loop works
 
@@ -69,7 +69,7 @@ MAX_TOOL_ROUNDS = 1
 
 This gives the assistant one round only. The policy search uses it up, so no turn is left to write the answer. The code still runs and the unit tests still pass, so only the pipeline's live questions can catch it.
 
-Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.0` to `1.0.1`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. You raise the last number because this change adds no feature: in semantic versioning (document 06a), that is a patch. Save both files.
+Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.0` to `1.0.1`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. You raise the last number because this change adds no feature: in semantic versioning (document 07), that is a patch. Save both files.
 
 Check the change before you commit:
 
@@ -209,4 +209,4 @@ git branch -D test/tool-limit fix/tool-limit
 - The two Langfuse trace links for the PTO question, before and after.
 - The `approved` version before, during and after.
 
-**Next:** [07b Use case 2: wrong prompt instruction](07b-use-case-2-wrong-prompt-instruction.md)
+**Next:** [13 Use case 2: wrong prompt instruction](13-use-case-2-wrong-prompt-instruction.md)

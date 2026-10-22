@@ -83,14 +83,14 @@ EOF
 
 What each part does:
 
-- `on:`: The workflow starts on pull requests, on pushes to `main`, `feature/**`, `fix/**` and `test/**`, and when you click **Run workflow** in GitHub. Those branch patterns match the branch names this lab uses: `feature/pipeline` here, and `test/...` and `fix/...` branches in the use cases of document 07. A push to a branch with any other name starts nothing.
+- `on:`: The workflow starts on pull requests, on pushes to `main`, `feature/**`, `fix/**` and `test/**`, and when you click **Run workflow** in GitHub. Those branch patterns match the branch names this lab uses: `feature/pipeline` here, and `test/...` and `fix/...` branches in the use cases of document 11. A push to a branch with any other name starts nothing.
 - `permissions: contents: read`: The job can read the code and nothing else.
 - `concurrency: hr-staging`: Only one run at a time. Two deployments never overlap, because there is only one staging environment: the test copy of the app that setup created in document 02. `cancel-in-progress: false` makes a new run wait instead of stopping the one already running, so a deployment is never cut off halfway.
 - `runs-on: ubuntu-24.04`: The job runs on a GitHub runner with Ubuntu Linux 24.04. The name `ubuntu-latest` would move to a newer Ubuntu whenever GitHub decides. Naming the exact version keeps the runner the same until you change it.
 - `persist-credentials: false`: The Git token is removed from the runner after the code is downloaded.
 - `actions/checkout`: Downloads your repository's code onto the runner.
 - `@v7` after an action's name: the major version of that action. The lab uses the newest major versions, which run on Node.js 24, because GitHub is retiring actions that run on Node.js 20.
-- `fetch-depth: 0`: Downloads the full history, including the release tags, so the next step can compare versions. A release tag, such as `v1.0.0`, marks the commit of a release. The pipeline creates them, starting in document 06b.
+- `fetch-depth: 0`: Downloads the full history, including the release tags, so the next step can compare versions. A release tag, such as `v1.0.0`, marks the commit of a release. The pipeline creates them, starting in document 10.
 - `actions/setup-python` and `pip install -r ci/requirements.txt`: Installs Python 3.12 and the packages the pipeline scripts need. Python 3.12 matches the Lambda runtime, `python_runtime` in `infra/terraform/lambda.tf`, so the code is tested on the same Python it runs on in AWS.
 - `Release version is new`: The `VERSION` file at the top of the repository holds the release number, such as `1.0.0`. `ci/check_version.py` checks that it is newer than every release tag, so a number is never used twice. Before the first release there are no tags. Then it prints `Release version v1.0.0: the first release.`
 - `unittest discover -s ci/tests`: Runs the same unit tests as step 1.
@@ -115,6 +115,6 @@ Near the bottom of the pull request page, you see the `checks` job twice: `check
 
 **Expected:** both finish green, and the page shows **All checks have passed**.
 
-Leave the pull request open for now. In documents 06a, 06a2 and 06a3 you add the deployment and release jobs to it.
+Leave the pull request open for now. Document 07 explains the deployment and release jobs, and in document 09 you add them to it.
 
-**Next:** [04b Code scans](04b-code-scans.md)
+**Next:** [05 Code scans](05-code-scans.md)

@@ -1,4 +1,4 @@
-# 08 Production handoff and rollback
+# 16 Production handoff and rollback
 
 **Goal:** see where the lab's approval in staging stops, and practise moving the `approved` pointer back to an earlier version.
 
@@ -59,4 +59,4 @@ If you run it again, it swaps back, because each rollback notes the version it l
 - The passing report.
 - Your own explanation of the test results, and of how a release is approved and rolled back.
 
-**Next:** [09 Tear down](09-tear-down.md)
+**Next:** [17 Tear down](17-tear-down.md)

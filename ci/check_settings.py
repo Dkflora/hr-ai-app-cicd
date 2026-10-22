@@ -12,7 +12,7 @@ import json
 import os
 import sys
 
-# The settings document 06b asks for, in the same order as build/github-settings.txt.
+# The settings document 10 asks for, in the same order as build/github-settings.txt.
 VARIABLES = [
     'AWS_REGION', 'AWS_STAGING_ROLE_ARN', 'HR_STAGING_FUNCTION', 'HR_EVALUATION_FUNCTION',
     'HR_STAGING_ORIGIN', 'HR_TEST_USERS_SECRET_ARN', 'HR_COGNITO_POOL_ID', 'HR_COGNITO_CLIENT_ID',

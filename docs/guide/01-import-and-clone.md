@@ -30,7 +30,7 @@ git remote -v
 git switch -c feature/pipeline
 ```
 
-`git remote -v` shows where the code came from. `origin` is the name Git gives the GitHub repository you cloned, and `git push` sends your commits there. The `origin` lines must show **your** repository. You stay on the `feature/pipeline` branch until document 06b.
+`git remote -v` shows where the code came from. `origin` is the name Git gives the GitHub repository you cloned, and `git push` sends your commits there. The `origin` lines must show **your** repository. You stay on the `feature/pipeline` branch until document 10.
 
 ## Step 3: Look around
 

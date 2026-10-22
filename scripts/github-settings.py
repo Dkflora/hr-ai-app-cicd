@@ -3,15 +3,15 @@
     python scripts/github-settings.py
 
 Writes build/github-settings.txt: each variable and secret name exactly as GitHub expects it,
-with its value on the next line. Document 06b copies from this one file instead of looking
-in five places. Setup (document 02) and scripts/prepare-oidc.py (document 05) run this
+with its value on the next line. Document 10 copies from this one file instead of looking
+in five places. Setup (document 02) and scripts/prepare-oidc.py (document 06) run this
 script when they finish, so the file fills up as you go. Run it yourself at any time.
 
 The values come from:
   Terraform outputs               function names, secret, Cognito, bucket, CloudFront, app address
   frontend/.env.production        the two public Cognito settings the React build needs
   .env.langfuse                   the Langfuse address and key pair
-  build/github-oidc-role-arn.txt  the pipeline's AWS role, written in document 05
+  build/github-oidc-role-arn.txt  the pipeline's AWS role, written in document 06
 
 The file holds the Langfuse secret key. build/ is git-ignored, so it never reaches GitHub,
 but keep it out of screenshots and chat.
@@ -25,8 +25,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'build' / 'github-settings.txt'
 MISSING = 'MISSING'
-# Not a problem: the pipeline's AWS role is created later, in document 05.
-LATER = 'ADDED IN DOCUMENT 05'
+# Not a problem: the pipeline's AWS role is created later, in document 06.
+LATER = 'ADDED IN DOCUMENT 06'
 
 
 def read_env_file(path):
@@ -77,7 +77,7 @@ def main():
     def from_file(values, name, file_name, step):
         return values.get(name) or f'{MISSING}: {name} not found in {file_name} ({step})'
 
-    # Same order as the list in document 06b, step 3.
+    # Same order as the list in document 10, step 3.
     variables = [
         ('AWS_REGION', aws_region()),
         ('AWS_STAGING_ROLE_ARN', role_arn()),
@@ -128,7 +128,7 @@ def main():
         print(f'  still missing: {name}')
     later = [name for name, value in variables if value.startswith(LATER)]
     for name in later:
-        print(f'  {name} is added in document 05, when you run prepare-oidc.py. Nothing to fix now.')
+        print(f'  {name} is added in document 06, when you run prepare-oidc.py. Nothing to fix now.')
 
 
 if __name__ == '__main__':

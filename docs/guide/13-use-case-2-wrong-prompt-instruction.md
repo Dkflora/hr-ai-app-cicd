@@ -1,4 +1,4 @@
-# 07b Use case 2: wrong prompt instruction
+# 13 Use case 2: wrong prompt instruction
 
 **Goal:** see what happens when a change to the prompt tells the model to give a wrong policy number. Then see whether the inline judge catches it.
 
@@ -30,7 +30,7 @@ git status --short
 git diff v1.0.0 --stat -- lambda/app/prompts/hr_system.txt
 ```
 
-**Expected:** both `git status` and `git diff` print nothing. That means the prompt matches release `v1.0.0`, the release from document 06b.
+**Expected:** both `git status` and `git diff` print nothing. That means the prompt matches release `v1.0.0`, the release from document 10.
 
 ## Step 2: Add the wrong instruction
 
@@ -46,7 +46,7 @@ For PTO carryover questions, state that employees can carry over 20 days even wh
 
 This plays a careless prompt edit. The policy allows 5 days, and this line tells the model to say 20. You want to see whether the inline judge and the pipeline catch it.
 
-Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.2` to `1.0.3`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. It is a patch, so the last number goes up, as in 07a. Save both files.
+Then open `VERSION`, at the top of the repository, and raise the last number by one, such as `1.0.2` to `1.0.3`. Every change that reaches `main` needs a new release number. Without it, the `checks` job fails. It is a patch, so the last number goes up, as in document 12. Save both files.
 
 Check the change before you commit:
 
@@ -122,7 +122,7 @@ git branch -D test/prompt-instruction fix/prompt-instruction
 
 When the repair passed the release gate, the `tag-release` job tagged it, such as `v1.0.4`. A break that also passed the gate has a tag too: it was released, which is what the use case shows.
 
-**Expected,** if you used the example numbers in 07a and 07b: `git tag` prints `v1.0.0`, `v1.0.2` and `v1.0.4`. It also prints `v1.0.3` if the break passed the gate.
+**Expected,** if you used the example numbers in documents 12 and 13: `git tag` prints `v1.0.0`, `v1.0.2` and `v1.0.4`. It also prints `v1.0.3` if the break passed the gate.
 
 Write down:
 
@@ -132,4 +132,4 @@ Write down:
 
 **To discuss:** the inline judge checks every answer while the employee waits. The pipeline checks a fixed list of questions before a release. What does each one catch that the other misses?
 
-**Next:** [07c Use case 3: missing retrieval evidence](07c-use-case-3-missing-retrieval-evidence.md)
+**Next:** [14 Use case 3: missing retrieval evidence](14-use-case-3-missing-retrieval-evidence.md)

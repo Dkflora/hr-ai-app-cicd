@@ -1,4 +1,4 @@
-# 05 GitHub-to-AWS access
+# 06 GitHub-to-AWS access
 
 **Goal:** give the pipeline permission to change your AWS resources. You compare the two usual ways of doing that, then set up the safer one, OIDC.
 
@@ -6,14 +6,14 @@
 
 In document 02, setup created every AWS resource, using your AWS sign-in. The pipeline creates nothing new. It uploads new code to those resources and tests it:
 
-- **Lambda, chat function** (`deploy_candidate.py`, `promote_lab.py`): Uploads the new code, saves it as a new numbered version, and moves the `candidate` and `approved` labels. Document 06a explains these labels.
+- **Lambda, chat function** (`deploy_candidate.py`, `promote_lab.py`): Uploads the new code, saves it as a new numbered version, and moves the `candidate` and `approved` labels. Document 07 explains these labels.
 - **S3** (`deploy_frontend.py`): Uploads the built React website files.
 - **CloudFront** (`deploy_frontend.py`): Clears its cache, so browsers load the new website.
 - **Secrets Manager** (`evaluate_api.py`): Reads the password of the test accounts. It can read no other secret.
 - **Cognito** (`evaluate_api.py`): Signs in as the `qa.*` test accounts.
 - **Lambda, evaluation function** (`deepeval_check.py`, `quality_checks.py`): Runs the model that grades answers, the search check and the consistency check, inside AWS.
 
-The live tests call the app the same way a browser does: through its public API, signed in with Cognito. Langfuse has its own keys, which you save in GitHub in document 06b.
+The live tests call the app the same way a browser does: through its public API, signed in with Cognito. Langfuse has its own keys, which you save in GitHub in document 10.
 
 ## Two ways to give the pipeline AWS access
 
@@ -43,7 +43,7 @@ This removes each problem above:
 
 - **No secret is stored**, so there is nothing to leak, copy or rotate.
 - **The credentials expire within an hour**, even if one leaks from a running job.
-- **Only your repository's `hr-staging` environment can use the role.** A fork or another repository has a token that names a different repository. In document 06b, you allow only `main` to use that environment.
+- **Only your repository's `hr-staging` environment can use the role.** A fork or another repository has a token that names a different repository. In document 10, you allow only `main` to use that environment.
 - **CloudTrail records who asked.** Each sign-in shows the repository and environment named in the token, not just a user name.
 
 This lab uses OIDC. It is what AWS and GitHub recommend for pipelines. Azure DevOps calls the same idea workload identity federation.
@@ -54,7 +54,7 @@ One script, `scripts/prepare-oidc.py`, sets everything up in your AWS account. I
 
 1. Finds your GitHub repository from the folder's Git remote. This is the same address `git remote -v` shows.
 2. Writes two policy files to `build/`. One says who may use the role. The other says what the role may do.
-3. Checks both files. Only your repository's `hr-staging` environment may use the role. A GitHub **environment** is a named set of settings and rules for deployments. You create `hr-staging` in document 06b. Every permission must name one of the project's resources in the AWS account you are signed in to. If anything is wrong, the script stops before it changes AWS.
+3. Checks both files. Only your repository's `hr-staging` environment may use the role. A GitHub **environment** is a named set of settings and rules for deployments. You create `hr-staging` in document 10. Every permission must name one of the project's resources in the AWS account you are signed in to. If anything is wrong, the script stops before it changes AWS.
 4. Connects GitHub to AWS as an **identity provider**: an IAM setting that tells AWS to trust tokens signed by GitHub (`token.actions.githubusercontent.com`). An AWS account needs only one, so if yours already has it, the script reuses it.
 5. Creates the deployment role, named after your project. If the role already exists, it updates it.
 6. Prints the role's ARN, its full AWS name, and saves it in `build/github-oidc-role-arn.txt`.
@@ -81,6 +81,6 @@ You can run the script again safely. It updates the role and never deletes anyth
 
 To see each step the script takes, or to build the same role yourself in the AWS console, follow [Reference: OIDC by hand](reference-oidc-by-hand.md).
 
-That last line comes from `scripts/github-settings.py`, which the script runs at the end. It collects every value the pipeline needs, including this role ARN, into `build/github-settings.txt`. In document 06b, you copy every GitHub value from that one file. It also holds the Langfuse secret key, so keep it private. Git ignores everything in `build/`.
+That last line comes from `scripts/github-settings.py`, which the script runs at the end. It collects every value the pipeline needs, including this role ARN, into `build/github-settings.txt`. In document 10, you copy every GitHub value from that one file. It also holds the Langfuse secret key, so keep it private. Git ignores everything in `build/`.
 
-**Next:** [06a How the deployment jobs work](06a-how-the-deployment-jobs-work.md)
+**Next:** [07 How the deployment jobs work](07-how-the-deployment-jobs-work.md)

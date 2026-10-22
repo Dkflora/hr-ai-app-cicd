@@ -1,4 +1,4 @@
-# 09 Tear down
+# 17 Tear down
 
 **Goal:** delete everything the lab created in AWS, so you stop paying for it.
 
@@ -25,7 +25,7 @@ The script does the rest, in this order:
 
 1. Reads your project's names from Terraform.
 2. Runs `terraform destroy`. It lists everything it will delete and asks you to type `yes`. Check that every name starts with your own `project_name`, then type `yes`.
-3. Deletes the pipeline's AWS role from document 05. Terraform did not create that role, so it cannot delete it.
+3. Deletes the pipeline's AWS role from document 06. Terraform did not create that role, so it cannot delete it.
 4. Deletes `demo-sign-in.txt`, `.env.langfuse` and `build/github-settings.txt` from your folder. These files held passwords and keys.
 5. Lists anything in AWS that is still labelled with your project.
 

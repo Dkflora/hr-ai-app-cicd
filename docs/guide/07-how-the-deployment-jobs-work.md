@@ -1,6 +1,6 @@
-# 06a How the deployment jobs work
+# 07 How the deployment jobs work
 
-**Goal:** understand what the deployment jobs do, before you add them to your workflow in documents 06a2 and 06a3.
+**Goal:** understand what the deployment jobs do, before you add them to your workflow in document 09.
 
 There is nothing to run in this document.
 
@@ -31,9 +31,9 @@ The chat function has two aliases:
 - **`candidate`** points to the newest version, the one being tested. The pipeline moves it on every merge. The staging app you sign in to uses it.
 - **`approved`** points to the last version that passed every test. The pipeline moves it only when the release gate passes.
 
-So when a merge breaks something, `candidate` points to the broken version, and `approved` still points to the last good one. The staging app shows the broken answers, because it follows `candidate`. Documents 07a to 07c use this to show a failure safely.
+So when a merge breaks something, `candidate` points to the broken version, and `approved` still points to the last good one. The staging app shows the broken answers, because it follows `candidate`. Documents 12 to 14 use this to show a failure safely.
 
-Right now the chat function has only `candidate`. The first passing run, in document 06b, creates `approved`.
+Right now the chat function has only `candidate`. The first passing run, in document 10, creates `approved`.
 
 ## What the candidate job does, in order
 
@@ -43,13 +43,13 @@ Each item below is one step in the workflow file, with the script or action it r
 - **Runs only on `main`, and only after `checks` passed.** A pull request never gets AWS access or secrets. So code that has not been reviewed cannot touch AWS.
 
 **Sign in and deploy**
-- **Sign in to AWS** (`configure-aws-credentials`): uses the role from document 05. AWS gives the job temporary credentials that expire within the hour.
+- **Sign in to AWS** (`configure-aws-credentials`): uses the role from document 06. AWS gives the job temporary credentials that expire within the hour.
 - **Deploy the website** (`ci/deploy_frontend.py`): builds the React website from this commit and uploads it.
 - **Publish the prompt** (`ci/release.py --publish`): saves the system prompt in Langfuse as a numbered version, linked to this commit, and packages the backend code.
 - **Deploy the backend** (`ci/deploy_candidate.py`): uploads the code as a new Lambda version, and moves `candidate` to it.
 
 **Test**
-- **Ask the real app**, also called the **API test** (`ci/evaluate_api.py`): signs in as the test accounts and asks one warm-up question that is not timed. Then it asks every question in [the test cases](reference-test-cases.md) twice. A wrong answer, or an answer slower than the time limit, fails the step. Document 06a1 explains the two tries and the 20-second limit.
+- **Ask the real app**, also called the **API test** (`ci/evaluate_api.py`): signs in as the test accounts and asks one warm-up question that is not timed. Then it asks every question in [the test cases](reference-test-cases.md) twice. A wrong answer, or an answer slower than the time limit, fails the step. Document 08 explains the two tries and the 20-second limit.
 - **Check retrieval and consistency** (`ci/quality_checks.py`): checks that the search finds each case's expected policy, and that both answers to each question say the same thing.
 
 **Evaluate the answers**
@@ -61,7 +61,7 @@ Each item below is one step in the workflow file, with the script or action it r
 
 If the API test (**Ask the real app**) fails, the retrieval and consistency check, Langfuse, Promptfoo, Evidently and the report still run, so you can see what broke. **Approve** is skipped, and so is DeepEval.
 
-DeepEval and Evidently run only when the GitHub variables `ENABLE_DEEPEVAL` and `ENABLE_EVIDENTLY` are `true`. You set them in document 06b.
+DeepEval and Evidently run only when the GitHub variables `ENABLE_DEEPEVAL` and `ENABLE_EVIDENTLY` are `true`. You set them in document 10.
 
 ## The answers file: build/evaluation.json
 
@@ -78,7 +78,7 @@ The file holds full answers, including the test accounts' salary figures. So it 
 
 ## What is checked, and by which tool
 
-The checks after the API test each look at the answers in a different way: retrieval quality, answer consistency, Promptfoo, DeepEval, Evidently and the Langfuse experiment. The next document, [06a1 What each test checks](06a1-what-each-test-checks.md), explains each one: what it is, what it checks, which questions it uses and why, and how it passes.
+The checks after the API test each look at the answers in a different way: retrieval quality, answer consistency, Promptfoo, DeepEval, Evidently and the Langfuse experiment. The next document, [08 What each test checks](08-what-each-test-checks.md), explains each one: what it is, what it checks, which questions it uses and why, and how it passes.
 
 ## One release number everywhere
 
@@ -103,6 +103,6 @@ These gaps remain:
 
 ## The production handoff job
 
-This job starts only after the `candidate` job succeeds. It runs in the `hr-production-approval` environment, so a person can be required to approve it first (document 06b). It checks two things: the tested commit is the one you merged, and the report says the gate passed. Then it prints what production would receive. It changes nothing.
+This job starts only after the `candidate` job succeeds. It runs in the `hr-production-approval` environment, so a person can be required to approve it first (document 10). It checks two things: the tested commit is the one you merged, and the report says the gate passed. Then it prints what production would receive. It changes nothing.
 
-**Next:** [06a1 What each test checks](06a1-what-each-test-checks.md)
+**Next:** [08 What each test checks](08-what-each-test-checks.md)

@@ -1,8 +1,8 @@
-# 06a1 What each test checks
+# 08 What each test checks
 
 **Goal:** know what each check in the `candidate` job looks at, which questions it uses and why, and how it passes. This is reading only.
 
-Every check below works on the [test cases](reference-test-cases.md): questions with known correct answers, in `lambda/data/evaluation_questions.json`. The first check asks the app those questions and saves the answers in `build/evaluation.json`, the answers file from document 06a. Every other check reads that file. None of them asks the app again.
+Every check below works on the [test cases](reference-test-cases.md): questions with known correct answers, in `lambda/data/evaluation_questions.json`. The first check asks the app those questions and saves the answers in `build/evaluation.json`, the answers file from document 07. Every other check reads that file. None of them asks the app again.
 
 Each section answers the same questions:
 
@@ -129,7 +129,7 @@ For example, with the current test cases it grades cases 6, 11, 18, 46 and 49. C
 
 **How it passes:** every case scores 1. Any 0 fails the step.
 
-**Where to see the result:** in Langfuse, under **Datasets**. Document 07 walks you through it.
+**Where to see the result:** in Langfuse, under **Datasets**. Document 11 walks you through it.
 
 ## Which checks decide the release
 
@@ -137,4 +137,4 @@ The approval step runs only when every step before it passed. So a failure in th
 
 The checks that follow fixed rules cost little and give the same result every time. The judge model costs money and can be wrong, so it only adds evidence on a sample.
 
-**Next:** [06a2 Add the deployment jobs](06a2-add-deployment-jobs.md)
+**Next:** [09 Add the deployment jobs](09-add-deployment-and-release-jobs.md)

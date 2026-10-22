@@ -1,4 +1,4 @@
-# 06b Environments, merge and first run
+# 10 Environments, merge and first run
 
 **Goal:** give the new jobs their settings, merge your pull request, and watch the pipeline run from start to finish for the first time.
 
@@ -23,7 +23,7 @@ In your GitHub repository, open **Settings → Environments → New environment*
 
 ## Step 2: Open the settings file
 
-Every value you need here is in one file. Setup wrote it in document 02, and document 05 added the last value. Run this to bring it up to date:
+Every value you need here is in one file. Setup wrote it in document 02, and document 06 added the last value. Run this to bring it up to date:
 
 ```bash
 cd ~/hr-rag-lab
@@ -56,7 +56,7 @@ The two `VITE_COGNITO` values are not secret. The web app needs them to show the
 
 On the same `hr-staging` page, under **Environment secrets**, click **Add environment secret**. Add each name listed under `ENVIRONMENT SECRETS` in the file: `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`.
 
-These are the only secrets stored in GitHub. The pipeline signs in to AWS with the role from document 05, so it needs no AWS keys.
+These are the only secrets stored in GitHub. The pipeline signs in to AWS with the role from document 06, so it needs no AWS keys.
 
 ## Step 5: Protect the environments
 
@@ -131,4 +131,4 @@ The same release number shows in every other place:
 
 **Save for later:** the link to this passing run and the prompt version shown in Langfuse. The use cases compare their results with release `v1.0.0`, and put files back from it.
 
-**Next:** [07 Read the evaluation results](07-read-the-evaluation-results.md)
+**Next:** [11 Read the evaluation results](11-read-the-evaluation-results.md)

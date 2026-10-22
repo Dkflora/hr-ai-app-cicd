@@ -1,8 +1,8 @@
-# 07 Read the evaluation results
+# 11 Read the evaluation results
 
 **Goal:** find each tool's result from your first pipeline run, and understand what a pass or a fail tells you.
 
-Document 06a1 explains what each tool is and what it checks. This document shows where to find each result and how to read it.
+Document 08 explains what each tool is and what it checks. This document shows where to find each result and how to read it.
 
 ## How the live API test decides
 
@@ -87,4 +87,4 @@ Open the report from your passing run and answer these:
 2. Pick case 2 from [the test cases](reference-test-cases.md). Which fact must the answer **not** contain, and why?
 3. DeepEval uses a model to grade only a small sample of cases, 5 by default. What could it catch that the fact checks miss, and what could it get wrong?
 
-**Next:** [07a Use case 1: tool-limit failure](07a-use-case-1-tool-limit-failure.md)
+**Next:** [12 Use case 1: tool-limit failure](12-use-case-1-tool-limit-failure.md)

@@ -33,7 +33,7 @@ LANGFUSE_SECRET_KEY=sk-lf-...
 LANGFUSE_BASE_URL=https://us.cloud.langfuse.com
 ```
 
-These keys are private to you. In document 06b you will add the same two keys to GitHub.
+These keys are private to you. In document 10 you will add the same two keys to GitHub.
 
 ## Step 4: Set your names in terraform.tfvars
 
@@ -57,7 +57,7 @@ trace_synthetic_content = true
 - `aurora_instance_count`: the number of database servers. `1` costs half as much as `2`. With `2`, a second server takes over if the first one fails. The lab uses `1` to save money. A company running real HR data would use `2`.
 - `trace_synthetic_content`: `true` lets Langfuse store the made-up questions and answers, so you can read them.
 
-Leave the other lines in the file as they are. `alarm_email` stays empty: document 07d connects your email to the alarms another way.
+Leave the other lines in the file as they are. `alarm_email` stays empty: document 15 connects your email to the alarms another way.
 
 ## What the setup builds
 
@@ -131,7 +131,7 @@ It also prints the sign-in for the LiteLLM gateway admin page, which you open in
 
 The same details are saved in the file `demo-sign-in.txt` in the project folder. You can open it in your editor at any time. It holds the gateway's master key, so it stays on your computer. If you delete it, run `python scripts/show-demo-users.py` to create it again.
 
-Setup also creates the file `build/github-settings.txt`. It collects every value GitHub will need in document 06b, each under the exact name GitHub expects. Document 05 adds the last value. Like everything in the `build/` folder, it never reaches GitHub.
+Setup also creates the file `build/github-settings.txt`. It collects every value GitHub will need in document 10, each under the exact name GitHub expects. Document 06 adds the last value. Like everything in the `build/` folder, it never reaches GitHub.
 
 If you closed the terminal or lost the output, print the details again:
 

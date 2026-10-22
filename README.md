@@ -4,7 +4,7 @@ An AI chatbot application deployed in AWS with React frontend, Python backend, a
 
 ## Start here
 
-Follow [the step-by-step guide](docs/guide/hr-rag-cicd.md) in order, from document 00 to 09. Each document ends with a link to the next.
+Follow [the step-by-step guide](docs/guide/hr-rag-cicd.md) in order, from document 00 to 17. Each document ends with a link to the next.
 
 Import this public repository into your own GitHub account before cloning. Your copy must own its Actions settings, environments and secrets. Document 01 gives the exact steps.
 
@@ -17,7 +17,7 @@ Import this public repository into your own GitHub account before cloning. Your 
 - `infra/terraform/`: infrastructure for initial setup, including the private model gateway.
 - `scripts/`: automated application setup and configuration helpers.
 - `ci/`: authenticated API tests, evaluation adapters, deployment and reporting helpers.
-- `docs/guide/`: the step-by-step guide, documents 00 to 09 plus the test cases and troubleshooting.
+- `docs/guide/`: the step-by-step guide, documents 00 to 17 plus the test cases and troubleshooting.
 - `docs/HR-LAB-START-TO-FINISH.md`: the full reference in one page.
 - `OWNERS.md`: who owns each part of the repository, and what each owner checks in a review.
 

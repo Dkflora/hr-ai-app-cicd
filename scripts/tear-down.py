@@ -7,7 +7,7 @@
 What it does, in order:
   1. Reads the project's names from Terraform, while Terraform can still print them.
   2. Runs `terraform destroy`. Terraform lists everything it will delete and waits for `yes`.
-  3. Deletes the pipeline's IAM role from document 05 (Terraform did not create it).
+  3. Deletes the pipeline's IAM role from document 06 (Terraform did not create it).
   4. With --release-names: force-deletes the two secrets whose names AWS keeps reserved
      for 30 days, so you can set up again with the same project_name straight away.
   5. Deletes demo-sign-in.txt, .env.langfuse and build/github-settings.txt from this folder.
@@ -105,7 +105,7 @@ def main():
     if destroy.returncode != 0:
         sys.exit('terraform destroy did not finish. Run this script again: it continues from what is left.')
 
-    # Step 3: the role from document 05.
+    # Step 3: the role from document 06.
     delete_role(boto3.client('iam'), role_name)
 
     # Step 4: optional, free the secret names now instead of in 30 days.
