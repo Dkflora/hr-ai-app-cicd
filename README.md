@@ -1,6 +1,6 @@
 # Northwind HR Assistant: an end-to-end LLMOps lab
 
-An AI chatbot for HR policy questions, deployed in AWS, with everything around it: sign-in and data permissions, a guardrail, LiteLLM model routing, Langfuse tracing and user feedback, automated evaluations, alarms, and a CI/CD pipeline that tests every change before it is approved.
+An AI chatbot for HR policy questions, deployed in AWS, with everything around it. That means sign-in and data permissions, a guardrail, LiteLLM model routing, Langfuse tracing and user feedback, evaluations and alarms. At the centre is a CI/CD pipeline that tests every change before it is approved.
 
 ## Start here
 
