@@ -215,6 +215,8 @@ step "Langfuse keys stored in Secrets Manager" \
   "Storing the Langfuse keys failed. Check the keys in .env.langfuse." \
   python scripts/configure-langfuse.py
 
+step "Langfuse dashboard: HR assistant health"   "Creating the Langfuse dashboard failed. The app works; rerun to try again."   python scripts/create-langfuse-dashboard.py
+
 # Wait for ingestion only when documents were uploaded; otherwise the index is already built.
 READINESS_FLAG=--skip-ingestion-wait
 [ -f build/.documents-uploaded ] && READINESS_FLAG=--wait-for-ingestion

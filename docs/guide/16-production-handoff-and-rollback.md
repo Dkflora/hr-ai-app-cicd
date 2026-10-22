@@ -35,6 +35,16 @@ An **alias** is a name that points to one version of the Lambda function. The pi
 
 When `promote_lab.py` moves `approved`, it also notes the release and the version it replaced, in the alias description. For example: `Lab approved release pointer; release v1.0.2; previous approved version: 7`. The rollback reads that note, and prints which release `approved` moved from and to.
 
+## How production releases: canary
+
+In this lab, a passing release becomes `approved` all at once. Many companies release in steps instead, called a **canary** release:
+
+1. Send a small share of real traffic to the new version, such as 5 or 10%. The rest stays on the approved version.
+2. Watch the signals you already know: errors, answer time, and the 👎 rate, in CloudWatch and on the Langfuse dashboard.
+3. If they stay healthy, raise the share step by step to 100%. If they get worse, send all traffic back to the approved version.
+
+Lambda aliases can do this directly: an alias can send a set share of requests to a second version, called weighted routing. So the same `approved` and `candidate` aliases could carry a canary. A canary catches what the test cases miss, because real people ask questions nobody wrote down. The lab does not build it, so that every run in class gives the same result.
+
 ## Rollback: restore the previous approved version
 
 A **rollback** means going back to the last version that worked. `ci/rollback_lab.py` reads the recorded version from AWS and moves `approved` back to it. It refuses any version that does not belong to the staging function. It never deletes anything.

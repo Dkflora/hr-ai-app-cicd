@@ -107,6 +107,7 @@ Use case 1 always fails in the same way, so it is the one to run in class. Use c
 - [Test cases](reference-test-cases.md): every test question (52 with the current test cases), which test account asks each one, and what the answer must and must not contain.
 - [OIDC by hand](reference-oidc-by-hand.md): the AWS console steps that `scripts/prepare-oidc.py` does for you, one at a time.
 - [Troubleshooting](reference-troubleshooting.md): AWS sign-in errors and other common problems.
+- [Runbook](reference-runbook.md): what to do when the release gate fails, a bad release is live, an alarm fires, or the gateway is down.
 
 ## Rules for the whole lab
 

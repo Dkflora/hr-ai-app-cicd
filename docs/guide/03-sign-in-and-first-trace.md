@@ -70,6 +70,25 @@ In Langfuse, a **score** is a grade attached to a trace. It can be yes or no, a 
 
 Now open the trace of the second answer. Under **Scores**, you see `user_feedback` with the value `false` and your reason. If a reason contains personal data, such as a phone number, it is hidden before it is saved. To review every answer people disliked, open **Scores** or **Traces** and filter on `user_feedback`. A team can also send those traces to an **annotation queue**, a list where an HR expert grades each answer.
 
+### The health dashboard
+
+Setup also created a dashboard in Langfuse. Open **Dashboards**, then **HR assistant health**. Its six charts show how the app behaves for real people, not for the pipeline's test accounts:
+
+- **Questions per day** from real people.
+- **Answer time p95 by release:** 95% of answers took less than this. After document 10, each release gets its own bar, so you can compare them.
+- **AI model cost per day**, by model.
+- **Blocked questions per day:** questions the guardrail stopped.
+- **Share of thumbs up** and **Votes: thumbs up and down**, from the 👍 and 👎 buttons.
+
+Most charts are nearly empty for now. They fill up as people use the app. The script that builds the dashboard is `scripts/create-langfuse-dashboard.py`. If your setup ran before it existed, create the dashboard once:
+
+```bash
+cd ~/hr-rag-lab
+python scripts/create-langfuse-dashboard.py
+```
+
+**Expected:** `Created the dashboard "HR assistant health" with 6 charts.` If it already exists, the script says so and changes nothing.
+
 ## Step 3: See the same questions in the model gateway
 
 Every question the app sends to an AI model goes through the LiteLLM gateway. The gateway has an admin page that lists each of those questions with its model and its cost. It also shows whether the reply came from the gateway's cache: a store of recent replies it can reuse for an identical question. Langfuse shows the whole request from the app's side. The gateway shows each separate question to the AI model.

@@ -91,6 +91,14 @@ The `VERSION` file holds the release number, such as `1.0.3`. Each change raises
 - **API answers:** each answer carries the header `x-hr-release: v1.0.3`.
 - **Git:** after the release gate passes, the `tag-release` job tags the tested commit `v1.0.3` and pushes the tag to GitHub. A release that fails the gate gets no tag.
 
+## How production does this
+
+This lab keeps everything in one AWS account and one staging environment, so you can follow each step. A company usually adds three things:
+
+- **A separate production account.** Staging and production live in different AWS accounts, so a mistake in staging cannot touch production. A release moves from staging to production only after the approval step. In this lab, the production job is a dry run that shows what production would receive (document 16).
+- **Terraform in the pipeline.** Here you ran Terraform by hand in document 02, and its state file stays on your computer. A company keeps the state in shared storage, such as an S3 bucket with a lock, so two people cannot change the infrastructure at once. Every pull request then shows `terraform plan`, the list of changes, and the merge applies it.
+- **A versioned search index.** A release here names the code and the prompt. A company also records which version of the policy index the release was tested with, because a re-indexed document can change answers too.
+
 ## What these checks still do not cover
 
 These gaps remain:
