@@ -24,21 +24,32 @@ A company running the HR assistant for real employees would add the practices be
 
 **In the lab:** when a release passes, `approved` moves to it all at once.
 
-**In production:** many teams send a new version to a small share of real traffic first. This is a **canary** release:
+**In production:** many teams first give a new version to a small share of real users. This is a **canary** release. If the new version behaves well, the share grows step by step to everyone. If it does not, the share goes back to zero.
 
-1. Send a small share of requests, such as 5 or 10%, to the new version. The rest stays on the approved version.
-2. Watch the signals you already know: errors, answer time, and the 👎 rate.
-3. If they stay healthy, raise the share step by step to 100%. If they get worse, send all traffic back to the approved version.
+### Split by person, not by request
 
-A canary catches what test cases miss, because real people ask questions nobody wrote down.
+A chat is a series of requests: a question, then a follow-up that depends on the first answer. If the first answer comes from one version and the follow-up from another, the conversation can contradict itself, and nobody can tell which version caused a problem. So a chat app splits traffic by **person** or by **conversation**, never request by request. This is called **sticky assignment**:
 
-**How to add it here:** a Lambda alias can split traffic between two versions. This is called weighted routing. For example, this keeps the `approved` alias on version 21 and sends 10% of its requests to version 22:
+1. **Decide once.** When a conversation starts, the app turns the employee's ID into a number from 0 to 99 with a fixed hash. If the number is below the canary share, such as 10, the conversation gets the new version. The same person always gets the same number, so they get the same version on every visit.
+2. **Remember the decision.** The app stores the chosen version with the conversation. Every follow-up in that conversation uses it, even if the share changes in the middle.
+3. **Record it everywhere.** Every trace carries the version, as this lab's traces already carry their release. The team can then compare the two groups: errors, answer time, 👎 rate and judge scores.
 
-```bash
-aws lambda update-alias --function-name "$(terraform -chdir=infra/terraform output -raw candidate_function)" --name approved --function-version 21 --routing-config 'AdditionalVersionWeights={"22"=0.1}'
-```
+The decision usually comes from a **feature flag service**. On AWS, AppConfig feature flags can split by a percentage of a value you pass in, such as the user ID. The same ID always gets the same answer. Teams also use LaunchDarkly or Unleash for the same job.
 
-AWS CodeDeploy can run the steps for you, with modes such as "10% for 5 minutes, then everything". It also rolls back automatically when a CloudWatch alarm you name goes off, such as this lab's error or slow-answer alarms. In this lab, the staging app follows `candidate`, so a real canary would first need the app to follow `approved`.
+### What the flag switches
+
+- **A prompt or model change:** the same deployed code holds both prompts or both model names. The flag picks one per conversation, so no second deployment is needed.
+- **A code change:** two versions of the code run side by side, and a small routing step sends each conversation to the one the flag chose.
+
+### How the rollout is gated
+
+A person or a pipeline job widens the share in steps, such as 1%, 10%, 50%, then 100%. Before each step, it compares the two groups against written limits. For example: "the new version's 👎 rate and error rate are no worse than the old one's". If a limit is broken, the share goes back to 0%. New conversations then all start on the old version. Conversations already on the new version either finish there, or move at their next question.
+
+### Where a per-request split still fits
+
+A Lambda alias can also split traffic between two versions by weight. AWS CodeDeploy can raise that weight in steps, and roll it back when a CloudWatch alarm goes off. That split is made for every request separately, so it fits calls that stand alone, such as a single document ingestion. It does not fit a conversation, for the reason above. CloudFront can also send a share of visitors to a test copy of a website, and keep each visitor there with a cookie. It allows at most 15% of traffic, and a session ends after at most an hour of inactivity. That suits website changes, not a chat that must stay on one version.
+
+**How to add it here:** add a version column to the `conversations` table, which the chat function already writes when a conversation starts. Choose the version there with the hash rule above, and pass it to the answer code, which then picks the prompt or model. Add the version as a tag on every trace, so the Langfuse dashboard can show each group.
 
 ## 4. A rollback strategy
 
