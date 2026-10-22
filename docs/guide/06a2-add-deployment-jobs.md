@@ -148,6 +148,8 @@ cat >> .github/workflows/hr-quality.yml <<'EOF'
       # Retain a sanitized report even when evaluation fails.
       - name: Publish public-safe report
         if: always()
+        env:                                                            # step variables
+          JOB_STATUS: ${{ job.status }}                                 # did any earlier step fail?
         run: |
           if test -f build/evaluation.json; then
             python ci/report.py
@@ -193,6 +195,7 @@ The steps match the list in document 06a. A few parts of the YAML are new:
 - `id: live` names the API test step, so later steps can ask how it ended.
 - `if: always() && steps.live.outcome != 'skipped'` means: run this step even if an earlier step failed, as long as the API test ran. Without `always()`, GitHub skips every step after a failure, and you would see no results.
 - `if: success()` on the approval step means: run only if every earlier step passed.
+- `JOB_STATUS: ${{ job.status }}` on the report step tells `ci/report.py` whether any earlier step failed. If one did, the report says `Release gate: FAIL`, even when every answer passed. The report and the approval always agree.
 - `if: vars.ENABLE_DEEPEVAL == 'true'` turns DeepEval on or off with a GitHub variable. Evidently has the same switch, `ENABLE_EVIDENTLY`.
 - `actions/upload-artifact` keeps the listed files for 3 days, under **Artifacts** on the run page. The production and release jobs in document 06a3 read them from there.
 

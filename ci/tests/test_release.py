@@ -142,6 +142,14 @@ class ReleaseTests(unittest.TestCase):
         report = summarize({'expected': 2, 'records': two_runs_of_one_case})
         self.assertIn('1/1', report)
 
+    def test_a_failed_step_fails_the_gate(self):
+        # Every answer passed, but another step failed, such as Promptfoo. Approval was skipped,
+        # so the report must not say PASS.
+        both_runs_passed = [{'case_id': 'a', 'passed': True}] * 2
+        report = summarize({'expected': 2, 'records': both_runs_passed}, job_status='failure')
+        self.assertIn('Release gate: FAIL.', report)
+        self.assertIn('Another step in this job failed', report)
+
     def test_missing_report_fails(self):
         # Two answers were expected and none arrived. That must be an error, never a pass.
         with self.assertRaises(ValueError):

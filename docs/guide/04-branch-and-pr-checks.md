@@ -28,7 +28,7 @@ source .venv/Scripts/activate 2>/dev/null || source .venv/bin/activate
 python -m unittest discover -s ci/tests -v
 ```
 
-**Expected:** every test ends with `ok`. Near the end, the output says `Ran 53 tests`, and the last line is `OK`.
+**Expected:** every test ends with `ok`. Near the end, the output says `Ran 54 tests`, and the last line is `OK`.
 
 The tests are the seven files in `ci/tests/`. They check the prompt's structure, the release package, the inline judge and the connection to the model gateway. They also check the tracing code, user feedback, the rollback script, the release number, and that the Evidently drift reference matches the test cases. They use fakes instead of AWS and the AI model, so they need no access and run in seconds. To see an example, open `ci/tests/test_release.py`.
 

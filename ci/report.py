@@ -1,6 +1,7 @@
 """Public-safe quality report; never posts raw questions, answers, or employee names."""
 import json
 import math
+import os
 from pathlib import Path
 
 def wilson(passed, total):
@@ -13,8 +14,12 @@ def wilson(passed, total):
     half = z * math.sqrt(p*(1-p)/total + z*z/(4*total*total))/denom
     return centre-half, centre+half
 
-def summarize(data, quality=None, deepeval=None):
-    """The report text. quality and deepeval are the results of the other checks, when they ran."""
+def summarize(data, quality=None, deepeval=None, job_status='success'):
+    """The report text. quality and deepeval are the results of the other checks, when they ran.
+
+    job_status is the status of the whole candidate job. Any failed step, such as Promptfoo,
+    the Langfuse experiment or approval, makes it 'failure', and then the gate cannot pass.
+    """
     rows = data['records']
     if len(rows) != data['expected'] or not rows:
         raise ValueError('Incomplete report')
@@ -31,7 +36,10 @@ def summarize(data, quality=None, deepeval=None):
         'does not establish a production error rate.\n\n'
         f'Application requests recorded: {len(rows)}.\n\n')
     sections, other_checks_passed = quality_section(quality, deepeval)
-    if all(r['passed'] for r in rows) and other_checks_passed:
+    if job_status != 'success':
+        sections += ('Another step in this job failed, so this version was not approved. '
+                     'Open the run to see which step.\n\n')
+    if all(r['passed'] for r in rows) and other_checks_passed and job_status == 'success':
         verdict = 'PASS'
     else:
         verdict = 'FAIL'
@@ -81,6 +89,7 @@ if __name__ == '__main__':
         if path.exists():
             optional[name] = json.loads(path.read_text())
     report = summarize(json.loads((root / 'build/evaluation.json').read_text()),
-                       optional.get('quality'), optional.get('deepeval'))
+                       optional.get('quality'), optional.get('deepeval'),
+                       os.getenv('JOB_STATUS', 'success'))   # set by the workflow
     (root / 'build/report.md').write_text(report)
     print(report)
