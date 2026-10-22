@@ -1,19 +1,23 @@
-# HR RAG CI/CD: delivery and evaluation lab
+# Northwind HR Assistant: an end-to-end LLMOps lab
 
 Northwind HR Assistant is a chatbot for the company's employees. It answers questions about HR policies, such as time off or expenses. It runs on AWS. An employee signs in, asks a question, and gets an answer. The answer comes from the approved policy documents and from that employee's own HR record.
 
-The chatbot is already built. In this lab you build the **delivery pipeline** around it. A delivery pipeline is a set of automatic steps that run every time someone changes the code. Here it is a GitHub Actions workflow. It puts every reviewed change on a test copy of the app, called staging. Then it asks the app real questions. It approves the new version only if every test passes.
+This lab gives you a full view of an AI application in production, not only its pipeline. You run it, secure it, route its model calls, watch it, test it, ship changes to it, and react when users are unhappy. The centre of the lab is **CI/CD**: the delivery pipeline that tests every change and approves a new version only when every test passes. The other parts are there because a pipeline is only as useful as what it can see and check.
 
 ## What you will have at the end
 
-- The company's HR assistant running in AWS, in one staging environment the whole team uses.
-- A GitHub Actions workflow, `hr-quality.yml`, with four jobs:
+- **The app running** (documents 02 and 03): the HR assistant in AWS, in one staging environment the whole team uses.
+- **Security in layers** (documents 03 and 06): sign-in with Cognito, and each employee sees only their own records. A guardrail blocks or hides personal data. The pipeline holds no AWS keys.
+- **A model gateway** (document 03): every AI model call goes through LiteLLM, with spending limits, request limits and a fallback model.
+- **Observability** (documents 03 and 15): every question is traced step by step in Langfuse, with 👍 and 👎 votes on the answers. Email alarms report errors, slow answers and thumbs down.
+- **Evaluation** (documents 07, 08 and 11): a fixed set of test questions with known answers. Code and Promptfoo check the facts, DeepEval uses an AI judge, and Evidently watches for drift.
+- **CI/CD** (documents 04, 09 and 10): a GitHub Actions workflow, `hr-quality.yml`. It has four jobs.
   - **checks**: checks the release number, runs the unit tests and builds the code on every branch and pull request. It has no access to AWS.
   - **candidate**: runs on every merge to `main`. It puts the new version on staging and asks every test question twice, through the real app.
   - **production-handoff-dry-run**: checks that the tested version is the one you merged. Then it shows what a production release would contain. It changes nothing.
   - **tag-release**: when the release passes, tags the tested commit in Git with its release number, such as `v1.0.0`.
-- A second workflow, `code-scan.yml`, that checks the code's style, risky patterns and packages on every push. It only reports.
-- A failing run and a passing run for the same question. Langfuse traces show you why each one happened.
+- **Code scans** (document 05): a second workflow, `code-scan.yml`, that checks the code's style, risky patterns and packages on every push. It only reports.
+- **Operations** (documents 12 to 17): three broken releases and their repairs, a thumbs-down review in Langfuse, a one-command rollback, and a full tear-down.
 
 ## The parts you will meet
 
